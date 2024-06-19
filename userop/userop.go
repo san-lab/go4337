@@ -172,6 +172,10 @@ var (
 )
 
 func (u *UserOp) Pack() *PackedUserOp {
+	if u == nil {
+		fmt.Println("UserOp is nil")
+		return nil
+	}
 	initCode := []byte{}
 	if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 		initCode = append(u.Factory.Bytes(), u.FactoryData...)

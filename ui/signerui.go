@@ -35,10 +35,8 @@ func SignerUI() {
 			AddSignerUI()
 		default:
 			if i < len(state.State.Signers) {
-				SignItem.Value = state.State.Signers[i]
-				SignItem.DisplayValue = state.State.Signers[i].String()
+				SignerItem.Value = state.State.Signers[i]
 				SignerItem.DisplayValue = state.State.Signers[i].String()
-				SignItem.Details = "Sign the user operation with " + state.State.Signers[i].String()
 				return
 			}
 			fmt.Println("Unreachable reached:", sel)

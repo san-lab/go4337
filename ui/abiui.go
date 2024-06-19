@@ -258,7 +258,10 @@ func SelectMethodUI(contract string) {
 func SetParamUI(label string, input abi.Argument) (interface{}, error) {
 	switch input.Type.T {
 	case abi.AddressTy:
-		return InputNewAddressUI(label)
+		addr, ok := AddressFromBookUI(label)
+		if ok {
+			return addr, nil
+		}
 	case abi.UintTy:
 		switch input.Type.Size {
 		case 256, 160, 128:

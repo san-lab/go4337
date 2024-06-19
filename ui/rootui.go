@@ -31,6 +31,7 @@ func RootUI() {
 		UserOpItem,
 		SignerItem,
 		AbisItem,
+		ChainIDItem,
 		EntryPointItem,
 		Exit,
 	}
@@ -60,6 +61,8 @@ func RootUI() {
 			EntryPointUI()
 		case Exit.Label:
 			return
+		case ChainIDItem.Label:
+			InputUint(ChainIDItem, 64)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}

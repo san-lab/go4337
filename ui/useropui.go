@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -37,7 +38,7 @@ func UserOpUI() {
 		case Back.Label:
 			return
 		case UserOpContentItem.Label:
-			usop = UserOpContentUI()
+			UserOpContentUI(usop)
 		case ExportUserOpItem.Label:
 			ExportUserOpUI(usop)
 		case GetHashItem.Label:
@@ -48,7 +49,7 @@ func UserOpUI() {
 	}
 }
 
-var SenderItem = &Item{Label: "Sender", Details: "Set sender"}
+var SenderItem = &Item{Label: state.Sender, Details: "Set sender"}
 var NonceItem = &Item{Label: "Nonce", Details: "Set nonce", Value: uint64(0)}
 var CallDataItem = &Item{Label: "Call Data", Details: "Set Call Data"}
 var CallGasLimitItem = &Item{Label: "Call Gas Limit", Details: "Set Call Gas Limit", Value: userop.DefaultCallGasLimit, DisplayValue: fmt.Sprint(userop.DefaultCallGasLimit)}
@@ -56,6 +57,9 @@ var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "
 var PreVerificationGasItem = &Item{Label: "Pre Verification Gas", Details: "Set Pre Verification Gas", Value: userop.DefaultPreVerificationGas, DisplayValue: fmt.Sprint(userop.DefaultPreVerificationGas)}
 var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas", Details: "Set Max Fee Per Gas", Value: userop.DefaultMaxFeePerGas, DisplayValue: fmt.Sprint(userop.DefaultMaxFeePerGas)}
 var MaxPriorityFeePerGasItem = &Item{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas", Value: userop.DefaultMaxPriorityFeePerGas, DisplayValue: fmt.Sprint(userop.DefaultMaxPriorityFeePerGas)}
+var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
+var FactoryItem = &Item{Label: "Factory", Details: "Set Factory"}
+var FactoryDataItem = &Item{Label: "Factory Data", Details: "Set Factory Data"}
 
 // PaymasterItem is defined in paymasterui.go
 var PaymasterDataItem = &Item{Label: "Paymaster Data", Details: "Set Paymaster Data"}
@@ -63,11 +67,13 @@ var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verification Gas
 var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit, DisplayValue: fmt.Sprint(userop.DefaultPaymasterPostOpGasLimit)}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 
-func UserOpContentUI() (uop *userop.UserOp) {
-	uop = new(userop.UserOp)
+func UserOpContentUI(usop *userop.UserOp) {
+
 	items := []*Item{
 		SenderItem,
 		NonceItem,
+		FactoryItem,
+		FactoryDataItem,
 		CallDataItem,
 		CallGasLimitItem,
 		VerificationGasLimitItem,
@@ -81,6 +87,7 @@ func UserOpContentUI() (uop *userop.UserOp) {
 		SignatureItem,
 		Back,
 	}
+	copyFromUseropToItems(usop)
 	// Create a new select prompt
 	prompt := promptui.Select{
 		Label:     "Select an option",
@@ -95,15 +102,18 @@ func UserOpContentUI() (uop *userop.UserOp) {
 		}
 		switch sel {
 		case Back.Label:
-			copyValuesToUserOp(uop)
+			copyValuesToUserOp(usop)
 
 			return
 		case NonceItem.Label, CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
-			InputUint(it, 64)
-		case CallDataItem.Label, PaymasterDataItem.Label, SignatureItem.Label:
+			err = InputUint(it, 64)
+			if err != nil {
+				copyValuesToUserOp(usop)
+			}
+		case CallDataItem.Label:
 			it, _ := GetItem(sel, items)
 			caldat, err := PotentiallyRecursiveCallDataUI()
 			if err != nil {
@@ -111,20 +121,66 @@ func UserOpContentUI() (uop *userop.UserOp) {
 			} else {
 				SetCallDataValue(caldat, it)
 			}
-			//InputBytes(it)
-		case SenderItem.Label:
-			addr, err := SenderUI()
+		//InputBytes(it)
+		case FactoryDataItem.Label, PaymasterDataItem.Label:
+			it, _ := GetItem(sel, items)
+			err = InputBytes(it, -1)
 			if err != nil {
-				fmt.Println(err)
+				copyValuesToUserOp(usop)
+			}
+		case SignatureItem.Label:
+			copyValuesToUserOp(usop)
+			ret, err := SetSignatureUI(usop)
+			if err == nil {
+				SignItem.Value = ret
+				SignItem.DisplayValue = ShortHex(ret, 7)
+				SignItem.Details = hex.EncodeToString(ret)
 			} else {
-				SenderItem.Value = addr
-				SenderItem.DisplayValue = addr.String()
+				fmt.Println(err)
+			}
+
+		case SenderItem.Label, PaymasterItem.Label, FactoryItem.Label:
+			it, _ := GetItem(sel, items)
+			addr, ok := AddressFromBookUI(sel)
+			if ok {
+
+				it.Value = addr
+				it.DisplayValue = addr.String()
 			}
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
 	}
 
+}
+
+func copyFromUseropToItems(uop *userop.UserOp) {
+	if uop.Sender != nil {
+		SenderItem.Value = uop.Sender
+		SenderItem.DisplayValue = uop.Sender.String()
+	}
+	NonceItem.Value = uop.Nonce
+	if uop.CallData != nil {
+		SetCallDataValue(uop.CallData, CallDataItem)
+	}
+	CallGasLimitItem.Value = uop.CallGasLimit
+	VerificationGasLimitItem.Value = uop.VerificationGasLimit
+	PreVerificationGasItem.Value = uop.PreVerificationGas
+	MaxFeePerGasItem.Value = uop.MaxFeePerGas
+	MaxPriorityFeePerGasItem.Value = uop.MaxPriorityFeePerGas
+	if uop.Paymaster != nil {
+		PaymasterItem.Value = uop.Paymaster
+		PaymasterItem.DisplayValue = uop.Paymaster.String()
+	}
+	if uop.PaymasterData != nil {
+		SetCallDataValue(uop.PaymasterData, PaymasterDataItem)
+	}
+	PaymasterVerificationGasLimitItem.Value = uop.PaymasterVerificationGasLimit
+	PaymasterPostOpGasLimitItem.Value = uop.PaymasterPostOpGasLimit
+	if uop.Signature != nil {
+		SignatureItem.Value = uop.Signature
+		SignatureItem.DisplayValue = hex.EncodeToString(uop.Signature)
+	}
 }
 
 func copyValuesToUserOp(uop *userop.UserOp) {

@@ -164,6 +164,7 @@ func InputNewAddressUI(label string) (*common.Address, error) {
 	if err != nil {
 		return nil, err
 	}
+	s = strings.Trim(s, " ")
 	common.BytesToAddress(common.FromHex(s))
 	addr := common.HexToAddress(s)
 	return &addr, nil

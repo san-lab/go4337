@@ -12,8 +12,7 @@ import (
 )
 
 type StateStruct struct {
-	Senders    []*common.Address
-	Paymasters []*common.Address
+	AddressBooks map[string]*AddressBook
 	//Default Gas Costs?
 	Signers    []signer.Signer `json:"-"`
 	SignersRaw []string
@@ -31,13 +30,48 @@ func InitState() {
 	err := State.Load()
 	if err != nil {
 		fmt.Println(err)
+		State.AddressBooks = make(map[string]*AddressBook)
 
-		State.Senders = []*common.Address{}
-		State.Paymasters = make([]*common.Address, 1)
-		State.Paymasters[0] = &common.Address{}
+		State.AddressBooks[Sender] = &AddressBook{}
+		State.AddressBooks[Paymaster] = &AddressBook{}
 		State.Signers = []signer.Signer{}
 		State.ABIs = make(map[string]string)
 	}
+}
+
+type AddressBook []*common.Address
+
+const Sender = "Sender"
+const Paymaster = "Paymaster"
+
+func GetAddressBook(label string) (*AddressBook, bool) {
+	ab, ok := State.AddressBooks[label]
+	if !ok {
+		ab = &AddressBook{}
+		State.AddressBooks[label] = ab
+	}
+	return ab, true
+}
+
+func (ab *AddressBook) Add(addr *common.Address) {
+	*ab = append(*ab, addr)
+	State.Save()
+}
+
+func (ab *AddressBook) Remove(addr *common.Address) {
+	//Find the address index
+	i := 0
+	for i = 0; i < len(*ab); i++ {
+		if (*ab)[i].Hex() == addr.Hex() {
+			break
+		}
+	}
+	if i == len(*ab) {
+		return
+	}
+	//Remove the address
+	*ab = append((*ab)[:i], (*ab)[i+1:]...)
+	State.Save()
 }
 
 var StateFile = "state.json"
