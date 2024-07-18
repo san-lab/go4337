@@ -1,13 +1,14 @@
 package ui
 
 import (
-	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
@@ -18,8 +19,9 @@ var AddAbiItem = &Item{Label: "Add ABI", Details: "Add a new ABI"}
 func AbisUI(callbackItem *Item) (contract string, err error) {
 	for {
 		abiitems := []*Item{}
-		for contract, abi := range state.State.ABIs {
-			abiitems = append(abiitems, &Item{Label: contract, Details: "Select this ABI", Value: abi, DisplayValue: sanitize(abi, 50)})
+		for _, contract := range state.ListABIs() {
+			//We can assume the abi is in the cache
+			abiitems = append(abiitems, &Item{Label: contract[0], Details: "Select this ABI", Value: contract[1], DisplayValue: abiutil.Sanitize(contract[1], 50)})
 		}
 		abiitems = append(abiitems, AddAbiItem, Back)
 		// Create a new select prompt
@@ -51,36 +53,22 @@ func AbisUI(callbackItem *Item) (contract string, err error) {
 }
 
 func AddAbiUI() {
-	contract, err := InputNewStringUI("Contract Name")
+	InputItem := &Item{Label: "Contract Name", Details: "Input the contract name"}
+	err := InputNewStringUI(InputItem)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	abistr, err := MultiLineInput("Input ABI, add an empty line to finish")
+	contract := InputItem.Value.(string)
+	abistr, err := MultiLineInput(fmt.Sprintf("Input ABI for %s, add an empty line to finish", contract))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	abistr = sanitize(abistr, -1)
-	//First try to fit into a full ABI-Metadata json
-	abistuct := new(ABIStruct)
-	err = json.Unmarshal([]byte(abistr), abistuct)
-	if err == nil {
-		abistr = string(abistuct.Output.Abi)
-	}
-
-	//else try the whole block
-	abi.JSON(strings.NewReader(abistr))
-	cABI, err := abi.JSON(strings.NewReader(abistr))
+	_, _, err = state.ParseABI(contract, abistr)
 	if err != nil {
-		fmt.Println(err)
-		return
+		fmt.Printf("Error %e when parsing abi:\n>>%s<<\n", err, abistr)
 	}
-	for k, v := range cABI.Methods {
-		fmt.Println(k, v)
-	}
-	state.State.ABIs[contract] = sanitize(abistr, -1)
-	state.State.Save()
 }
 
 var EditAbiItem = &Item{Label: "Edit ABI", Details: "Edit this ABI"}
@@ -93,7 +81,7 @@ var MethodItem = &Item{Label: "Method", Details: "Manage method"}
 func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return error?
 	var label string
 	var proceed bool
-	_, _, err := userop.GetABI(contract)
+	_, _, err := state.GetABI(contract)
 	if err != nil {
 		label = fmt.Sprintf("Invalid ABI: %v", err)
 		proceed = false
@@ -104,7 +92,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 
 	if proceed {
 		items := []*Item{}
-		if MethodItem.Value != nil && (MethodItem.Value.(*userop.Method)).ABIName != contract {
+		if MethodItem.Value != nil && (MethodItem.Value.(*state.MethodCall)).ABIName != contract {
 			fmt.Println("Clearing method")
 			MethodItem.Value = nil
 			MethodItem.DisplayValue = ""
@@ -129,7 +117,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 			case EditAbiItem.Label:
 				fmt.Println("Edit ABI")
 			case DeleteAbiItem.Label:
-				delete(state.State.ABIs, contract)
+				state.RemoveABI(contract)
 				return
 			case SelectMethodItem.Label:
 				SelectMethodUI(contract)
@@ -152,12 +140,12 @@ func MethodUI(callbackItem *Item) (ret bool) {
 		fmt.Println("No method selected")
 		return
 	}
-	method := vmethod.(*userop.Method)
-
+	method := vmethod.(*state.MethodCall)
 	for {
 		allSet := true
 		items := []*Item{}
-		for i, input := range method.ABI.Methods[method.Name].Inputs {
+
+		for i, input := range method.ABI.Methods[method.MethodName].Inputs {
 			allSet = allSet && method.Params[i] != nil
 			items = append(items, &Item{Label: input.Name, DisplayValue: userop.ParamToString(method.Params[i]), Details: input.Type.String(), Value: input})
 		}
@@ -182,7 +170,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 		case Back.Label:
 			return
 		case "Encode":
-			data, err := userop.EncodeWithParams(method.ABI, method.Name, method.Params...)
+			data, err := userop.EncodeWithParams(method.ABI, method.MethodName, method.Params...)
 			if err != nil {
 				fmt.Println("Errrrorrr!!!!!", err)
 				continue
@@ -195,14 +183,20 @@ func MethodUI(callbackItem *Item) (ret bool) {
 		default:
 			it, ok := GetItem(sel, items)
 			if ok {
-				v, err := SetParamUI(it.Label, it.Value.(abi.Argument))
+				arg, okk := it.Value.(abi.Argument)
+				if !okk {
+					fmt.Println("Not an ABI argument")
+					continue
+				}
+				it.Value = method.Params[i]
+				err := SetParamUI(it, &arg)
 				if err != nil {
 					fmt.Println(err)
 				} else {
 					//t := reflect.TypeOf(v)
 					//fmt.Println("Type", t)
-					it.Value = v
-					method.Params[i] = v
+
+					method.Params[i] = it.Value
 					//it.DisplayValue = fmt.Sprint(v)
 				}
 			}
@@ -210,9 +204,9 @@ func MethodUI(callbackItem *Item) (ret bool) {
 	}
 }
 
-func SelectMethodUI(contract string) {
+func SelectMethodUI(contractName string) {
 	items := []*Item{}
-	_, methods, err := userop.GetABI(contract)
+	_, methods, err := state.GetABI(contractName)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -225,7 +219,7 @@ func SelectMethodUI(contract string) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		v := methods[k]
-		items = append(items, &Item{Label: k, Details: "select " + v.Name, Value: v})
+		items = append(items, &Item{Label: k, Details: "select " + v.MethodName, Value: v})
 	}
 	items = append(items, Back)
 	// Create a new select prompt
@@ -255,42 +249,218 @@ func SelectMethodUI(contract string) {
 	}
 }
 
-func SetParamUI(label string, input abi.Argument) (interface{}, error) {
+func Capitalize(s string) string {
+	//return s
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+var AppendItem = &Item{Label: "Append", Details: "Append a new value"}
+
+func SetSliceUI(topItem *Item, slice *abi.Argument) error {
+	fmt.Println(topItem.Value)
+	valueItems := []*Item{}
+	v := reflect.ValueOf(topItem.Value)
+
+	// Check if the value is a slice
+	// TODO better compare with the type of the slice
+	if topItem.Value != nil && v.Kind() == reflect.Slice { //so we have a slice...
+
+		// Iterate over the slice elements
+		for i := 0; i < v.Len(); i++ {
+			element := v.Index(i)
+			valueItems = append(valueItems, &Item{Label: fmt.Sprintf("%s_%v", slice.Name, i), Details: "set " + slice.Type.Elem.String(), Value: element.Interface(), DisplayValue: fmt.Sprint(element.Interface())})
+		}
+	}
+	loop := true
+	for loop {
+		items := valueItems
+		items = append(items, AppendItem, Set, Back)
+		// Create a new select prompt
+		prompt := promptui.Select{
+			Label:     topItem.Label,
+			Items:     items,
+			Templates: ItemTemplate,
+			Size:      10,
+		}
+
+		_, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		switch sel {
+		case Back.Label:
+			return fmt.Errorf("Back")
+		case Set.Label:
+			loop = false
+		case AppendItem.Label:
+			input := &abi.Argument{Type: *slice.Type.Elem}
+			newItem := &Item{Label: fmt.Sprintf("%s_%v", slice.Name, len(valueItems)), Details: "set " + slice.Type.Elem.String()}
+			err := SetParamUI(newItem, input)
+			if err != nil {
+				fmt.Println(err)
+			}
+			valueItems = append(valueItems, newItem)
+		default:
+			it, ok := GetItem(sel, items)
+			if ok {
+				err := SetParamUI(it, &abi.Argument{Type: *slice.Type.Elem})
+				if err != nil {
+					fmt.Println(err)
+				}
+
+			}
+		}
+	}
+	//Repackage the values to avoid dependency
+	values := abiutil.MakeSliceOfType(*slice.Type.Elem, 0, 0)
+	for i := range valueItems {
+		var err error
+		values, err = abiutil.AppendToSlice(values, valueItems[i].Value)
+		if err != nil {
+			return fmt.Errorf("Error appending to slice: %v", err)
+		}
+	}
+	topItem.Value = values
+	//fmt.Println(topItem.Value)
+	return nil
+
+}
+
+func SetTupleUI(item *Item, tuple *abi.Argument) error {
+	if tuple.Type.T != abi.TupleTy {
+		return fmt.Errorf("Not a tuple")
+	}
+	valueItems := []*Item{}
+	// Expect nil or a tuple
+	if item.Value != nil && reflect.TypeOf(item.Value) != tuple.Type.GetType() {
+		return fmt.Errorf("Value passed that is not a correct struct")
+	}
+	// Create a new struct if nil
+	if item.Value == nil {
+		item.Value = reflect.New(tuple.Type.GetType()).Elem().Interface()
+	}
+
+	for i := range tuple.Type.TupleElems {
+		name := tuple.Type.GetType().Field(i).Name
+		mv := reflect.ValueOf(item.Value).Field(i).Interface()
+		nit := &Item{
+			Label:        name,
+			Value:        mv,
+			DisplayValue: fmt.Sprint(mv),
+			Details:      "Set " + tuple.Type.TupleElems[i].String(),
+		}
+		valueItems = append(valueItems, nit)
+	}
+
+	loop := true
+	for loop {
+		allSet := true
+		items := valueItems
+		for i := range tuple.Type.TupleElems {
+
+			allSet = allSet && valueItems[i].Value != nil
+		}
+		if allSet {
+			items = append(items, Set)
+		}
+		items = append(items, Back)
+		// Create a new select prompt
+		prompt := promptui.Select{
+			Label:     "Set tuple values",
+			Items:     items,
+			Templates: ItemTemplate,
+			Size:      10,
+		}
+
+		i, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		switch sel {
+		case Back.Label:
+			return nil
+		case "Set":
+			loop = false
+		default:
+			it, ok := GetItem(sel, items)
+			if ok {
+				err := SetParamUI(it, &abi.Argument{Type: *tuple.Type.TupleElems[i]})
+				if err != nil {
+					fmt.Println(err)
+				}
+
+			}
+		}
+	}
+	//Repackage the values to avoid dependency
+	values := []interface{}{}
+	for i := range tuple.Type.TupleElems {
+		values = append(values, valueItems[i].Value)
+	}
+	v, err := abiutil.SetTupleValues(tuple, values)
+	if err != nil {
+		return fmt.Errorf("Error setting tuple values: %v", err)
+	}
+	item.Value = v
+	return nil
+
+}
+
+// Returning the new value as Item.Value. This allows to handle the DisplayValue in a flexible way
+func SetParamUI(item *Item, input *abi.Argument) error {
+
 	switch input.Type.T {
+	case abi.SliceTy, abi.ArrayTy:
+		return SetSliceUI(item, input)
+	case abi.TupleTy:
+		return SetTupleUI(item, input)
+
 	case abi.AddressTy:
-		addr, ok := AddressFromBookUI(label)
+		addr, ok := AddressFromBookUI(item.Label)
 		if ok {
-			return addr, nil
+			item.Value = *addr
+			item.DisplayValue = addr.String()
+			return nil
 		}
 	case abi.UintTy:
 		switch input.Type.Size {
 		case 256, 160, 128:
-			return InputBigInt(label)
+			return InputBigInt(item)
 		case 64, 32, 16, 8:
-			it := &Item{Label: label}
+			it := &Item{Label: item.Label}
 			err := InputUint(it, input.Type.Size)
 			if err != nil {
-				return nil, err
+				return err
 			}
-
-			return it.Value, nil
+			item.Value = it.Value
+			item.DisplayValue = fmt.Sprint(it.Value)
+			return nil
 		default:
 			fmt.Printf("no such uint size: %d\n", input.Type.Size)
 
 		}
 
 	case abi.BytesTy:
-
-		return PotentiallyRecursiveCallDataUI()
+		fmt.Println(item.Label)
+		bts, err := PotentiallyRecursiveCallDataUI()
+		if err != nil {
+			return err
+		}
+		item.Value = bts
+		item.DisplayValue = fmt.Sprintf("0x%x", bts)
 
 	case abi.FixedBytesTy:
-		item := &Item{Label: fmt.Sprintf("Bytes%d", input.Type.Size)}
-		err := InputBytes(item, input.Type.Size)
-		return item.Value, err
+		return InputBytes(item, input.Type.Size)
+	case abi.BoolTy:
+		return InputBool(item)
+	case abi.StringTy:
+		return InputString(item)
 
 	default:
 		fmt.Println("Not implemented yet:", input.Type.String())
 	}
-	return nil, nil
+	return nil
 
 }

@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/entrypoint"
 )
 
-var EntryPointV6Item = &Item{Label: "V6", Details: fmt.Sprintf("Use the V6 entrypoint at: %s", EntryPointAddressV6)}
-var EntryPointV7Item = &Item{Label: "V7", Details: fmt.Sprintf("Use the V7 entrypoint at: %s", EntryPointAddressV7)}
+var EntryPointV6Item = &Item{Label: "V6", Details: fmt.Sprintf("Use the V6 entrypoint at: %s", entrypoint.EntryPointAddressV6)}
+var EntryPointV7Item = &Item{Label: "V7", Details: fmt.Sprintf("Use the V7 entrypoint at: %s", entrypoint.EntryPointAddressV7)}
 
 func EntryPointUI() {
 	items := []*Item{
@@ -32,12 +33,12 @@ func EntryPointUI() {
 	case Back.Label:
 		return
 	case EntryPointV6Item.Label:
-		EntryPointItem.DisplayValue = EntryPointAddressV6
-		bt, _ := hex.DecodeString(EntryPointAddressV6)
+		EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV6
+		bt, _ := hex.DecodeString(entrypoint.EntryPointAddressV6)
 		EntryPointItem.Value = bt
 	case EntryPointV7Item.Label:
-		EntryPointItem.DisplayValue = EntryPointAddressV7
-		bt, _ := hex.DecodeString(EntryPointAddressV7)
+		EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV7
+		bt, _ := hex.DecodeString(entrypoint.EntryPointAddressV7)
 		EntryPointItem.Value = bt
 	default:
 		fmt.Println("Unreachable reached:", sel)

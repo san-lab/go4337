@@ -1,43 +1,34 @@
 package userop
 
 import (
-	"bytes"
-	"encoding/hex"
-	"fmt"
 	"math/big"
-	"testing"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
-func TestEncode(t *testing.T) {
-	abistring := testAbi
-	methodName := "int256Andint64"
-	params := []interface{}{
-		big.NewInt(17),
-		uint64(42)}
-	testabi, _, err := ParseABI(abistring, "test")
-	if err != nil {
-		t.Error(err)
-	}
-	data, err := EncodeWithParams(testabi, methodName, params...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmpdat, _ := hex.DecodeString(calldataIntInt17and42)
-	fmt.Println(bytes.Equal(data, cmpdat))
-
-	params[0] = common.HexToAddress(testAddress)
-	params[1] = testBigInt
-	data, err = EncodeWithParams(testabi, "addressAndInt", params...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmpdat, _ = hex.DecodeString(callDataAddrAndInt)
-	fmt.Println(bytes.Equal(data, cmpdat))
-	fmt.Printf("%x\n%x\n", data, cmpdat)
-
-}
+const tupleABI = `[{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint64",
+								"name": "first",
+								"type": "uint64"
+							},
+							{
+								"internalType": "uint64",
+								"name": "second",
+								"type": "uint64"
+							}
+						],
+						"internalType": "struct Subject.mtuple",
+						"name": "tuple",
+						"type": "tuple"
+					}
+				],
+				"name": "AcceptTuple",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}]`
 
 const testAbi = `[
 			{

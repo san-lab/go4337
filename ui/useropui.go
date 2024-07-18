@@ -4,18 +4,175 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
 
+var SelectUserOpItem = &Item{Label: "Select User Operation", Details: "Select a user operation"}
+var CreateUserOpItem = &Item{Label: "Create User Operation", Details: "Create a new user operation"}
+var CloneUserOpItem = &Item{Label: "Clone User Operation", Details: "Clone a user operation"}
+
+func TopUserOpUI() {
+
+	usOpItem := &Item{}
+	workItem := &Item{}
+	for {
+		items := []*Item{
+			SelectUserOpItem,
+			CreateUserOpItem,
+			CloneUserOpItem,
+		}
+		//Select a userOp, create a new one, or go back
+		if usOpItem.Value != nil {
+			if usop, ok := usOpItem.Value.(*userop.UserOp); ok {
+				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender.String(), usop.Nonce)}
+				items = append(items, workItem)
+			}
+		}
+		items = append(items, Back)
+
+		// Create a new select prompt
+		prompt := promptui.Select{
+			Label:     "Select an option",
+			Items:     items,
+			Templates: ItemTemplate,
+			Size:      10,
+		}
+		_, sel, err := prompt.Run()
+		if err != nil {
+			return
+		}
+		switch sel {
+		case Back.Label:
+			return
+		case SelectUserOpItem.Label:
+
+			SelectUserOpUI(usOpItem)
+		case CreateUserOpItem.Label:
+			CreateUserOpUI(usOpItem)
+		case CloneUserOpItem.Label:
+			CloneUserOpUI(usOpItem)
+		case workItem.Label:
+			usop := usOpItem.Value.(*userop.UserOp) //Has been checked when generating ui, and there should be no concurrency, so it is safe
+			UserOpUI(usop)
+		default:
+			fmt.Println("Not implemented yet:", sel)
+		}
+	}
+
+}
+
+func CloneUserOpUI(topIt *Item) {
+	it := &Item{}
+	SelectUserOpUI(it)
+	if it.Value == nil {
+		return
+	}
+	usop, ok := it.Value.(*userop.UserOp)
+	if !ok {
+		fmt.Println("Invalid UserOp selected. This should be impossible...")
+		return
+	}
+	//Prompt for a new name
+	newname := ""
+	for {
+		prompt := promptui.Prompt{
+			Label: "Enter new UserOp Name",
+		}
+		name, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		newname = name
+		if _, ok := state.State.UserOps[name]; !ok {
+			break
+		}
+		fmt.Println("UserOp already exists")
+
+	}
+	if len(newname) == 0 {
+		return
+	}
+	clone, err := abiutil.CloneStruct(usop)
+	if err != nil {
+		fmt.Printf("Error cloning UserOp: %v\n", err)
+		return
+	}
+
+	topIt.Value = clone
+	topIt.Label = newname
+	state.State.UserOps[newname] = clone.(*userop.UserOp)
+	state.State.Save()
+}
+
+func SelectUserOpUI(topit *Item) {
+	items := []*Item{}
+	keys := make([]string, 0, len(state.State.UserOps))
+	for k := range state.State.UserOps {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		fmt.Println("No UserOps available")
+		return
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		uop := state.State.UserOps[name]
+		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender.String(), uop.Nonce)})
+	}
+	items = append(items, Back)
+	// Create a new select prompt
+	prompt := promptui.Select{
+		Label:     "Select UserOperation",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+	_, sel, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if sel == Back.Label {
+		return
+	}
+	topit.Value = state.State.UserOps[sel]
+	topit.Label = sel
+
+}
+
+func CreateUserOpUI(topIt *Item) {
+	//prompt for name
+	prompt := promptui.Prompt{
+		Label: "Enter UserOp Name",
+	}
+	name, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if _, ok := state.State.UserOps[name]; ok {
+		fmt.Println("UserOp already exists")
+		return
+	}
+	topIt.Label = name
+	UserOpContentUI(topIt)
+	state.State.UserOps[name] = topIt.Value.(*userop.UserOp)
+	state.State.Save()
+
+}
+
 var UserOpContentItem = &Item{Label: "User Operation Content", Details: "Manage user operation content"}
 var ExportUserOpItem = &Item{Label: "Export User Operation", Details: "Select the export format"}
-var GetHashItem = &Item{Label: "Get Hash", Details: "Get the hash of the user operation with entrypoint and chainid"}
+var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
 
-func UserOpUI() {
+func UserOpUI(usop *userop.UserOp) {
 	items := []*Item{
 		UserOpContentItem,
 		ExportUserOpItem,
@@ -28,7 +185,7 @@ func UserOpUI() {
 		Items:     items,
 		Templates: ItemTemplate,
 	}
-	usop := new(userop.UserOp)
+
 	for {
 		_, sel, err := prompt.Run()
 		if err != nil {
@@ -38,7 +195,8 @@ func UserOpUI() {
 		case Back.Label:
 			return
 		case UserOpContentItem.Label:
-			UserOpContentUI(usop)
+			it := &Item{Value: usop}
+			UserOpContentUI(it)
 		case ExportUserOpItem.Label:
 			ExportUserOpUI(usop)
 		case GetHashItem.Label:
@@ -67,7 +225,18 @@ var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verification Gas
 var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit, DisplayValue: fmt.Sprint(userop.DefaultPaymasterPostOpGasLimit)}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 
-func UserOpContentUI(usop *userop.UserOp) {
+func UserOpContentUI(topIt *Item) {
+	var usop *userop.UserOp
+	if topIt.Value == nil {
+		usop = new(userop.UserOp)
+	} else {
+		ok := false
+		usop, ok = topIt.Value.(*userop.UserOp)
+		if !ok {
+			fmt.Println("Invalid UserOp passed to UserOpContentUI")
+			return
+		}
+	}
 
 	items := []*Item{
 		SenderItem,
@@ -103,7 +272,7 @@ func UserOpContentUI(usop *userop.UserOp) {
 		switch sel {
 		case Back.Label:
 			copyValuesToUserOp(usop)
-
+			topIt.Value = usop
 			return
 		case NonceItem.Label, CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,

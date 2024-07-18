@@ -14,8 +14,14 @@ import (
 )
 
 func InputBytes(item *Item, bytecount int) error {
+	bytelab := fmt.Sprint(bytecount)
+	if bytecount < 0 {
+		bytelab = ""
+	}
+	label := fmt.Sprintf("%s (bytes%s)", item.Label, bytelab)
+
 	prompt := promptui.Prompt{
-		Label: item.Details,
+		Label: label,
 	}
 	s, err := prompt.Run()
 	if err != nil {
@@ -63,14 +69,14 @@ func InputBytes(item *Item, bytecount int) error {
 	return nil
 }
 
-func InputBigInt(label string) (*big.Int, error) {
+func InputBigInt(item *Item) error {
 	res := new(big.Int)
 	prompt := promptui.Prompt{
-		Label: label,
+		Label: item.Label,
 	}
 	a, err := prompt.Run()
 	if err != nil {
-		return res, err
+		return err
 	}
 	base := 10
 	if strings.HasPrefix(a, "0x") {
@@ -78,21 +84,29 @@ func InputBigInt(label string) (*big.Int, error) {
 		a = a[2:]
 	}
 	res, ok := res.SetString(a, base)
-	if ok {
-		return res, nil
+	if !ok {
+		return fmt.Errorf("error parsing big int: %s", a)
 	}
-	return res, fmt.Errorf("error parsing uint: %s", a)
+	item.Value = res
+	item.DisplayValue = res.String()
+
+	return nil
 }
 
 func InputUint(item *Item, size int) error {
 	prompt := promptui.Prompt{
-		Label: item.Details,
+		Label: item.Label,
 	}
 	s, err := prompt.Run()
 	if err != nil {
 		return err
 	}
-	u, err := strconv.ParseUint(s, 10, size)
+	base := 10
+	if strings.HasPrefix(s, "0x") {
+		s = s[2:]
+		base = 16
+	}
+	u, err := strconv.ParseUint(s, base, size)
 	if err != nil {
 		return err
 	}
@@ -110,11 +124,17 @@ func InputUint(item *Item, size int) error {
 	return nil
 }
 
-func InputNewStringUI(label string) (string, error) {
+func InputNewStringUI(item *Item) error {
 	prompt := promptui.Prompt{
-		Label: label,
+		Label: item.Label,
 	}
-	return prompt.Run()
+	s, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	item.Value = s
+	item.DisplayValue = s
+	return nil
 }
 
 func MultiLineInput(label string) (string, error) {
@@ -146,16 +166,6 @@ func MultiLineInput(label string) (string, error) {
 	return multiLineInput, nil
 }
 
-func sanitize(abi string, l int) string {
-	// Remove newlines and leading/trailing whitespace
-	san := strings.TrimSpace(strings.ReplaceAll(abi, "\n", ""))
-	san = strings.ReplaceAll(san, "\t", "")
-	if l > 0 && len(san) > l {
-		return san[:l] + "..."
-	}
-	return san
-}
-
 func InputNewAddressUI(label string) (*common.Address, error) {
 	prompt := promptui.Prompt{
 		Label: label,
@@ -175,4 +185,31 @@ func ShortHex(data []byte, l int) string {
 		return hex.EncodeToString(data)
 	}
 	return fmt.Sprintf("%s...%s", hex.EncodeToString(data[:l]), hex.EncodeToString(data[len(data)-l:]))
+}
+
+func InputBool(item *Item) error {
+	prompt := promptui.Select{
+		Label: item.Label,
+		Items: []string{"true", "false"},
+	}
+	_, sel, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	item.Value = sel == "true"
+	item.DisplayValue = sel
+	return nil
+}
+
+func InputString(item *Item) error {
+	prompt := promptui.Prompt{
+		Label: item.Label,
+	}
+	s, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	item.Value = s
+	item.DisplayValue = s
+	return nil
 }

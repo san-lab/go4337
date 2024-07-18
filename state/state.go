@@ -4,11 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/san-lab/go4337/abiutil"
+	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
+	"github.com/san-lab/go4337/userop"
 )
 
 type StateStruct struct {
@@ -16,12 +21,18 @@ type StateStruct struct {
 	//Default Gas Costs?
 	Signers    []signer.Signer `json:"-"`
 	SignersRaw []string
-	ABIs       map[string]string
+	ABIs       map[string]string //ABI strings memorized
+	UserOps    map[string]*userop.UserOp
 }
+
+//type ABIs map[string]string
 
 var State *StateStruct
 
 var stateMux = &sync.Mutex{}
+
+const EntrypointV6 = "EntrypointV6"
+const EntrypointV7 = "EntrypointV7"
 
 func InitState() {
 	stateMux.Lock()
@@ -30,13 +41,29 @@ func InitState() {
 	err := State.Load()
 	if err != nil {
 		fmt.Println(err)
+	}
+	if State.AddressBooks == nil {
 		State.AddressBooks = make(map[string]*AddressBook)
-
 		State.AddressBooks[Sender] = &AddressBook{}
 		State.AddressBooks[Paymaster] = &AddressBook{}
-		State.Signers = []signer.Signer{}
+	}
+	if State.ABIs == nil {
 		State.ABIs = make(map[string]string)
 	}
+	if State.UserOps == nil {
+		State.UserOps = make(map[string]*userop.UserOp)
+	}
+
+	//Add the Entrypoin abis
+	_, _, err = ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, _, err = ParseABI(EntrypointV7, entrypoint.EntryPointV7AbiJson)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
 
 type AddressBook []*common.Address
@@ -76,7 +103,7 @@ func (ab *AddressBook) Remove(addr *common.Address) {
 
 var StateFile = "state.json"
 
-func (st *StateStruct) Save() {
+func (st *StateStruct) Save() error {
 	st.SignersRaw = []string{}
 	for _, s := range st.Signers {
 		bt, err := s.Marshal()
@@ -88,13 +115,14 @@ func (st *StateStruct) Save() {
 	}
 	bt, err := json.MarshalIndent(State, "", "  ")
 	if err != nil {
-		fmt.Println("Error saving:", err)
-		return
+		return fmt.Errorf("Error saving: %w", err)
+
 	}
 	err = os.WriteFile(StateFile, bt, 0644)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Errorf("Error saving: %w", err)
 	}
+	return nil
 
 }
 
@@ -141,4 +169,65 @@ func Register(signerType string, add signer.AddSigner, unmarshal func([]byte) (s
 	SignerTypes[signerType] = add
 	Unmarshalers[signerType] = unmarshal
 
+}
+
+var abicache = map[string]*abi.ABI{}                  //Transient cache
+var methodcache = map[string]map[string]*MethodCall{} //ContractName.MethodName
+
+type MethodCall struct {
+	MethodName string
+	ABIName    string
+	ABI        *abi.ABI
+	Params     []interface{}
+}
+
+func ParseABI(contractname, abiString string) (*abi.ABI, map[string]*MethodCall, error) {
+
+	abi, clrabistr, err := abiutil.ParseABIFromString(abiString)
+	if err != nil {
+		fmt.Println(clrabistr)
+		return abi, nil, fmt.Errorf("Error parsing ABI: %w", err)
+	}
+	methodCalls := map[string]*MethodCall{}
+	for l, m := range abi.Methods {
+		params := make([]interface{}, len(m.Inputs))
+		methodCalls[m.Name] = &MethodCall{MethodName: l, ABIName: m.Name, ABI: abi, Params: params}
+	}
+	abicache[contractname] = abi
+	methodcache[contractname] = methodCalls
+	State.ABIs[contractname] = clrabistr
+	return abi, methodCalls, nil
+}
+
+func RemoveABI(name string) error {
+	delete(State.ABIs, name)
+	return State.Save()
+}
+
+func GetABI(name string) (*abi.ABI, map[string]*MethodCall, error) {
+	abistring, ok := State.ABIs[name]
+	if !ok {
+		return nil, nil, fmt.Errorf("ABI not found")
+	}
+	cabi, ok := abicache[name]
+	if ok {
+		return cabi, methodcache[name], nil
+
+	}
+
+	return ParseABI(name, abistring)
+}
+
+func ListABIs() [][]string {
+	abinames := []string{}
+	for k := range State.ABIs {
+		abinames = append(abinames, k)
+	}
+	//sort the names
+	sort.Strings(abinames)
+	abis := [][]string{}
+	for _, k := range abinames {
+		abis = append(abis, []string{k, State.ABIs[k]})
+	}
+	return abis
 }

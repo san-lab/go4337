@@ -1,4 +1,4 @@
-package ui
+package abiutil
 
 import "encoding/json"
 

@@ -5,14 +5,12 @@ import (
 	"fmt"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/entrypoint"
 )
 
-const EntryPointAddressV6 = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
-const EntryPointAddressV7 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
-
 func init() {
-	EntryPointItem.DisplayValue = EntryPointAddressV6
-	bt, err := hex.DecodeString(EntryPointAddressV6[2:])
+	EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV6
+	bt, err := hex.DecodeString(entrypoint.EntryPointAddressV6[2:])
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -25,14 +23,17 @@ var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}
 var SignerItem = &Item{Label: "Signer", Details: "Manage signer settings"}
 var EntryPointItem = &Item{Label: "Entry Point", Details: "Set entry point"}
 
+var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
+
 func RootUI() {
 	items := []*Item{
-		PaymasterItem,
+		//PaymasterItem,
+		SettingsItem,
 		UserOpItem,
-		SignerItem,
+		//SignerItem,
 		AbisItem,
-		ChainIDItem,
-		EntryPointItem,
+		//ChainIDItem,
+		//EntryPointItem,
 		Exit,
 	}
 	// Create a new select prompt
@@ -49,10 +50,12 @@ func RootUI() {
 			return
 		}
 		switch sel {
+		case SettingsItem.Label:
+			SettingsUI()
 		case PaymasterItem.Label:
 			PaymasterUI()
 		case UserOpItem.Label:
-			UserOpUI()
+			TopUserOpUI()
 		case SignerItem.Label:
 			SignerUI()
 		case AbisItem.Label:
@@ -63,6 +66,42 @@ func RootUI() {
 			return
 		case ChainIDItem.Label:
 			InputUint(ChainIDItem, 64)
+		default:
+			fmt.Println("Not implemented yet:", sel)
+		}
+	}
+}
+
+func SettingsUI() {
+	items := []*Item{
+		PaymasterItem,
+		SignerItem,
+		ChainIDItem,
+		EntryPointItem,
+		Back,
+	}
+	prompt := promptui.Select{
+		Label:     "Settings",
+		Items:     items,
+		Templates: ItemTemplate,
+	}
+	for {
+		_, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch sel {
+		case PaymasterItem.Label:
+			PaymasterUI()
+		case SignerItem.Label:
+			SignerUI()
+		case ChainIDItem.Label:
+			InputUint(ChainIDItem, 64)
+		case EntryPointItem.Label:
+			EntryPointUI()
+		case Back.Label:
+			return
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}

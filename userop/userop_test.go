@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func TestPack(t *testing.T) {
+func TestPackUints(t *testing.T) {
 	var a uint64 = 4000000
 	var b uint64 = 200000
 	bt := PackUints(a, b)

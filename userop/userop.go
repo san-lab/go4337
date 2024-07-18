@@ -57,25 +57,30 @@ type UserOp struct {
 	Signature []byte `json:"signature"`
 }
 
+type UsOpJsonAdapter struct {
+	Sender                        string `json:"sender"`
+	Nonce                         uint64 `json:"nonce"`
+	Factory                       string `json:"factory,omitempty"`
+	FactoryData                   string `json:"factorydata,omitempty"`
+	CallData                      string `json:"calldata"`
+	CallGasLimit                  uint64 `json:"callgaslimit"`
+	VerificationGasLimit          uint64 `json:"verificationgaslimit"`
+	PreVerificationGas            uint64 `json:"preverificationgas"`
+	MaxFeePerGas                  uint64 `json:"maxfeepergas"`
+	MaxPriorityFeePerGas          uint64 `json:"maxpriorityfeepergas"`
+	Paymaster                     string `json:"paymaster,omitempty"`
+	PaymasterVerificationGasLimit uint64 `json:"paymasterverificationgaslimit"`
+	PaymasterPostOpGasLimit       uint64 `json:"paymasterpostopgaslimit"`
+	PaymasterData                 string `json:"paymasterdata"`
+	Signature                     string `json:"signature"`
+}
+
 func (u *UserOp) MarshalJSON() ([]byte, error) {
+	if u.Sender == nil {
+		return nil, fmt.Errorf("Sender is nil")
+	}
 	return json.Marshal(
-		&struct {
-			Sender                        string `json:"sender"`
-			Nonce                         uint64 `json:"nonce"`
-			Factory                       string `json:"factory,omitempty"`
-			FactoryData                   string `json:"factorydata,omitempty"`
-			CallData                      string `json:"calldata"`
-			CallGasLimit                  uint64 `json:"callgaslimit"`
-			VerificationGasLimit          uint64 `json:"verificationgaslimit"`
-			PreVerificationGas            uint64 `json:"preverificationgas"`
-			MaxFeePerGas                  uint64 `json:"maxfeepergas"`
-			MaxPriorityFeePerGas          uint64 `json:"maxpriorityfeepergas"`
-			Paymaster                     string `json:"paymaster,omitempty"`
-			PaymasterVerificationGasLimit uint64 `json:"paymasterverificationgaslimit"`
-			PaymasterPostOpGasLimit       uint64 `json:"paymasterpostopgaslimit"`
-			PaymasterData                 string `json:"paymasterdata"`
-			Signature                     string `json:"signature"`
-		}{
+		&UsOpJsonAdapter{
 			Sender:                        u.Sender.Hex(),
 			Nonce:                         u.Nonce,
 			Factory:                       JSAddressHex(u.Factory),
@@ -93,6 +98,39 @@ func (u *UserOp) MarshalJSON() ([]byte, error) {
 			Signature:                     BytesToString(u.Signature),
 		},
 	)
+}
+
+func (u *UserOp) UnmarshalJSON(data []byte) error {
+	adapter := &UsOpJsonAdapter{}
+	err := json.Unmarshal(data, adapter)
+	if err != nil {
+		return err
+	}
+	if adapter.Sender != "" {
+		addr := common.HexToAddress(adapter.Sender)
+		u.Sender = &addr
+	}
+	u.Nonce = adapter.Nonce
+	if adapter.Factory != "" {
+		u.Factory = new(common.Address)
+		*u.Factory = common.HexToAddress(adapter.Factory)
+	}
+	u.FactoryData = common.FromHex(adapter.FactoryData)
+	u.CallData = common.FromHex(adapter.CallData)
+	u.CallGasLimit = adapter.CallGasLimit
+	u.VerificationGasLimit = adapter.VerificationGasLimit
+	u.PreVerificationGas = adapter.PreVerificationGas
+	u.MaxFeePerGas = adapter.MaxFeePerGas
+	u.MaxPriorityFeePerGas = adapter.MaxPriorityFeePerGas
+	if adapter.Paymaster != "" {
+		u.Paymaster = new(common.Address)
+		*u.Paymaster = common.HexToAddress(adapter.Paymaster)
+	}
+	u.PaymasterVerificationGasLimit = adapter.PaymasterVerificationGasLimit
+	u.PaymasterPostOpGasLimit = adapter.PaymasterPostOpGasLimit
+	u.PaymasterData = common.FromHex(adapter.PaymasterData)
+	u.Signature = common.FromHex(adapter.Signature)
+	return nil
 }
 
 // PackedUserOp is an EntryPoint viev of UserOp
