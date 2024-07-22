@@ -9,7 +9,7 @@ import (
 )
 
 func TestSlice(t *testing.T) {
-	state.InitState()
+	//state.InitState()
 	abistr := abiutil.TestABI
 	abi, _, err := state.ParseABI("AcceptintSlice", abistr)
 	if err != nil {

@@ -36,7 +36,7 @@ func SignerUI() {
 		default:
 			if i < len(state.State.Signers) {
 				SignerItem.Value = state.State.Signers[i]
-				SignerItem.DisplayValue = state.State.Signers[i].String()
+				//SignerItem.DisplayValue = state.State.Signers[i].String()
 				return
 			}
 			fmt.Println("Unreachable reached:", sel)

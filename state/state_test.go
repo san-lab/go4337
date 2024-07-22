@@ -7,7 +7,6 @@ import (
 )
 
 func TestParseABI(t *testing.T) {
-	InitState()
 	abistr := abiutil.Subjectstring
 	_, _, err := ParseABI("AcceptTuple", abistr)
 	if err != nil {

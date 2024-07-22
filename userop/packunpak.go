@@ -39,7 +39,44 @@ func (puop *PackedUserOp) EncodeToHash() ([]byte, error) {
 	)
 }
 
+func (uop *UserOp) EncodeToHash() ([]byte, error) {
+	arguments := abi.Arguments{
+		{Type: addressTy}, //sender
+		{Type: uint256Ty}, //nonce
+		{Type: bytes32Ty}, //initCode
+		{Type: bytes32Ty}, //callData
+		{Type: uint256Ty}, //callGasLimit
+		{Type: uint256Ty}, //verificationGasLimit
+		{Type: uint256Ty}, //preVerificationGas
+		{Type: uint256Ty}, //maxFeePerGas
+		{Type: uint256Ty}, //maxPriorityFeePerGas
+		{Type: bytes32Ty}, //paymasterAndData
+		//{Type: bytesTy},   //signature
+	}
+	return arguments.Pack(
+		uop.Sender,
+		big.NewInt(int64(uop.Nonce)),
+		UnsafeSliceToBytes32(crypto.Keccak256(uop.InitData())),
+		UnsafeSliceToBytes32(crypto.Keccak256(uop.CallData)),
+		big.NewInt(int64(uop.CallGasLimit)),
+		big.NewInt(int64(uop.VerificationGasLimit)),
+		big.NewInt(int64(uop.PreVerificationGas)),
+		big.NewInt(int64(uop.MaxFeePerGas)),
+		big.NewInt(int64(uop.MaxPriorityFeePerGas)),
+		UnsafeSliceToBytes32(crypto.Keccak256(uop.PaymasterAndData())),
+	)
+}
+
 func GetUsOpLibPrehash(userOp *PackedUserOp) (hash [32]byte, err error) {
+	enc1, err := userOp.EncodeToHash()
+	if err != nil {
+		err = fmt.Errorf("encode error: %v", err)
+		return
+	}
+	return UnsafeSliceToBytes32(crypto.Keccak256(enc1)), nil
+}
+
+func GetUsOpLibPrehashV6(userOp *UserOp) (hash [32]byte, err error) {
 	enc1, err := userOp.EncodeToHash()
 	if err != nil {
 		err = fmt.Errorf("encode error: %v", err)
@@ -62,8 +99,32 @@ func GetUserOpHash(userOp *PackedUserOp, entryPoint common.Address, chainid uint
 
 }
 
+/*
+keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
+*/
+func GetUserOpHashV6(userOp *UserOp, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
+
+	enc2, err := GetUserOpBytesToHashV6(userOp, entryPoint, chainid)
+	if err != nil {
+		err = fmt.Errorf("pack error: %v", err)
+		return
+	}
+	return UnsafeSliceToBytes32(crypto.Keccak256(enc2)), nil
+
+}
+
 func GetUserOpBytesToHash(userOp *PackedUserOp, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
 	h1, err := GetUsOpLibPrehash(userOp)
+	args := abi.Arguments{
+		{Type: bytes32Ty},
+		{Type: addressTy},
+		{Type: uint256Ty},
+	}
+	return args.Pack(h1, entryPoint, big.NewInt(int64(chainid)))
+}
+
+func GetUserOpBytesToHashV6(userOp *UserOp, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
+	h1, err := GetUsOpLibPrehashV6(userOp)
 	args := abi.Arguments{
 		{Type: bytes32Ty},
 		{Type: addressTy},

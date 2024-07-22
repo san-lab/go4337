@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/manifoldco/promptui"
@@ -33,13 +32,9 @@ func EntryPointUI() {
 	case Back.Label:
 		return
 	case EntryPointV6Item.Label:
-		EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV6
-		bt, _ := hex.DecodeString(entrypoint.EntryPointAddressV6)
-		EntryPointItem.Value = bt
+		EntryPointItem.Value = entrypoint.E6Address
 	case EntryPointV7Item.Label:
-		EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV7
-		bt, _ := hex.DecodeString(entrypoint.EntryPointAddressV7)
-		EntryPointItem.Value = bt
+		EntryPointItem.Value = entrypoint.E7Address
 	default:
 		fmt.Println("Unreachable reached:", sel)
 	}

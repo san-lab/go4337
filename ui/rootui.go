@@ -1,20 +1,16 @@
 package ui
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
+	"github.com/san-lab/go4337/state"
 )
 
 func init() {
-	EntryPointItem.DisplayValue = entrypoint.EntryPointAddressV6
-	bt, err := hex.DecodeString(entrypoint.EntryPointAddressV6[2:])
-	if err != nil {
-		fmt.Println(err)
-	}
-	EntryPointItem.Value = bt
+
+	EntryPointItem.Value = entrypoint.E6Address
 }
 
 var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage paymaster settings"}
@@ -98,6 +94,7 @@ func SettingsUI() {
 			SignerUI()
 		case ChainIDItem.Label:
 			InputUint(ChainIDItem, 64)
+			state.State.ChainID = ChainIDItem.Value.(uint64)
 		case EntryPointItem.Label:
 			EntryPointUI()
 		case Back.Label:

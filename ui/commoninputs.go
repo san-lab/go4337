@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -35,7 +34,7 @@ func InputBytes(item *Item, bytecount int) error {
 	if bytecount < 0 {
 
 		item.Value = ibt
-		item.DisplayValue = "0x" + hex.EncodeToString(ibt)
+		//item.DisplayValue = "0x" + hex.EncodeToString(ibt)
 		return nil
 	}
 	if len(ibt) > bytecount {
@@ -46,22 +45,22 @@ func InputBytes(item *Item, bytecount int) error {
 		fbt := [4]byte{}
 		copy(fbt[4-len(ibt):], ibt)
 		item.Value = fbt
-		item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
+		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
 	case 8:
 		fbt := [8]byte{}
 		copy(fbt[8-len(ibt):], ibt)
 		item.Value = fbt
-		item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
+		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
 	case 16:
 		fbt := [16]byte{}
 		copy(fbt[16-len(ibt):], ibt)
 		item.Value = fbt
-		item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
+		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
 	case 32:
 		fbt := [32]byte{}
 		copy(fbt[32-len(ibt):], ibt)
 		item.Value = fbt
-		item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
+		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
 	default:
 		return fmt.Errorf("unsupported byte count: %d", bytecount)
 	}
@@ -88,7 +87,7 @@ func InputBigInt(item *Item) error {
 		return fmt.Errorf("error parsing big int: %s", a)
 	}
 	item.Value = res
-	item.DisplayValue = res.String()
+	//item.DisplayValue = res.String()
 
 	return nil
 }
@@ -120,7 +119,7 @@ func InputUint(item *Item, size int) error {
 	case 64:
 		item.Value = u
 	}
-	item.DisplayValue = fmt.Sprint(u)
+	//item.DisplayValue = fmt.Sprint(u)
 	return nil
 }
 
@@ -133,7 +132,7 @@ func InputNewStringUI(item *Item) error {
 		return err
 	}
 	item.Value = s
-	item.DisplayValue = s
+	//item.DisplayValue = s
 	return nil
 }
 
@@ -180,13 +179,6 @@ func InputNewAddressUI(label string) (*common.Address, error) {
 	return &addr, nil
 }
 
-func ShortHex(data []byte, l int) string {
-	if len(data) < 2*l+3 {
-		return hex.EncodeToString(data)
-	}
-	return fmt.Sprintf("%s...%s", hex.EncodeToString(data[:l]), hex.EncodeToString(data[len(data)-l:]))
-}
-
 func InputBool(item *Item) error {
 	prompt := promptui.Select{
 		Label: item.Label,
@@ -197,7 +189,7 @@ func InputBool(item *Item) error {
 		return err
 	}
 	item.Value = sel == "true"
-	item.DisplayValue = sel
+	//item.DisplayValue() = sel
 	return nil
 }
 
@@ -210,6 +202,6 @@ func InputString(item *Item) error {
 		return err
 	}
 	item.Value = s
-	item.DisplayValue = s
+	//item.DisplayValue = s
 	return nil
 }

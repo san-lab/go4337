@@ -4,8 +4,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/san-lab/go4337/entrypoint/entrypointv6"
 )
 
 /* ERC 4337 UserOperation
@@ -131,6 +133,45 @@ func (u *UserOp) UnmarshalJSON(data []byte) error {
 	u.PaymasterData = common.FromHex(adapter.PaymasterData)
 	u.Signature = common.FromHex(adapter.Signature)
 	return nil
+}
+
+func (u *UserOp) InitData() []byte {
+	if u.Factory != nil && *(u.Factory) != (common.Address{}) {
+		return append(u.Factory.Bytes(), u.FactoryData...)
+	}
+	return []byte{}
+}
+
+func (u *UserOp) PaymasterAndData() []byte {
+	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
+		return append(u.Paymaster.Bytes(), u.PaymasterData...)
+	}
+	return []byte{}
+}
+
+func (u *UserOp) MarshalRemixV6() string {
+	uop6 := new(entrypointv6.UserOperation)
+	uop6.Sender = *u.Sender
+	uop6.Nonce = big.NewInt(int64(u.Nonce))
+	//if u.Factory != nil && *(u.Factory) != (common.Address{}) {
+	//	uop6.InitCode = append(u.Factory.Bytes(), u.FactoryData...)
+	//}
+	uop6.InitCode = u.InitData()
+	uop6.CallData = u.CallData
+	uop6.CallGasLimit = big.NewInt(int64(u.CallGasLimit))
+	uop6.VerificationGasLimit = big.NewInt(int64(u.VerificationGasLimit))
+	uop6.PreVerificationGas = big.NewInt(int64(u.PreVerificationGas))
+	uop6.MaxFeePerGas = big.NewInt(int64(u.MaxFeePerGas))
+	uop6.MaxPriorityFeePerGas = big.NewInt(int64(u.MaxPriorityFeePerGas))
+	//if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
+	//	uop6.PaymasterAndData = append(u.Paymaster.Bytes(), u.PaymasterData...)
+	//}
+	uop6.PaymasterAndData = u.PaymasterAndData()
+	uop6.Signature = u.Signature
+
+	return fmt.Sprintf("[%s, %d, %s, %s, %d, %d, %d, %d, %d, %s, %s]", ToRemixHex(uop6.Sender.Bytes()), uop6.Nonce, ToRemixHex(uop6.InitCode), ToRemixHex(uop6.CallData),
+		uop6.CallGasLimit, uop6.VerificationGasLimit, uop6.PreVerificationGas, uop6.MaxFeePerGas, uop6.MaxPriorityFeePerGas,
+		ToRemixHex(uop6.PaymasterAndData), ToRemixHex(uop6.Signature))
 }
 
 // PackedUserOp is an EntryPoint viev of UserOp

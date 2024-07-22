@@ -5,13 +5,12 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/san-lab/go4337/ecsigner"
 	"github.com/san-lab/go4337/state"
 )
 
 func TestLoadState(t *testing.T) {
-	ecsigner.Init()
-	state.InitState()
+	//ecsigner.Init()
+	//state.InitState()
 	mabi, _, err := state.GetABI("Subject")
 
 	if err != nil {

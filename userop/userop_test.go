@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"encoding/json"
-
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -55,14 +53,12 @@ func init() {
 	}
 }
 
-func TestPackUserOp(t *testing.T) {
+func TestHash(t *testing.T) {
 	uop := TestUserOp
-	puop := uop.Pack()
-	bt, err := json.MarshalIndent(puop, "", "  ")
+	hash, err := uop.EncodeToHash()
 	if err != nil {
 		t.Error(err)
 	}
 
-	fmt.Println(string(bt))
-
+	fmt.Println(hash)
 }

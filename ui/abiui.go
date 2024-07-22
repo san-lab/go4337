@@ -21,7 +21,7 @@ func AbisUI(callbackItem *Item) (contract string, err error) {
 		abiitems := []*Item{}
 		for _, contract := range state.ListABIs() {
 			//We can assume the abi is in the cache
-			abiitems = append(abiitems, &Item{Label: contract[0], Details: "Select this ABI", Value: contract[1], DisplayValue: abiutil.Sanitize(contract[1], 50)})
+			abiitems = append(abiitems, &Item{Label: contract[0], Details: "Select this ABI", Value: contract[1]})
 		}
 		abiitems = append(abiitems, AddAbiItem, Back)
 		// Create a new select prompt
@@ -52,7 +52,53 @@ func AbisUI(callbackItem *Item) (contract string, err error) {
 	}
 }
 
+var InputAbiItem = &Item{Label: "Input ABI", Details: "Input ABI manually"}
+var ReadAbiFileItem = &Item{Label: "Read ABI from file", Details: "Read ABI from a file"}
+
 func AddAbiUI() {
+	items := []*Item{InputAbiItem, ReadAbiFileItem, Back}
+	// Create a new select prompt
+	prompt := promptui.Select{
+		Label:     "Add ABI",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+
+	_, sel, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	switch sel {
+	case Back.Label:
+		return
+	case InputAbiItem.Label:
+		AddAbiManuallyUI()
+	case ReadAbiFileItem.Label:
+		InputItem := &Item{Label: "Contract Name", Details: "Input the contract name"}
+		err := InputNewStringUI(InputItem)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		contract := InputItem.Value.(string)
+		bts, err := SelectFileFromFS("")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		abistr := string(bts)
+		_, _, err = state.ParseABI(contract, abistr)
+		if err != nil {
+			fmt.Printf("Error %e when parsing abi:\n>>%s<<\n", err, abistr)
+		}
+	default:
+		fmt.Println("Not implemented yet:", sel)
+	}
+}
+
+func AddAbiManuallyUI() {
 	InputItem := &Item{Label: "Contract Name", Details: "Input the contract name"}
 	err := InputNewStringUI(InputItem)
 	if err != nil {
@@ -95,7 +141,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 		if MethodItem.Value != nil && (MethodItem.Value.(*state.MethodCall)).ABIName != contract {
 			fmt.Println("Clearing method")
 			MethodItem.Value = nil
-			MethodItem.DisplayValue = ""
+			MethodItem.DisplayValueString = ""
 		}
 		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, Back)
 		// Create a new select prompt
@@ -147,7 +193,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 
 		for i, input := range method.ABI.Methods[method.MethodName].Inputs {
 			allSet = allSet && method.Params[i] != nil
-			items = append(items, &Item{Label: input.Name, DisplayValue: userop.ParamToString(method.Params[i]), Details: input.Type.String(), Value: input})
+			items = append(items, &Item{Label: input.Name, DisplayValueString: userop.ParamToString(method.Params[i]), Details: input.Type.String(), Value: input})
 		}
 		if allSet {
 			items = append(items, &Item{Label: "Encode", Details: "Encode this method", Value: method})
@@ -155,7 +201,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 		items = append(items, Back)
 		// Create a new select prompt
 		prompt := promptui.Select{
-			Label:     "Set details for " + MethodItem.DisplayValue + " method",
+			Label:     "Set details for " + MethodItem.DisplayValueString + " method",
 			Items:     items,
 			Templates: ItemTemplate,
 			Size:      10,
@@ -242,7 +288,7 @@ func SelectMethodUI(contractName string) {
 			it, ok := GetItem(sel, items)
 			if ok {
 				MethodItem.Value = it.Value
-				MethodItem.DisplayValue = it.Label + "()"
+				MethodItem.DisplayValueString = it.Label + "()"
 				return
 			}
 		}
@@ -268,7 +314,7 @@ func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 		// Iterate over the slice elements
 		for i := 0; i < v.Len(); i++ {
 			element := v.Index(i)
-			valueItems = append(valueItems, &Item{Label: fmt.Sprintf("%s_%v", slice.Name, i), Details: "set " + slice.Type.Elem.String(), Value: element.Interface(), DisplayValue: fmt.Sprint(element.Interface())})
+			valueItems = append(valueItems, &Item{Label: fmt.Sprintf("%s_%v", slice.Name, i), Details: "set " + slice.Type.Elem.String(), Value: element.Interface()})
 		}
 	}
 	loop := true
@@ -345,10 +391,10 @@ func SetTupleUI(item *Item, tuple *abi.Argument) error {
 		name := tuple.Type.GetType().Field(i).Name
 		mv := reflect.ValueOf(item.Value).Field(i).Interface()
 		nit := &Item{
-			Label:        name,
-			Value:        mv,
-			DisplayValue: fmt.Sprint(mv),
-			Details:      "Set " + tuple.Type.TupleElems[i].String(),
+			Label: name,
+			Value: mv,
+			//DisplayValue: fmt.Sprint(mv),
+			Details: "Set " + tuple.Type.TupleElems[i].String(),
 		}
 		valueItems = append(valueItems, nit)
 	}
@@ -421,7 +467,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 		addr, ok := AddressFromBookUI(item.Label)
 		if ok {
 			item.Value = *addr
-			item.DisplayValue = addr.String()
+			//item.DisplayValue = addr.String()
 			return nil
 		}
 	case abi.UintTy:
@@ -435,7 +481,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 				return err
 			}
 			item.Value = it.Value
-			item.DisplayValue = fmt.Sprint(it.Value)
+			//item.DisplayValue = fmt.Sprint(it.Value)
 			return nil
 		default:
 			fmt.Printf("no such uint size: %d\n", input.Type.Size)
@@ -449,7 +495,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 			return err
 		}
 		item.Value = bts
-		item.DisplayValue = fmt.Sprintf("0x%x", bts)
+		//item.DisplayValue = fmt.Sprintf("0x%x", bts)
 
 	case abi.FixedBytesTy:
 		return InputBytes(item, input.Type.Size)

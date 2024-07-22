@@ -23,6 +23,7 @@ type StateStruct struct {
 	SignersRaw []string
 	ABIs       map[string]string //ABI strings memorized
 	UserOps    map[string]*userop.UserOp
+	ChainID    uint64
 }
 
 //type ABIs map[string]string
@@ -34,7 +35,7 @@ var stateMux = &sync.Mutex{}
 const EntrypointV6 = "EntrypointV6"
 const EntrypointV7 = "EntrypointV7"
 
-func InitState() {
+func init() {
 	stateMux.Lock()
 	defer stateMux.Unlock()
 	State = new(StateStruct)
@@ -113,6 +114,12 @@ func (st *StateStruct) Save() error {
 		}
 		st.SignersRaw = append(st.SignersRaw, string(bt))
 	}
+	//Also save the undecoded ones
+	for k, v := range UnmarshalledSignersBuffer {
+		for _, raw := range v {
+			st.SignersRaw = append(st.SignersRaw, k+";"+string(raw))
+		}
+	}
 	bt, err := json.MarshalIndent(State, "", "  ")
 	if err != nil {
 		return fmt.Errorf("Error saving: %w", err)
@@ -146,6 +153,7 @@ func (st *StateStruct) Load() error {
 		su, ok := Unmarshalers[terms[0]]
 		if !ok {
 			fmt.Println("Unknown signer type:", terms[0])
+			UnmarshalledSignersBuffer[terms[0]] = append(UnmarshalledSignersBuffer[terms[0]], []byte(terms[1])) //Store for later
 			continue
 		}
 		s, err := su([]byte(terms[1]))
@@ -160,6 +168,8 @@ func (st *StateStruct) Load() error {
 
 }
 
+var UnmarshalledSignersBuffer = map[string][][]byte{}
+
 var SignerTypes = map[string]signer.AddSigner{}
 var Unmarshalers = map[string]func([]byte) (signer.Signer, error){}
 
@@ -168,6 +178,19 @@ func Register(signerType string, add signer.AddSigner, unmarshal func([]byte) (s
 	defer stateMux.Unlock()
 	SignerTypes[signerType] = add
 	Unmarshalers[signerType] = unmarshal
+	clearBuffer := true
+	for _, raw := range UnmarshalledSignersBuffer[signerType] {
+		s, err := unmarshal(raw)
+		if err != nil {
+			fmt.Println("Unmarshal error:", err)
+			clearBuffer = false
+			continue
+		}
+		State.Signers = append(State.Signers, s)
+	}
+	if clearBuffer {
+		delete(UnmarshalledSignersBuffer, signerType)
+	}
 
 }
 

@@ -12,7 +12,7 @@ func PaymasterUI() (*common.Address, bool) {
 	addr, ok := AddressFromBookUI(state.Paymaster)
 	if ok {
 		PaymasterItem.Value = addr
-		PaymasterItem.DisplayValue = addr.String()
+		//PaymasterItem.DisplayValue = addr.String()
 	}
 	return addr, ok
 }

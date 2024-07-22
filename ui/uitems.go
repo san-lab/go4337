@@ -1,12 +1,43 @@
 package ui
 
-import "github.com/manifoldco/promptui"
+import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/manifoldco/promptui"
+)
 
 type Item struct {
-	Label        string
-	Value        interface{}
-	Details      string
-	DisplayValue string //could be a function, but I am lazy
+	Label              string
+	Value              interface{}
+	Details            string
+	DisplayValueString string //could be a function, but I am lazy
+}
+
+func (i *Item) DisplayValue() string {
+	if i.Value == nil {
+		return ""
+	}
+	switch i.Value.(type) {
+	case string:
+		return ShortString(i.Value.(string), 40)
+	case []byte:
+		return ShortHex(i.Value.([]byte), 40)
+	default:
+		return fmt.Sprint(i.Value)
+	}
+}
+
+func ShortHex(data []byte, l int) string {
+
+	return ShortString(hex.EncodeToString(data), l)
+}
+
+func ShortString(data string, l int) string {
+	if len(data) < l+3 {
+		return data
+	}
+	return fmt.Sprintf("%s...%s", data[:l], data[len(data)-l:])
 }
 
 func (i *Item) String() string {

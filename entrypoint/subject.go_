@@ -1,0 +1,448 @@
+// Code generated - DO NOT EDIT.
+// This file is a generated binding and any manual changes will be lost.
+
+package genapi
+
+import (
+	"errors"
+	"math/big"
+	"strings"
+
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
+)
+
+// Reference imports to suppress errors if they are not otherwise used.
+var (
+	_ = errors.New
+	_ = big.NewInt
+	_ = strings.NewReader
+	_ = ethereum.NotFound
+	_ = bind.Bind
+	_ = common.Big1
+	_ = types.BloomLookup
+	_ = event.NewSubscription
+	_ = abi.ConvertType
+)
+
+// Subjectmtuple is an auto generated low-level Go binding around an user-defined struct.
+type Subjectmtuple struct {
+	First  uint64
+	Second uint64
+}
+
+// GenapiMetaData contains all meta data concerning the Genapi contract.
+var GenapiMetaData = &bind.MetaData{
+	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"name\":\"TupeSet\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"first\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"second\",\"type\":\"uint64\"}],\"internalType\":\"structSubject.mtuple\",\"name\":\"tuple\",\"type\":\"tuple\"}],\"name\":\"AcceptTuple\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"calldat\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"_object\",\"type\":\"address\"}],\"name\":\"CallObject\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"GetCallMeBytecode\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"GetCallOwner\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}]",
+	Bin: "0x608060405234801561000f575f80fd5b506107278061001d5f395ff3fe608060405234801561000f575f80fd5b506004361061004a575f3560e01c80633768b8811461004e578063867ec0541461006c578063a5d695bb14610088578063ec96732c146100b8575b5f80fd5b6100566100e8565b60405161006391906102ff565b60405180910390f35b61008660048036038101906100819190610352565b61011b565b005b6100a2600480360381019061009d9190610503565b61017a565b6040516100af91906102ff565b60405180910390f35b6100d260048036038101906100cd919061055d565b6101f1565b6040516100df91906102ff565b60405180910390f35b60605f632c39924260e01b60405160200161010391906105c2565b60405160208183030381529060405290508091505090565b7f45a881945ec2d8cce96264f1da99f270cd36154a4e6952acf878ee7c6aabd6c8815f01602081019061014e9190610618565b8260200160208101906101619190610618565b60405161016f929190610652565b60405180910390a150565b6060808273ffffffffffffffffffffffffffffffffffffffff16846040516101a291906106b3565b5f604051808303815f865af19150503d805f81146101db576040519150601f19603f3d011682016040523d82523d5f602084013e6101e0565b606091505b509050809150508091505092915050565b60605f6313af403560e01b8360405160240161020d91906106d8565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff8381831617835250505050905080915050919050565b5f81519050919050565b5f82825260208201905092915050565b5f5b838110156102ac578082015181840152602081019050610291565b5f8484015250505050565b5f601f19601f8301169050919050565b5f6102d182610275565b6102db818561027f565b93506102eb81856020860161028f565b6102f4816102b7565b840191505092915050565b5f6020820190508181035f83015261031781846102c7565b905092915050565b5f604051905090565b5f80fd5b5f80fd5b5f80fd5b5f6040828403121561034957610348610330565b5b81905092915050565b5f6040828403121561036757610366610328565b5b5f61037484828501610334565b91505092915050565b5f80fd5b5f80fd5b7f4e487b71000000000000000000000000000000000000000000000000000000005f52604160045260245ffd5b6103bb826102b7565b810181811067ffffffffffffffff821117156103da576103d9610385565b5b80604052505050565b5f6103ec61031f565b90506103f882826103b2565b919050565b5f67ffffffffffffffff82111561041757610416610385565b5b610420826102b7565b9050602081019050919050565b828183375f83830152505050565b5f61044d610448846103fd565b6103e3565b90508281526020810184848401111561046957610468610381565b5b61047484828561042d565b509392505050565b5f82601f8301126104905761048f61037d565b5b81356104a084826020860161043b565b91505092915050565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6104d2826104a9565b9050919050565b6104e2816104c8565b81146104ec575f80fd5b50565b5f813590506104fd816104d9565b92915050565b5f806040838503121561051957610518610328565b5b5f83013567ffffffffffffffff8111156105365761053561032c565b5b6105428582860161047c565b9250506020610553858286016104ef565b9150509250929050565b5f6020828403121561057257610571610328565b5b5f61057f848285016104ef565b91505092915050565b5f7fffffffff0000000000000000000000000000000000000000000000000000000082169050919050565b6105bc81610588565b82525050565b5f6020820190506105d55f8301846105b3565b92915050565b5f67ffffffffffffffff82169050919050565b6105f7816105db565b8114610601575f80fd5b50565b5f81359050610612816105ee565b92915050565b5f6020828403121561062d5761062c610328565b5b5f61063a84828501610604565b91505092915050565b61064c816105db565b82525050565b5f6040820190506106655f830185610643565b6106726020830184610643565b9392505050565b5f81905092915050565b5f61068d82610275565b6106978185610679565b93506106a781856020860161028f565b80840191505092915050565b5f6106be8284610683565b915081905092915050565b6106d2816104c8565b82525050565b5f6020820190506106eb5f8301846106c9565b9291505056fea26469706673582212208535d4fe1dad6a357517cb280aaa51297af02098e7f2d5ee77e5c3720df4967664736f6c63430008170033",
+}
+
+// GenapiABI is the input ABI used to generate the binding from.
+// Deprecated: Use GenapiMetaData.ABI instead.
+var GenapiABI = GenapiMetaData.ABI
+
+// GenapiBin is the compiled bytecode used for deploying new contracts.
+// Deprecated: Use GenapiMetaData.Bin instead.
+var GenapiBin = GenapiMetaData.Bin
+
+// DeployGenapi deploys a new Ethereum contract, binding an instance of Genapi to it.
+func DeployGenapi(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Genapi, error) {
+	parsed, err := GenapiMetaData.GetAbi()
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	if parsed == nil {
+		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
+	}
+
+	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(GenapiBin), backend)
+	if err != nil {
+		return common.Address{}, nil, nil, err
+	}
+	return address, tx, &Genapi{GenapiCaller: GenapiCaller{contract: contract}, GenapiTransactor: GenapiTransactor{contract: contract}, GenapiFilterer: GenapiFilterer{contract: contract}}, nil
+}
+
+// Genapi is an auto generated Go binding around an Ethereum contract.
+type Genapi struct {
+	GenapiCaller     // Read-only binding to the contract
+	GenapiTransactor // Write-only binding to the contract
+	GenapiFilterer   // Log filterer for contract events
+}
+
+// GenapiCaller is an auto generated read-only Go binding around an Ethereum contract.
+type GenapiCaller struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// GenapiTransactor is an auto generated write-only Go binding around an Ethereum contract.
+type GenapiTransactor struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// GenapiFilterer is an auto generated log filtering Go binding around an Ethereum contract events.
+type GenapiFilterer struct {
+	contract *bind.BoundContract // Generic contract wrapper for the low level calls
+}
+
+// GenapiSession is an auto generated Go binding around an Ethereum contract,
+// with pre-set call and transact options.
+type GenapiSession struct {
+	Contract     *Genapi           // Generic contract binding to set the session for
+	CallOpts     bind.CallOpts     // Call options to use throughout this session
+	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
+}
+
+// GenapiCallerSession is an auto generated read-only Go binding around an Ethereum contract,
+// with pre-set call options.
+type GenapiCallerSession struct {
+	Contract *GenapiCaller // Generic contract caller binding to set the session for
+	CallOpts bind.CallOpts // Call options to use throughout this session
+}
+
+// GenapiTransactorSession is an auto generated write-only Go binding around an Ethereum contract,
+// with pre-set transact options.
+type GenapiTransactorSession struct {
+	Contract     *GenapiTransactor // Generic contract transactor binding to set the session for
+	TransactOpts bind.TransactOpts // Transaction auth options to use throughout this session
+}
+
+// GenapiRaw is an auto generated low-level Go binding around an Ethereum contract.
+type GenapiRaw struct {
+	Contract *Genapi // Generic contract binding to access the raw methods on
+}
+
+// GenapiCallerRaw is an auto generated low-level read-only Go binding around an Ethereum contract.
+type GenapiCallerRaw struct {
+	Contract *GenapiCaller // Generic read-only contract binding to access the raw methods on
+}
+
+// GenapiTransactorRaw is an auto generated low-level write-only Go binding around an Ethereum contract.
+type GenapiTransactorRaw struct {
+	Contract *GenapiTransactor // Generic write-only contract binding to access the raw methods on
+}
+
+// NewGenapi creates a new instance of Genapi, bound to a specific deployed contract.
+func NewGenapi(address common.Address, backend bind.ContractBackend) (*Genapi, error) {
+	contract, err := bindGenapi(address, backend, backend, backend)
+	if err != nil {
+		return nil, err
+	}
+	return &Genapi{GenapiCaller: GenapiCaller{contract: contract}, GenapiTransactor: GenapiTransactor{contract: contract}, GenapiFilterer: GenapiFilterer{contract: contract}}, nil
+}
+
+// NewGenapiCaller creates a new read-only instance of Genapi, bound to a specific deployed contract.
+func NewGenapiCaller(address common.Address, caller bind.ContractCaller) (*GenapiCaller, error) {
+	contract, err := bindGenapi(address, caller, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &GenapiCaller{contract: contract}, nil
+}
+
+// NewGenapiTransactor creates a new write-only instance of Genapi, bound to a specific deployed contract.
+func NewGenapiTransactor(address common.Address, transactor bind.ContractTransactor) (*GenapiTransactor, error) {
+	contract, err := bindGenapi(address, nil, transactor, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &GenapiTransactor{contract: contract}, nil
+}
+
+// NewGenapiFilterer creates a new log filterer instance of Genapi, bound to a specific deployed contract.
+func NewGenapiFilterer(address common.Address, filterer bind.ContractFilterer) (*GenapiFilterer, error) {
+	contract, err := bindGenapi(address, nil, nil, filterer)
+	if err != nil {
+		return nil, err
+	}
+	return &GenapiFilterer{contract: contract}, nil
+}
+
+// bindGenapi binds a generic wrapper to an already deployed contract.
+func bindGenapi(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
+	parsed, err := GenapiMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_Genapi *GenapiRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _Genapi.Contract.GenapiCaller.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_Genapi *GenapiRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Genapi.Contract.GenapiTransactor.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_Genapi *GenapiRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _Genapi.Contract.GenapiTransactor.contract.Transact(opts, method, params...)
+}
+
+// Call invokes the (constant) contract method with params as input values and
+// sets the output to result. The result type might be a single field for simple
+// returns, a slice of interfaces for anonymous returns and a struct for named
+// returns.
+func (_Genapi *GenapiCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
+	return _Genapi.Contract.contract.Call(opts, result, method, params...)
+}
+
+// Transfer initiates a plain transaction to move funds to the contract, calling
+// its default method if one is available.
+func (_Genapi *GenapiTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Genapi.Contract.contract.Transfer(opts)
+}
+
+// Transact invokes the (paid) contract method with params as input values.
+func (_Genapi *GenapiTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
+	return _Genapi.Contract.contract.Transact(opts, method, params...)
+}
+
+// GetCallMeBytecode is a free data retrieval call binding the contract method 0x3768b881.
+//
+// Solidity: function GetCallMeBytecode() pure returns(bytes)
+func (_Genapi *GenapiCaller) GetCallMeBytecode(opts *bind.CallOpts) ([]byte, error) {
+	var out []interface{}
+	err := _Genapi.contract.Call(opts, &out, "GetCallMeBytecode")
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// GetCallMeBytecode is a free data retrieval call binding the contract method 0x3768b881.
+//
+// Solidity: function GetCallMeBytecode() pure returns(bytes)
+func (_Genapi *GenapiSession) GetCallMeBytecode() ([]byte, error) {
+	return _Genapi.Contract.GetCallMeBytecode(&_Genapi.CallOpts)
+}
+
+// GetCallMeBytecode is a free data retrieval call binding the contract method 0x3768b881.
+//
+// Solidity: function GetCallMeBytecode() pure returns(bytes)
+func (_Genapi *GenapiCallerSession) GetCallMeBytecode() ([]byte, error) {
+	return _Genapi.Contract.GetCallMeBytecode(&_Genapi.CallOpts)
+}
+
+// GetCallOwner is a free data retrieval call binding the contract method 0xec96732c.
+//
+// Solidity: function GetCallOwner(address _owner) pure returns(bytes)
+func (_Genapi *GenapiCaller) GetCallOwner(opts *bind.CallOpts, _owner common.Address) ([]byte, error) {
+	var out []interface{}
+	err := _Genapi.contract.Call(opts, &out, "GetCallOwner", _owner)
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// GetCallOwner is a free data retrieval call binding the contract method 0xec96732c.
+//
+// Solidity: function GetCallOwner(address _owner) pure returns(bytes)
+func (_Genapi *GenapiSession) GetCallOwner(_owner common.Address) ([]byte, error) {
+	return _Genapi.Contract.GetCallOwner(&_Genapi.CallOpts, _owner)
+}
+
+// GetCallOwner is a free data retrieval call binding the contract method 0xec96732c.
+//
+// Solidity: function GetCallOwner(address _owner) pure returns(bytes)
+func (_Genapi *GenapiCallerSession) GetCallOwner(_owner common.Address) ([]byte, error) {
+	return _Genapi.Contract.GetCallOwner(&_Genapi.CallOpts, _owner)
+}
+
+// AcceptTuple is a paid mutator transaction binding the contract method 0x867ec054.
+//
+// Solidity: function AcceptTuple((uint64,uint64) tuple) returns()
+func (_Genapi *GenapiTransactor) AcceptTuple(opts *bind.TransactOpts, tuple Subjectmtuple) (*types.Transaction, error) {
+	return _Genapi.contract.Transact(opts, "AcceptTuple", tuple)
+}
+
+// AcceptTuple is a paid mutator transaction binding the contract method 0x867ec054.
+//
+// Solidity: function AcceptTuple((uint64,uint64) tuple) returns()
+func (_Genapi *GenapiSession) AcceptTuple(tuple Subjectmtuple) (*types.Transaction, error) {
+	return _Genapi.Contract.AcceptTuple(&_Genapi.TransactOpts, tuple)
+}
+
+// AcceptTuple is a paid mutator transaction binding the contract method 0x867ec054.
+//
+// Solidity: function AcceptTuple((uint64,uint64) tuple) returns()
+func (_Genapi *GenapiTransactorSession) AcceptTuple(tuple Subjectmtuple) (*types.Transaction, error) {
+	return _Genapi.Contract.AcceptTuple(&_Genapi.TransactOpts, tuple)
+}
+
+// CallObject is a paid mutator transaction binding the contract method 0xa5d695bb.
+//
+// Solidity: function CallObject(bytes calldat, address _object) returns(bytes)
+func (_Genapi *GenapiTransactor) CallObject(opts *bind.TransactOpts, calldat []byte, _object common.Address) (*types.Transaction, error) {
+	return _Genapi.contract.Transact(opts, "CallObject", calldat, _object)
+}
+
+// CallObject is a paid mutator transaction binding the contract method 0xa5d695bb.
+//
+// Solidity: function CallObject(bytes calldat, address _object) returns(bytes)
+func (_Genapi *GenapiSession) CallObject(calldat []byte, _object common.Address) (*types.Transaction, error) {
+	return _Genapi.Contract.CallObject(&_Genapi.TransactOpts, calldat, _object)
+}
+
+// CallObject is a paid mutator transaction binding the contract method 0xa5d695bb.
+//
+// Solidity: function CallObject(bytes calldat, address _object) returns(bytes)
+func (_Genapi *GenapiTransactorSession) CallObject(calldat []byte, _object common.Address) (*types.Transaction, error) {
+	return _Genapi.Contract.CallObject(&_Genapi.TransactOpts, calldat, _object)
+}
+
+// GenapiTupeSetIterator is returned from FilterTupeSet and is used to iterate over the raw logs and unpacked data for TupeSet events raised by the Genapi contract.
+type GenapiTupeSetIterator struct {
+	Event *GenapiTupeSet // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GenapiTupeSetIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GenapiTupeSet)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GenapiTupeSet)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GenapiTupeSetIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GenapiTupeSetIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GenapiTupeSet represents a TupeSet event raised by the Genapi contract.
+type GenapiTupeSet struct {
+	Arg0 uint64
+	Arg1 uint64
+	Raw  types.Log // Blockchain specific contextual infos
+}
+
+// FilterTupeSet is a free log retrieval operation binding the contract event 0x45a881945ec2d8cce96264f1da99f270cd36154a4e6952acf878ee7c6aabd6c8.
+//
+// Solidity: event TupeSet(uint64 arg0, uint64 arg1)
+func (_Genapi *GenapiFilterer) FilterTupeSet(opts *bind.FilterOpts) (*GenapiTupeSetIterator, error) {
+
+	logs, sub, err := _Genapi.contract.FilterLogs(opts, "TupeSet")
+	if err != nil {
+		return nil, err
+	}
+	return &GenapiTupeSetIterator{contract: _Genapi.contract, event: "TupeSet", logs: logs, sub: sub}, nil
+}
+
+// WatchTupeSet is a free log subscription operation binding the contract event 0x45a881945ec2d8cce96264f1da99f270cd36154a4e6952acf878ee7c6aabd6c8.
+//
+// Solidity: event TupeSet(uint64 arg0, uint64 arg1)
+func (_Genapi *GenapiFilterer) WatchTupeSet(opts *bind.WatchOpts, sink chan<- *GenapiTupeSet) (event.Subscription, error) {
+
+	logs, sub, err := _Genapi.contract.WatchLogs(opts, "TupeSet")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GenapiTupeSet)
+				if err := _Genapi.contract.UnpackLog(event, "TupeSet", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseTupeSet is a log parse operation binding the contract event 0x45a881945ec2d8cce96264f1da99f270cd36154a4e6952acf878ee7c6aabd6c8.
+//
+// Solidity: event TupeSet(uint64 arg0, uint64 arg1)
+func (_Genapi *GenapiFilterer) ParseTupeSet(log types.Log) (*GenapiTupeSet, error) {
+	event := new(GenapiTupeSet)
+	if err := _Genapi.contract.UnpackLog(event, "TupeSet", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
