@@ -3,8 +3,10 @@ package ui
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/state"
 )
 
 type Item struct {
@@ -15,16 +17,33 @@ type Item struct {
 }
 
 func (i *Item) DisplayValue() string {
+	if i.DisplayValueString != "" {
+		return ShortString(i.DisplayValueString, 50)
+	}
 	if i.Value == nil {
 		return ""
 	}
-	switch i.Value.(type) {
+	var derefv interface{}
+	//Dereference, if it is a pointer
+	if reflect.TypeOf(i.Value).Kind() == reflect.Ptr {
+		derefv = reflect.ValueOf(i.Value).Elem().Interface()
+	} else {
+		derefv = i.Value
+	}
+
+	switch derefv.(type) {
 	case string:
-		return ShortString(i.Value.(string), 40)
+		return ShortString(derefv.(string), 40)
 	case []byte:
-		return ShortHex(i.Value.([]byte), 40)
+		return ShortHex(derefv.([]byte), 40)
+	case [32]byte:
+		bt32 := derefv.([32]byte)
+		return ShortHex(bt32[:], 40)
+	case state.MethodCall:
+		method := derefv.(state.MethodCall)
+		return method.MethodName
 	default:
-		return fmt.Sprint(i.Value)
+		return ShortString(fmt.Sprint(derefv), 50)
 	}
 }
 

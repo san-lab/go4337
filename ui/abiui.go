@@ -265,7 +265,8 @@ func SelectMethodUI(contractName string) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		v := methods[k]
-		items = append(items, &Item{Label: k, Details: "select " + v.MethodName, Value: v})
+		items = append(items, &Item{Label: k, Details: "select " + v.MethodName, Value: v,
+			DisplayValueString: DisplayInputsTypes(v.ABI.Methods[v.MethodName].Inputs)})
 	}
 	items = append(items, Back)
 	// Create a new select prompt
@@ -340,6 +341,7 @@ func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 		case Set.Label:
 			loop = false
 		case AppendItem.Label:
+			fmt.Println(slice.Type.Elem.GetType().String())
 			input := &abi.Argument{Type: *slice.Type.Elem}
 			newItem := &Item{Label: fmt.Sprintf("%s_%v", slice.Name, len(valueItems)), Details: "set " + slice.Type.Elem.String()}
 			err := SetParamUI(newItem, input)
@@ -509,4 +511,12 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 	}
 	return nil
 
+}
+
+func DisplayInputsTypes(inputs abi.Arguments) string {
+	types := []string{}
+	for _, input := range inputs {
+		types = append(types, input.Type.String())
+	}
+	return "(" + strings.Join(types, ", ") + ")"
 }

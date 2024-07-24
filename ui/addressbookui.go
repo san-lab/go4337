@@ -24,7 +24,8 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 	for {
 		items := []*Item{}
 		for _, s := range *abook {
-			items = append(items, &Item{Label: s.String(), Details: "Select this " + label, Value: s})
+			items = append(items, &Item{Label: s.String(), Details: "Select this " + label, Value: s,
+				DisplayValueString: " "})
 
 		}
 		if !selectToRemove {

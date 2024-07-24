@@ -264,7 +264,7 @@ func UserOpContentUI(topIt *Item) {
 		Label:     "Select an option",
 		Items:     items,
 		Templates: ItemTemplate,
-		Size:      15,
+		Size:      22,
 	}
 	for {
 		_, sel, err := prompt.Run()
