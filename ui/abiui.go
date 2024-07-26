@@ -341,7 +341,6 @@ func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 		case Set.Label:
 			loop = false
 		case AppendItem.Label:
-			fmt.Println(slice.Type.Elem.GetType().String())
 			input := &abi.Argument{Type: *slice.Type.Elem}
 			newItem := &Item{Label: fmt.Sprintf("%s_%v", slice.Name, len(valueItems)), Details: "set " + slice.Type.Elem.String()}
 			err := SetParamUI(newItem, input)
@@ -380,6 +379,25 @@ func SetTupleUI(item *Item, tuple *abi.Argument) error {
 		return fmt.Errorf("Not a tuple")
 	}
 	valueItems := []*Item{}
+	//Intercept V6 UserOp's
+	if tuple.Type.GetType() == state.UserOpV6Type {
+		cit := &Item{Label: "Select a UserOp"}
+		TopUserOpUI(cit)
+		if cit.Value == nil {
+			return fmt.Errorf("No UserOp selected")
+		}
+		source := cit.Value.(*userop.UserOperation)
+		values := source.MarshalValuesV6()
+		v, err := abiutil.SetTupleValues(tuple, values)
+		if err != nil {
+			return fmt.Errorf("Error setting tuple values: %v", err)
+		}
+		item.Value = v
+		return nil
+	}
+
+	//---------------Not a known tuple, so a generic approach----------------
+
 	// Expect nil or a tuple
 	if item.Value != nil && reflect.TypeOf(item.Value) != tuple.Type.GetType() {
 		return fmt.Errorf("Value passed that is not a correct struct")

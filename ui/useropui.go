@@ -17,16 +17,23 @@ var SelectUserOpItem = &Item{Label: "Select User Operation", Details: "Select a 
 var CreateUserOpItem = &Item{Label: "Create User Operation", Details: "Create a new user operation"}
 var CloneUserOpItem = &Item{Label: "Clone User Operation", Details: "Clone a user operation"}
 
-func TopUserOpUI() {
+func TopUserOpUI(callbackItem *Item) {
 
 	usOpItem := &Item{}
 	workItem := &Item{}
 	for {
 		items := []*Item{}
 		if usOpItem.Value != nil {
-			if usop, ok := usOpItem.Value.(*userop.UserOp); ok {
-				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender.String(), usop.Nonce)}
+			if usop, ok := usOpItem.Value.(*userop.UserOperation); ok {
+				if callbackItem != nil {
+					callbackItem.Label = "Select this UserOperation"
+					callbackItem.Value = usop
+					items = append(items, callbackItem)
+				}
+
+				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
 				items = append(items, workItem)
+
 			}
 		}
 		items = append(items, []*Item{
@@ -60,8 +67,10 @@ func TopUserOpUI() {
 		case CloneUserOpItem.Label:
 			CloneUserOpUI(usOpItem)
 		case workItem.Label:
-			usop := usOpItem.Value.(*userop.UserOp) //Has been checked when generating ui, and there should be no concurrency, so it is safe
+			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
 			UserOpUI(usop)
+		case callbackItem.Label:
+			return
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -75,7 +84,7 @@ func CloneUserOpUI(topIt *Item) {
 	if it.Value == nil {
 		return
 	}
-	usop, ok := it.Value.(*userop.UserOp)
+	usop, ok := it.Value.(*userop.UserOperation)
 	if !ok {
 		fmt.Println("Invalid UserOp selected. This should be impossible...")
 		return
@@ -109,7 +118,7 @@ func CloneUserOpUI(topIt *Item) {
 
 	topIt.Value = clone
 	topIt.Label = newname
-	state.State.UserOps[newname] = clone.(*userop.UserOp)
+	state.State.UserOps[newname] = clone.(*userop.UserOperation)
 	state.State.Save()
 }
 
@@ -165,7 +174,7 @@ func CreateUserOpUI(topIt *Item) {
 	}
 	topIt.Label = name
 	UserOpContentUI(topIt)
-	state.State.UserOps[name] = topIt.Value.(*userop.UserOp)
+	state.State.UserOps[name] = topIt.Value.(*userop.UserOperation)
 	state.State.Save()
 
 }
@@ -174,7 +183,7 @@ var UserOpContentItem = &Item{Label: "User Operation Content", Details: "Manage 
 var ExportUserOpItem = &Item{Label: "Export User Operation", Details: "Select the export format"}
 var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
 
-func UserOpUI(usop *userop.UserOp) {
+func UserOpUI(usop *userop.UserOperation) {
 	items := []*Item{
 		UserOpContentItem,
 		ExportUserOpItem,
@@ -228,12 +237,12 @@ var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", De
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 
 func UserOpContentUI(topIt *Item) {
-	var usop *userop.UserOp
+	var usop *userop.UserOperation
 	if topIt.Value == nil {
-		usop = new(userop.UserOp)
+		usop = new(userop.UserOperation)
 	} else {
 		ok := false
-		usop, ok = topIt.Value.(*userop.UserOp)
+		usop, ok = topIt.Value.(*userop.UserOperation)
 		if !ok {
 			fmt.Println("Invalid UserOp passed to UserOpContentUI")
 			return
@@ -325,7 +334,7 @@ func UserOpContentUI(topIt *Item) {
 
 }
 
-func copyFromUseropToItems(uop *userop.UserOp) {
+func copyFromUseropToItems(uop *userop.UserOperation) {
 	if uop.Sender != nil {
 		SenderItem.Value = uop.Sender
 
@@ -354,7 +363,7 @@ func copyFromUseropToItems(uop *userop.UserOp) {
 	//}
 }
 
-func copyValuesToUserOp(uop *userop.UserOp) {
+func copyValuesToUserOp(uop *userop.UserOperation) {
 	if SenderItem.Value != nil {
 		uop.Sender = SenderItem.Value.(*common.Address)
 	}
@@ -391,7 +400,7 @@ var ExportAsRemixTupleV7Item = &Item{Label: "Export as Remix Tuple (V7)", Detail
 var ExportAsRemixTupleV6Item = &Item{Label: "Export as Remix Tuple (V6)", Details: "Export as Remix Tuple"}
 var ExportAsCurlToEntryItem = &Item{Label: "Export as Curl to Entrypoint", Details: "Export as Curl to Endpoint"}
 
-func ExportUserOpUI(uop *userop.UserOp) {
+func ExportUserOpUI(uop *userop.UserOperation) {
 	items := []*Item{ExportAsUOPJSONItem, ExportAsRemixTupleV6Item, ExportAsRemixTupleV7Item, ExportAsCurlToEntryItem, Back}
 	// Create a new select prompt
 	prompt := promptui.Select{
@@ -421,7 +430,7 @@ func ExportUserOpUI(uop *userop.UserOp) {
 	}
 }
 
-func ExportAsJSON(uop *userop.UserOp) {
+func ExportAsJSON(uop *userop.UserOperation) {
 	bt, err := json.MarshalIndent(uop, "", "  ")
 	if err != nil {
 		fmt.Println(err)
@@ -438,6 +447,6 @@ func ExportAsJSON(uop *userop.UserOp) {
 "0xfc78e0bcb3b9e4a294d0bfaccebe57111b053679f19dfc31b18486f94a52709129bd1a4f0b446384d851da2ae8076a7aaf56ac3fafae65810602efc3c30efd321B"]
 */
 
-func ExportAsCurl(uop *userop.UserOp) {
+func ExportAsCurl(uop *userop.UserOperation) {
 	fmt.Println("Not implemented yet")
 }

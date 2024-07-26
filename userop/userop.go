@@ -28,7 +28,7 @@ paymasterData	bytes	Data for paymaster (only if paymaster exists)
 signature	bytes	Data passed into the account to verify authorization
 */
 
-type UserOp struct {
+type UserOperation struct {
 	Sender *common.Address `json:"sender"`
 	Nonce  uint64          `json:"nonce"`
 	// Factory address, only for new accounts
@@ -77,7 +77,7 @@ type UsOpJsonAdapter struct {
 	Signature                     string `json:"signature"`
 }
 
-func (u *UserOp) MarshalJSON() ([]byte, error) {
+func (u *UserOperation) MarshalJSON() ([]byte, error) {
 	if u.Sender == nil {
 		return nil, fmt.Errorf("Sender is nil")
 	}
@@ -102,7 +102,7 @@ func (u *UserOp) MarshalJSON() ([]byte, error) {
 	)
 }
 
-func (u *UserOp) UnmarshalJSON(data []byte) error {
+func (u *UserOperation) UnmarshalJSON(data []byte) error {
 	adapter := &UsOpJsonAdapter{}
 	err := json.Unmarshal(data, adapter)
 	if err != nil {
@@ -135,21 +135,21 @@ func (u *UserOp) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (u *UserOp) InitData() []byte {
+func (u *UserOperation) InitData() []byte {
 	if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 		return append(u.Factory.Bytes(), u.FactoryData...)
 	}
 	return []byte{}
 }
 
-func (u *UserOp) PaymasterAndData() []byte {
+func (u *UserOperation) PaymasterAndData() []byte {
 	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
 		return append(u.Paymaster.Bytes(), u.PaymasterData...)
 	}
 	return []byte{}
 }
 
-func (u *UserOp) MarshalRemixV6() string {
+func (u *UserOperation) MarshalRemixV6() string {
 	uop6 := new(entrypointv6.UserOperation)
 	uop6.Sender = *u.Sender
 	uop6.Nonce = big.NewInt(int64(u.Nonce))
@@ -172,6 +172,23 @@ func (u *UserOp) MarshalRemixV6() string {
 	return fmt.Sprintf("[%s, %d, %s, %s, %d, %d, %d, %d, %d, %s, %s]", ToRemixHex(uop6.Sender.Bytes()), uop6.Nonce, ToRemixHex(uop6.InitCode), ToRemixHex(uop6.CallData),
 		uop6.CallGasLimit, uop6.VerificationGasLimit, uop6.PreVerificationGas, uop6.MaxFeePerGas, uop6.MaxPriorityFeePerGas,
 		ToRemixHex(uop6.PaymasterAndData), ToRemixHex(uop6.Signature))
+}
+
+func (u *UserOperation) MarshalValuesV6() []interface{} {
+	values := make([]interface{}, 11)
+	source := u
+	values[0] = *source.Sender
+	values[1] = big.NewInt(int64(source.Nonce))
+	values[2] = source.InitData()
+	values[3] = source.CallData
+	values[4] = big.NewInt(int64(source.CallGasLimit))
+	values[5] = big.NewInt(int64(source.VerificationGasLimit))
+	values[6] = big.NewInt(int64(source.PreVerificationGas))
+	values[7] = big.NewInt(int64(source.MaxFeePerGas))
+	values[8] = big.NewInt(int64(source.MaxPriorityFeePerGas))
+	values[9] = source.PaymasterAndData()
+	values[10] = source.Signature
+	return values
 }
 
 // PackedUserOp is an EntryPoint viev of UserOp
@@ -250,7 +267,7 @@ var (
 	DefaultPaymasterPostOpGasLimit       = uint64(0)
 )
 
-func (u *UserOp) Pack() *PackedUserOp {
+func (u *UserOperation) Pack() *PackedUserOp {
 	if u == nil {
 		fmt.Println("UserOp is nil")
 		return nil
@@ -281,8 +298,8 @@ func (u *UserOp) Pack() *PackedUserOp {
 
 func PackUints(a, b uint64) [32]byte {
 	buf := make([]byte, 32)
-	binary.BigEndian.PutUint64(buf[24:], a)
-	binary.BigEndian.PutUint64(buf[8:], b)
+	binary.BigEndian.PutUint64(buf[24:], b)
+	binary.BigEndian.PutUint64(buf[8:], a)
 	return [32]byte(buf)
 }
 

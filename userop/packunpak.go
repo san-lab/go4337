@@ -39,7 +39,7 @@ func (puop *PackedUserOp) EncodeToHash() ([]byte, error) {
 	)
 }
 
-func (uop *UserOp) EncodeToHash() ([]byte, error) {
+func (uop *UserOperation) EncodeToHash() ([]byte, error) {
 	arguments := abi.Arguments{
 		{Type: addressTy}, //sender
 		{Type: uint256Ty}, //nonce
@@ -76,7 +76,7 @@ func GetUsOpLibPrehash(userOp *PackedUserOp) (hash [32]byte, err error) {
 	return UnsafeSliceToBytes32(crypto.Keccak256(enc1)), nil
 }
 
-func GetUsOpLibPrehashV6(userOp *UserOp) (hash [32]byte, err error) {
+func GetUsOpLibPrehashV6(userOp *UserOperation) (hash [32]byte, err error) {
 	enc1, err := userOp.EncodeToHash()
 	if err != nil {
 		err = fmt.Errorf("encode error: %v", err)
@@ -102,7 +102,7 @@ func GetUserOpHash(userOp *PackedUserOp, entryPoint common.Address, chainid uint
 /*
 keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
 */
-func GetUserOpHashV6(userOp *UserOp, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
+func GetUserOpHashV6(userOp *UserOperation, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
 
 	enc2, err := GetUserOpBytesToHashV6(userOp, entryPoint, chainid)
 	if err != nil {
@@ -123,7 +123,7 @@ func GetUserOpBytesToHash(userOp *PackedUserOp, entryPoint common.Address, chain
 	return args.Pack(h1, entryPoint, big.NewInt(int64(chainid)))
 }
 
-func GetUserOpBytesToHashV6(userOp *UserOp, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
+func GetUserOpBytesToHashV6(userOp *UserOperation, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
 	h1, err := GetUsOpLibPrehashV6(userOp)
 	args := abi.Arguments{
 		{Type: bytes32Ty},

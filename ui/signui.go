@@ -24,7 +24,7 @@ var PreHashItem = &Item{Label: "Pre Hash", Details: "Hash of an encoded user ope
 var PreHashV6Item = &Item{Label: "Pre Hash_v6", Details: "Hash of an encoded user operation"}
 var EncodedBytesItem = &Item{Label: "Encoded Bytes", Details: "Encoded bytes of the user operation"}
 
-func GetHashUI(usop *userop.UserOp) (sig []byte, err error) {
+func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 	var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
 	prompt := promptui.Select{
 		Label:     "Select an option",
@@ -137,7 +137,7 @@ func GetHashUI(usop *userop.UserOp) (sig []byte, err error) {
 
 }
 
-func SetSignatureUI(userop *userop.UserOp) (calldata []byte, err error) {
+func SetSignatureUI(userop *userop.UserOperation) (calldata []byte, err error) {
 
 	var SignatureItemDirectItem = &Item{Label: "Input signature as hex", Details: "Input signature directly as hex"}
 	var UseSignerItem = &Item{Label: "Calculate using a Signer", Details: "Set Call Data using ABI"}

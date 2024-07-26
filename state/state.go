@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -16,13 +17,18 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
+// Some Types that are automatically abi-generated from entrypoin contract abi's
+// they are here, because their instantiation depends on parsing of the abi definitions
+var UserOpV6Type reflect.Type
+var PackedUserOpV7Type reflect.Type
+
 type StateStruct struct {
 	AddressBooks map[string]*AddressBook
 	//Default Gas Costs?
 	Signers    []signer.Signer `json:"-"`
 	SignersRaw []string
 	ABIs       map[string]string //ABI strings memorized
-	UserOps    map[string]*userop.UserOp
+	UserOps    map[string]*userop.UserOperation
 	ChainID    uint64
 }
 
@@ -47,22 +53,28 @@ func init() {
 		State.AddressBooks = make(map[string]*AddressBook)
 		State.AddressBooks[Sender] = &AddressBook{}
 		State.AddressBooks[Paymaster] = &AddressBook{}
+		State.AddressBooks[CustomEntrypoint] = &AddressBook{}
 	}
 	if State.ABIs == nil {
 		State.ABIs = make(map[string]string)
 	}
 	if State.UserOps == nil {
-		State.UserOps = make(map[string]*userop.UserOp)
+		State.UserOps = make(map[string]*userop.UserOperation)
 	}
 
 	//Add the Entrypoin abis
-	_, _, err = ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
+	v6, _, err := ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		UserOpV6Type = v6.Methods["getUserOpHash"].Inputs[0].Type.GetType()
+
 	}
-	_, _, err = ParseABI(EntrypointV7, entrypoint.EntryPointV7AbiJson)
+	v7, _, err := ParseABI(EntrypointV7, entrypoint.EntryPointV7AbiJson)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		PackedUserOpV7Type = v7.Methods["getUserOpHash"].Inputs[0].Type.GetType()
 	}
 
 }
@@ -71,6 +83,7 @@ type AddressBook []*common.Address
 
 const Sender = "Sender"
 const Paymaster = "Paymaster"
+const CustomEntrypoint = "Custom Entrypoint"
 
 func GetAddressBook(label string) (*AddressBook, bool) {
 	ab, ok := State.AddressBooks[label]

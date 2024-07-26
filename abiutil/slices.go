@@ -16,6 +16,9 @@ func MakeSliceOfType(solType abi.Type, length, cap int) interface{} {
 }
 
 func AppendToSlice(slice interface{}, value interface{}) (interface{}, error) {
+	if value == nil {
+		return nil, fmt.Errorf("value is nil")
+	}
 	sliceValue := reflect.ValueOf(slice)
 	valueValue := reflect.ValueOf(value)
 
@@ -26,7 +29,7 @@ func AppendToSlice(slice interface{}, value interface{}) (interface{}, error) {
 
 	// Check if the value is assignable to the slice element type
 	elemType := sliceValue.Type().Elem()
-	if !valueValue.Type().AssignableTo(elemType) {
+	if !valueValue.IsValid() && !valueValue.Type().AssignableTo(elemType) {
 		return nil, fmt.Errorf("cannot assign value of type %s to slice of type %s", valueValue.Type(), elemType)
 	}
 

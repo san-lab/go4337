@@ -51,7 +51,7 @@ func RootUI() {
 		case PaymasterItem.Label:
 			PaymasterUI()
 		case UserOpItem.Label:
-			TopUserOpUI()
+			TopUserOpUI(nil)
 		case SignerItem.Label:
 			SignerUI()
 		case AbisItem.Label:
