@@ -9,8 +9,10 @@ import (
 )
 
 func EntryPointUI() {
-	var EntryPointV6Item = &Item{Label: "V6", Details: fmt.Sprintf("Use the V6 entrypoint at: %s", entrypoint.E6Address)}
-	var EntryPointV7Item = &Item{Label: "V7", Details: fmt.Sprintf("Use the V7 entrypoint at: %s", entrypoint.E7Address)}
+	var EntryPointV6Item = &Item{Label: "V6 at " + entrypoint.EntryPointAddressV6,
+		Details: fmt.Sprintf("Use the standard V6 entrypoint at: %s", entrypoint.E6Address)}
+	var EntryPointV7Item = &Item{Label: "V7 at " + entrypoint.EntryPointAddressV7,
+		Details: fmt.Sprintf("Use the standard V7 entrypoint at: %s", entrypoint.E7Address)}
 	var CustomEntryPointItem = &Item{Label: "Custom", Details: "Use a custom entrypoint"}
 	items := []*Item{
 		EntryPointV6Item,

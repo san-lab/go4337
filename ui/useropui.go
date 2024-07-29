@@ -21,6 +21,7 @@ func TopUserOpUI(callbackItem *Item) {
 
 	usOpItem := &Item{}
 	workItem := &Item{}
+	deleteItem := &Item{}
 	for {
 		items := []*Item{}
 		if usOpItem.Value != nil {
@@ -32,7 +33,8 @@ func TopUserOpUI(callbackItem *Item) {
 				}
 
 				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
-				items = append(items, workItem)
+				deleteItem = &Item{Label: "Delete User Operation: " + usOpItem.Label, Details: "Delete this user operation"}
+				items = append(items, workItem, deleteItem)
 
 			}
 		}
@@ -69,6 +71,10 @@ func TopUserOpUI(callbackItem *Item) {
 		case workItem.Label:
 			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
 			UserOpUI(usop)
+		case deleteItem.Label:
+			delete(state.State.UserOps, usOpItem.Label)
+			state.State.Save()
+			return
 		case callbackItem.Label:
 			return
 		default:
@@ -293,7 +299,7 @@ func UserOpContentUI(topIt *Item) {
 			if err != nil {
 				copyValuesToUserOp(usop)
 			}
-		case CallDataItem.Label:
+		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
 			caldat, err := PotentiallyRecursiveCallDataUI()
 			if err != nil {
@@ -302,7 +308,7 @@ func UserOpContentUI(topIt *Item) {
 				SetCallDataValue(caldat, it)
 			}
 		//InputBytes(it)
-		case FactoryDataItem.Label, PaymasterDataItem.Label:
+		case PaymasterDataItem.Label:
 			it, _ := GetItem(sel, items)
 			err = InputBytes(it, -1)
 			if err != nil {
@@ -391,7 +397,7 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 
 func SetCallDataValue(data []byte, item *Item) {
 	item.Value = data
-	item.Details = fmt.Sprintf("Call Data: %s", hex.EncodeToString(data))
+	//item.Details = fmt.Sprintf("Call Data: %s", hex.EncodeToString(data))
 
 }
 

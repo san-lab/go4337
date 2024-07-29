@@ -278,7 +278,9 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	}
 	paymasterData := []byte{}
 	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
-		paymasterData = append(u.Paymaster.Bytes(), u.PaymasterData...)
+		gasbytes := PackUints(u.PaymasterVerificationGasLimit, u.PaymasterPostOpGasLimit)
+		paymasterData = append(u.Paymaster.Bytes(), gasbytes[:]...)
+		paymasterData = append(paymasterData, u.PaymasterData...)
 	}
 	if u.Sender == nil {
 		u.Sender = &common.Address{}
