@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -36,9 +38,12 @@ var TestUserOp UserOperation
 
 func init() {
 	sender := common.HexToAddress("0x63D993703e0514bE8C693D6CC91362A79B92Ce82")
+	factory := common.HexToAddress("0x123456789a")
 	TestUserOp = UserOperation{
 		Sender:                        &sender,
 		Nonce:                         0,
+		Factory:                       &factory,
+		FactoryData:                   []byte{0xff, 0xfe, 0xfd},
 		CallData:                      common.Hex2Bytes("b61d27f6000000000000000000000000754925c070c5368ae28d1d552dedae302280336d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000084cadcff3b0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e6c8fe3ad93f726543689c94864ea0a45e3a7b680000000000000000000000000000000000000000000000000000000000000002613300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		CallGasLimit:                  4000000,
 		VerificationGasLimit:          200000,
@@ -61,4 +66,23 @@ func TestHash(t *testing.T) {
 	}
 
 	fmt.Println(hash)
+}
+
+func TestFactoryCode(t *testing.T) {
+	uop := &TestUserOp
+	rem := uop.Pack().MarshalRemix()
+
+	fmt.Println(rem)
+
+	bt, err := json.Marshal(uop)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(string(bt))
+	uop2 := new(UserOperation)
+	err = json.Unmarshal(bt, uop2)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(uop2.Pack().MarshalRemix())
 }

@@ -77,7 +77,7 @@ type UsOpJsonAdapter struct {
 	Signature                     string `json:"signature"`
 }
 
-func (u *UserOperation) MarshalJSON() ([]byte, error) {
+func (u UserOperation) MarshalJSON() ([]byte, error) {
 	if u.Sender == nil {
 		return nil, fmt.Errorf("Sender is nil")
 	}
@@ -275,6 +275,8 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	initCode := []byte{}
 	if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 		initCode = append(u.Factory.Bytes(), u.FactoryData...)
+	} else {
+		fmt.Println("Factory is nil")
 	}
 	paymasterData := []byte{}
 	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {

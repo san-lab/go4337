@@ -377,6 +377,12 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	if CallDataItem.Value != nil {
 		uop.CallData = CallDataItem.Value.([]byte)
 	}
+	if FactoryItem.Value != nil {
+		uop.Factory = FactoryItem.Value.(*common.Address)
+	}
+	if FactoryDataItem.Value != nil {
+		uop.FactoryData = FactoryDataItem.Value.([]byte)
+	}
 	uop.CallGasLimit = CallGasLimitItem.Value.(uint64)
 	uop.VerificationGasLimit = VerificationGasLimitItem.Value.(uint64)
 	uop.PreVerificationGas = PreVerificationGasItem.Value.(uint64)
