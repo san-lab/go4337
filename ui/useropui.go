@@ -141,7 +141,7 @@ func SelectUserOpUI(topit *Item) {
 	sort.Strings(keys)
 	for _, name := range keys {
 		uop := state.State.UserOps[name]
-		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender.String(), uop.Nonce)})
+		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender, uop.Nonce)})
 	}
 	items = append(items, Back)
 	// Create a new select prompt
@@ -178,11 +178,16 @@ func CreateUserOpUI(topIt *Item) {
 		fmt.Println("UserOp already exists")
 		return
 	}
+	nuop := userop.NewUserOperationWithDefaults()
+	state.State.UserOps[name] = nuop
+	err = state.State.Save()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	topIt.Label = name
-	topIt.Value = nil
+	topIt.Value = nuop
 	UserOpContentUI(topIt)
-	state.State.UserOps[name] = topIt.Value.(*userop.UserOperation)
-	state.State.Save()
 
 }
 
@@ -228,11 +233,11 @@ func UserOpUI(usop *userop.UserOperation) {
 var SenderItem = &Item{Label: state.Sender, Details: "Set sender"}
 var NonceItem = &Item{Label: "Nonce", Details: "Set nonce", Value: uint64(0)}
 var CallDataItem = &Item{Label: "Call Data", Details: "Set Call Data"}
-var CallGasLimitItem = &Item{Label: "Call Gas Limit", Details: "Set Call Gas Limit", Value: userop.DefaultCallGasLimit}
-var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit", Value: userop.DefaultVerificationGasLimit}
-var PreVerificationGasItem = &Item{Label: "Pre Verification Gas", Details: "Set Pre Verification Gas", Value: userop.DefaultPreVerificationGas}
-var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas", Details: "Set Max Fee Per Gas", Value: userop.DefaultMaxFeePerGas}
-var MaxPriorityFeePerGasItem = &Item{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas", Value: userop.DefaultMaxPriorityFeePerGas}
+var CallGasLimitItem = &Item{Label: "Call Gas Limit", Details: "Set Call Gas Limit"}
+var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
+var PreVerificationGasItem = &Item{Label: "Pre Verification Gas", Details: "Set Pre Verification Gas"}
+var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas", Details: "Set Max Fee Per Gas"}
+var MaxPriorityFeePerGasItem = &Item{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
 var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
 var FactoryItem = &Item{Label: "Factory", Details: "Set Factory"}
 var FactoryDataItem = &Item{Label: "Factory Data", Details: "Set Factory Data"}
@@ -245,16 +250,12 @@ var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 
 func UserOpContentUI(topIt *Item) {
 	var usop *userop.UserOperation
-	if topIt.Value == nil {
-		usop = userop.NewUserOperationWithDefaults()
 
-	} else {
-		ok := false
-		usop, ok = topIt.Value.(*userop.UserOperation)
-		if !ok {
-			fmt.Println("Invalid UserOp passed to UserOpContentUI")
-			return
-		}
+	ok := false
+	usop, ok = topIt.Value.(*userop.UserOperation)
+	if !ok || usop == nil {
+		fmt.Println("Invalid UserOp passed to UserOpContentUI")
+		return
 	}
 
 	items := []*Item{
@@ -313,10 +314,8 @@ func UserOpContentUI(topIt *Item) {
 		//InputBytes(it)
 		case PaymasterDataItem.Label:
 			it, _ := GetItem(sel, items)
-			err = InputBytes(it, -1)
-			if err != nil {
-				copyValuesToUserOp(usop)
-			}
+			SetPaymasterDataUI(it)
+			copyValuesToUserOp(usop)
 		case SignatureItem.Label:
 			copyValuesToUserOp(usop)
 			ret, err := SetSignatureUI(usop)

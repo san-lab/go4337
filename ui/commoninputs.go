@@ -117,8 +117,11 @@ func InputUint(item *Item, size int) error {
 		item.Value = uint16(u)
 	case 32:
 		item.Value = uint32(u)
-	case 64:
+	case 48, 64:
 		item.Value = u
+	default:
+		return fmt.Errorf("unsupported size: %d", size)
+
 	}
 	//item.DisplayValue = fmt.Sprint(u)
 	return nil

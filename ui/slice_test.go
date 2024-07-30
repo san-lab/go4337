@@ -6,6 +6,7 @@ import (
 
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/userop"
 )
 
 func TestSlice(t *testing.T) {
@@ -24,4 +25,12 @@ func TestSlice(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(slice)
+}
+
+func TestBrokenTemplates(t *testing.T) {
+	it := &Item{Label: "Input new ECDSA private key in HEX"}
+	uop := userop.NewUserOperationWithDefaults()
+	it.Value = uop.Sender
+	fmt.Println(it.DisplayValue())
+
 }

@@ -52,13 +52,26 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			return
 		case PaymasterV7HashItem.Label:
 			ChainID := ChainIDItem.Value.(uint64)
-			EntryPoint := EntryPointItem.Value.(common.Address)
+			vafterItem := &Item{Label: "Valid After", Details: "Valid After"}
+			err := InputUint(vafterItem, 48)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			vuntilItem := &Item{Label: "Valid Until", Details: "Valid Until"}
+			err = InputUint(vuntilItem, 48)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
 			var hash []byte
-			_, hash, err = userop.GetPaymasterV7Hash(usop.Pack(), &EntryPoint, ChainID, 0, 0)
+			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, vafterItem.Value.(uint64), vuntilItem.Value.(uint64))
 			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Paymaster V7 Hash:", hex.EncodeToString(hash[:]))
+				fmt.Println("Paymaster V7 Hash Bytes:", hex.EncodeToString(bts))
 
 			}
 		case RequiredPrefundItem.Label:

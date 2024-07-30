@@ -61,13 +61,13 @@ type UserOperation struct {
 
 func NewUserOperationWithDefaults() *UserOperation {
 	uop := &UserOperation{
-		CallGasLimit:                  100000,
-		VerificationGasLimit:          100000,
-		PreVerificationGas:            10000,
-		MaxFeePerGas:                  100,
-		MaxPriorityFeePerGas:          100,
-		PaymasterVerificationGasLimit: 10000,
-		PaymasterPostOpGasLimit:       10000,
+		CallGasLimit:                  DefaultCallGasLimit,
+		VerificationGasLimit:          DefaultVerificationGasLimit,
+		PreVerificationGas:            DefaultPreVerificationGas,
+		MaxFeePerGas:                  DefaultMaxFeePerGas,
+		MaxPriorityFeePerGas:          DefaultMaxPriorityFeePerGas,
+		PaymasterVerificationGasLimit: DefaultPaymasterVerificationGasLimit,
+		PaymasterPostOpGasLimit:       DefaultPaymasterPostOpGasLimit,
 	}
 	return uop
 }
@@ -91,12 +91,13 @@ type UsOpJsonAdapter struct {
 }
 
 func (u UserOperation) MarshalJSON() ([]byte, error) {
-	if u.Sender == nil {
-		return nil, fmt.Errorf("Sender is nil")
+	var senderstring = ""
+	if u.Sender != nil {
+		senderstring = u.Sender.Hex()
 	}
 	return json.Marshal(
 		&UsOpJsonAdapter{
-			Sender:                        u.Sender.Hex(),
+			Sender:                        senderstring,
 			Nonce:                         u.Nonce,
 			Factory:                       JSAddressHex(u.Factory),
 			FactoryData:                   BytesToString(u.FactoryData),
@@ -271,13 +272,13 @@ func (u *PackedUserOp) MarshalRemix() string {
   paymasterPostOpGasLimit: 0,
 */
 var (
-	DefaultCallGasLimit                  = uint64(4000000)
+	DefaultCallGasLimit                  = uint64(2000000)
 	DefaultVerificationGasLimit          = uint64(200000)
 	DefaultPreVerificationGas            = uint64(20000)
 	DefaultMaxFeePerGas                  = uint64(1000)
 	DefaultMaxPriorityFeePerGas          = uint64(1000000)
-	DefaultPaymasterVerificationGasLimit = uint64(0)
-	DefaultPaymasterPostOpGasLimit       = uint64(0)
+	DefaultPaymasterVerificationGasLimit = uint64(1000)
+	DefaultPaymasterPostOpGasLimit       = uint64(100)
 )
 
 func (u *UserOperation) Pack() *PackedUserOp {

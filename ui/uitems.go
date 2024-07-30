@@ -23,8 +23,13 @@ func (i *Item) DisplayValue() string {
 	if i.Value == nil {
 		return ""
 	}
+
+	if reflect.ValueOf(i.Value).IsZero() {
+		return ""
+	}
 	var derefv interface{}
 	//Dereference, if it is a pointer
+
 	if reflect.TypeOf(i.Value).Kind() == reflect.Ptr {
 		derefv = reflect.ValueOf(i.Value).Elem().Interface()
 	} else {

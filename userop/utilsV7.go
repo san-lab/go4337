@@ -30,7 +30,7 @@ const PAYMASTER_VALIDATION_GAS_OFFSET = 20
 const PAYMASTER_POSTOP_GAS_OFFSET = 36
 const PAYMASTER_DATA_OFFSET = 52
 
-func GetPaymasterV7Hash(puop *PackedUserOp, paymaster *common.Address, chainId, validUntil, validAfter uint64) ([]byte, []byte, error) {
+func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validUntil, validAfter uint64) ([]byte, []byte, error) {
 	//can't use userOp.hash(), since it contains also the paymasterAndData itself.
 	/*
 	   address sender = userOp.getSender();
@@ -55,9 +55,7 @@ func GetPaymasterV7Hash(puop *PackedUserOp, paymaster *common.Address, chainId, 
 	if len(puop.PaymasterAndData) < PAYMASTER_DATA_OFFSET {
 		return nil, nil, fmt.Errorf("PaymasterAndData too short")
 	}
-	if paymaster == nil {
-		return nil, nil, fmt.Errorf("Paymaster address is nil")
-	}
+	paymaster := common.BytesToAddress(puop.PaymasterAndData[:20])
 	args := abi.Arguments{
 		{Type: addressTy}, //sender
 		{Type: uint256Ty}, //nonce
@@ -83,7 +81,7 @@ func GetPaymasterV7Hash(puop *PackedUserOp, paymaster *common.Address, chainId, 
 		big.NewInt(int64(puop.PreVerificationGas)),
 		puop.GasFees,
 		big.NewInt(int64(chainId)),
-		*paymaster,
+		paymaster,
 		big.NewInt(int64(validUntil)),
 		big.NewInt(int64(validAfter)),
 	)
