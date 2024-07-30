@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -85,4 +86,22 @@ func TestFactoryCode(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(uop2.Pack().MarshalRemix())
+}
+
+func TestPaymasterHash(t *testing.T) {
+	uop := TestUserOp
+	paymaster := common.HexToAddress("0xd4662c4530c9cB1d194Cc2e8c11A13413148Fc6F")
+	uop.Paymaster = &paymaster
+	bts := PackUints(uop.PaymasterVerificationGasLimit, uop.PaymasterPostOpGasLimit)
+	uop.PaymasterData = bts[0:32]
+
+	hashbytes, hash, err := GetPaymasterV7Hash(uop.Pack(), uop.Paymaster, 1, 11, 0xff)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("%x\n", hash)
+
+	fmt.Println(hex.EncodeToString(hashbytes))
+
+	fmt.Println(uop.Pack().MarshalRemix())
 }

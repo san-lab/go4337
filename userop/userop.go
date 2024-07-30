@@ -59,6 +59,19 @@ type UserOperation struct {
 	Signature []byte `json:"signature"`
 }
 
+func NewUserOperationWithDefaults() *UserOperation {
+	uop := &UserOperation{
+		CallGasLimit:                  100000,
+		VerificationGasLimit:          100000,
+		PreVerificationGas:            10000,
+		MaxFeePerGas:                  100,
+		MaxPriorityFeePerGas:          100,
+		PaymasterVerificationGasLimit: 10000,
+		PaymasterPostOpGasLimit:       10000,
+	}
+	return uop
+}
+
 type UsOpJsonAdapter struct {
 	Sender                        string `json:"sender"`
 	Nonce                         uint64 `json:"nonce"`

@@ -162,10 +162,10 @@ func (st *StateStruct) Load() error {
 			fmt.Println("Invalid signer data:", raw)
 			continue
 		}
-		fmt.Println("Unmarshaling signer:", terms[0])
+		//fmt.Println("Unmarshaling signer:", terms[0])
 		su, ok := Unmarshalers[terms[0]]
 		if !ok {
-			fmt.Println("Unknown signer type:", terms[0])
+			//fmt.Println("Unknown signer type:", terms[0])
 			UnmarshalledSignersBuffer[terms[0]] = append(UnmarshalledSignersBuffer[terms[0]], []byte(terms[1])) //Store for later
 			continue
 		}

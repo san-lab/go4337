@@ -179,6 +179,7 @@ func CreateUserOpUI(topIt *Item) {
 		return
 	}
 	topIt.Label = name
+	topIt.Value = nil
 	UserOpContentUI(topIt)
 	state.State.UserOps[name] = topIt.Value.(*userop.UserOperation)
 	state.State.Save()
@@ -245,7 +246,8 @@ var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 func UserOpContentUI(topIt *Item) {
 	var usop *userop.UserOperation
 	if topIt.Value == nil {
-		usop = new(userop.UserOperation)
+		usop = userop.NewUserOperationWithDefaults()
+
 	} else {
 		ok := false
 		usop, ok = topIt.Value.(*userop.UserOperation)
@@ -305,7 +307,8 @@ func UserOpContentUI(topIt *Item) {
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				SetCallDataValue(caldat, it)
+				it.Value = caldat
+
 			}
 		//InputBytes(it)
 		case PaymasterDataItem.Label:
@@ -341,32 +344,21 @@ func UserOpContentUI(topIt *Item) {
 }
 
 func copyFromUseropToItems(uop *userop.UserOperation) {
-	if uop.Sender != nil {
-		SenderItem.Value = uop.Sender
-
-	}
+	SenderItem.Value = uop.Sender
 	NonceItem.Value = uop.Nonce
-	if uop.CallData != nil {
-		SetCallDataValue(uop.CallData, CallDataItem)
-	}
+	CallDataItem.Value = uop.CallData
+	FactoryItem.Value = uop.Factory
+	FactoryDataItem.Value = uop.FactoryData
 	CallGasLimitItem.Value = uop.CallGasLimit
 	VerificationGasLimitItem.Value = uop.VerificationGasLimit
 	PreVerificationGasItem.Value = uop.PreVerificationGas
 	MaxFeePerGasItem.Value = uop.MaxFeePerGas
 	MaxPriorityFeePerGasItem.Value = uop.MaxPriorityFeePerGas
-	if uop.Paymaster != nil {
-		PaymasterItem.Value = uop.Paymaster
-
-	}
-	if uop.PaymasterData != nil {
-		SetCallDataValue(uop.PaymasterData, PaymasterDataItem)
-	}
+	PaymasterItem.Value = uop.Paymaster
+	PaymasterDataItem.Value = uop.PaymasterData
 	PaymasterVerificationGasLimitItem.Value = uop.PaymasterVerificationGasLimit
 	PaymasterPostOpGasLimitItem.Value = uop.PaymasterPostOpGasLimit
-	//if uop.Signature != nil {
 	SignatureItem.Value = uop.Signature
-
-	//}
 }
 
 func copyValuesToUserOp(uop *userop.UserOperation) {
@@ -399,12 +391,6 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	if SignatureItem.Value != nil {
 		uop.Signature = SignatureItem.Value.([]byte)
 	}
-}
-
-func SetCallDataValue(data []byte, item *Item) {
-	item.Value = data
-	//item.Details = fmt.Sprintf("Call Data: %s", hex.EncodeToString(data))
-
 }
 
 var ExportAsUOPJSONItem = &Item{Label: "Export as JSON", Details: "Export as JSON"}

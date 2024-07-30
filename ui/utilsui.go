@@ -11,10 +11,12 @@ import (
 
 var RequiredPrefundItem = &Item{Label: "Required Prefund", Details: "Get the required prefund for the user operation"}
 
+var PaymasterV7HashItem = &Item{Label: "Paymaster V7 Hash", Details: "Get the hash as cheked in VerifyingPaymasterV7"}
+
 func UtilsV7UI(usop *userop.UserOperation) {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{PreHashV7Item, HashV7Item, RequiredPrefundItem, Back},
+		Items:     []*Item{PreHashV7Item, HashV7Item, PaymasterV7HashItem, RequiredPrefundItem, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -48,6 +50,17 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			}
 
 			return
+		case PaymasterV7HashItem.Label:
+			ChainID := ChainIDItem.Value.(uint64)
+			EntryPoint := EntryPointItem.Value.(common.Address)
+			var hash []byte
+			_, hash, err = userop.GetPaymasterV7Hash(usop.Pack(), &EntryPoint, ChainID, 0, 0)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Paymaster V7 Hash:", hex.EncodeToString(hash[:]))
+
+			}
 		case RequiredPrefundItem.Label:
 			val := fmt.Sprint(usop.GetRequiredPrefund())
 			if len(val) > 18 {

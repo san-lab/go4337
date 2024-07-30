@@ -39,7 +39,7 @@ func EntryPointUI() {
 		entrypoint.E6Address = common.HexToAddress(entrypoint.EntryPointAddressV6)
 		EntryPointItem.Value = entrypoint.E6Address
 	case EntryPointV7Item.Label:
-		entrypoint.E6Address = common.HexToAddress(entrypoint.EntryPointAddressV7)
+		entrypoint.E7Address = common.HexToAddress(entrypoint.EntryPointAddressV7)
 		EntryPointItem.Value = entrypoint.E7Address
 	case CustomEntryPointItem.Label:
 		CustomEntryPointUI()

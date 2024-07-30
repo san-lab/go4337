@@ -12,6 +12,7 @@ import (
 var addressTy, _ = abi.NewType("address", "", nil)
 var uint256Ty, _ = abi.NewType("uint256", "", nil)
 var uint64Ty, _ = abi.NewType("uint64", "", nil)
+var uint48Ty, _ = abi.NewType("uint48", "", nil)
 var bytesTy, _ = abi.NewType("bytes", "", nil)
 var bytes32Ty, _ = abi.NewType("bytes32", "", nil)
 

@@ -94,7 +94,8 @@ func InputBigInt(item *Item) error {
 
 func InputUint(item *Item, size int) error {
 	prompt := promptui.Prompt{
-		Label: item.Label,
+		Label:   item.Label,
+		Default: fmt.Sprint(item.Value),
 	}
 	s, err := prompt.Run()
 	if err != nil {
@@ -195,7 +196,8 @@ func InputBool(item *Item) error {
 
 func InputString(item *Item) error {
 	prompt := promptui.Prompt{
-		Label: item.Label,
+		Label:   item.Label,
+		Default: fmt.Sprint(item.Value),
 	}
 	s, err := prompt.Run()
 	if err != nil {
