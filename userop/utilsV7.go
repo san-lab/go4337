@@ -30,7 +30,7 @@ const PAYMASTER_VALIDATION_GAS_OFFSET = 20
 const PAYMASTER_POSTOP_GAS_OFFSET = 36
 const PAYMASTER_DATA_OFFSET = 52
 
-func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validUntil, validAfter uint64) ([]byte, []byte, error) {
+func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validAfter, validUntil uint64) ([]byte, []byte, error) {
 	//can't use userOp.hash(), since it contains also the paymasterAndData itself.
 	/*
 	   address sender = userOp.getSender();

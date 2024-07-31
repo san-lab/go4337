@@ -42,7 +42,7 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			ChainID := ChainIDItem.Value.(uint64)
 			EntryPoint := EntryPointItem.Value.(common.Address)
 			var hash [32]byte
-			hash, err = userop.GetUserOpHash(usop.Pack(), EntryPoint, ChainID)
+			hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -66,7 +66,7 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			}
 
 			var hash []byte
-			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, vafterItem.Value.(uint64), vuntilItem.Value.(uint64))
+			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, vuntilItem.Value.(uint64), vafterItem.Value.(uint64))
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -116,7 +116,7 @@ func UtilsV6UI(usop *userop.UserOperation) {
 			ChainID := ChainIDItem.Value.(uint64)
 			EntryPoint := EntryPointItem.Value.(common.Address)
 			var hash [32]byte
-			hash, err = userop.GetUserOpHash(usop.Pack(), EntryPoint, ChainID)
+			hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
 			if err != nil {
 				fmt.Println(err)
 			} else {

@@ -89,7 +89,7 @@ func GetUsOpLibPrehashV6(userOp *UserOperation) (hash [32]byte, err error) {
 /*
 keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
 */
-func GetUserOpHash(userOp *PackedUserOp, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
+func GetUserOpHashV7(userOp *PackedUserOp, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
 
 	enc2, err := GetUserOpBytesToHash(userOp, entryPoint, chainid)
 	if err != nil {

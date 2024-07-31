@@ -4,22 +4,23 @@ import (
 	"fmt"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/userop"
 )
 
 // top selection menu
 var InputAsHexItem = &Item{Label: "Input as HEX", Details: "Input directly as HEX"}
-var EthInfVPMItem = &Item{Label: "EthInfinitism ValidatingPaymaster"}
+var EthInfVPMV7Item = &Item{Label: "EthInfinitism ValidatingPaymaster (V7)"}
 
 // ValidatingPaymaster specific menu
 var AfterItem = &Item{Label: "Valid After", Details: "After this block time", Value: 0}
 var UntilItem = &Item{Label: "Valid Until", Details: "Until this block time", Value: 0}
 var PaymasterSignatureItem = &Item{Label: "Paymaster Signature", Details: "Paymaster Signature", Value: []byte{}}
 
-func SetPaymasterDataUI(it *Item) error {
+func SetPaymasterDataUI(it *Item, usop *userop.UserOperation) error {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{InputAsHexItem, EthInfVPMItem, Back},
+		Items:     []*Item{InputAsHexItem, EthInfVPMV7Item, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -40,9 +41,9 @@ func SetPaymasterDataUI(it *Item) error {
 			it.DisplayValueString = ""
 			return nil
 
-		case EthInfVPMItem.Label:
+		case EthInfVPMV7Item.Label:
 			it.DisplayValueString = ""
-			return SetEthInfVPMDataUI(it)
+			return SetEthInfVPMV7DataUI(it, usop)
 		default:
 			fmt.Println("Invalid selection")
 			return nil
@@ -51,10 +52,10 @@ func SetPaymasterDataUI(it *Item) error {
 
 }
 
-func SetEthInfVPMDataUI(it *Item) error {
+func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 	prompt := promptui.Select{
 		Label:     "Set Validation Parameters",
-		Items:     []*Item{AfterItem, UntilItem, PaymasterSignatureItem, Set, Back},
+		Items:     []*Item{ChainIDItem, AfterItem, UntilItem, SignerItem, PaymasterSignatureItem, Set, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -66,21 +67,20 @@ func SetEthInfVPMDataUI(it *Item) error {
 		switch sel {
 		case Back.Label:
 			return nil
+		case SignerItem.Label:
+			SignerUI()
 
 		case AfterItem.Label:
 			err := InputUint(AfterItem, 48)
 			if err != nil {
-				return err
+				fmt.Println(err)
 			}
 
 		case UntilItem.Label:
 			err := InputUint(UntilItem, 48)
 			if err != nil {
-				return err
+				fmt.Println(err)
 			}
-
-		case PaymasterSignatureItem.Label:
-			PaymasterSignatureItem.Value = make([]byte, 64)
 
 		case Set.Label:
 			pmd := []byte{}
@@ -103,10 +103,30 @@ func SetEthInfVPMDataUI(it *Item) error {
 			}
 
 			return nil
-		default:
-			fmt.Println("Invalid selection")
-			return nil
+
 		}
+
+		chainid := ChainIDItem.Value.(uint64)
+		after, oka := AfterItem.Value.(uint64)
+		until, oku := UntilItem.Value.(uint64)
+		if oka && oku {
+
+			_, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), chainid, until, after)
+			if err != nil {
+				return fmt.Errorf("error hashing for paymaster: %v", err)
+			}
+			signer, ok := SignerItem.Value.(signer.Signer)
+
+			if ok {
+				sig, err := signer.Sign(hash)
+				if err != nil {
+					return fmt.Errorf("error signing for paymaster: %v", err)
+				}
+				PaymasterSignatureItem.Value = sig
+			}
+
+		}
+
 	}
 
 }

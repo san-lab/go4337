@@ -314,7 +314,7 @@ func UserOpContentUI(topIt *Item) {
 		//InputBytes(it)
 		case PaymasterDataItem.Label:
 			it, _ := GetItem(sel, items)
-			SetPaymasterDataUI(it)
+			SetPaymasterDataUI(it, usop)
 			copyValuesToUserOp(usop)
 		case SignatureItem.Label:
 			copyValuesToUserOp(usop)

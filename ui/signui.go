@@ -78,7 +78,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 				fmt.Println("Signing using v6 hashes")
 			} else {
 
-				hash, err = userop.GetUserOpHash(usop.Pack(), EntryPoint, ChainID)
+				hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
 				fmt.Println("Signing using v7 hashes")
 			}
 			if err != nil {
