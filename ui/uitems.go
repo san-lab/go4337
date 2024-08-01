@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
 )
 
@@ -24,7 +25,14 @@ func (i *Item) DisplayValue() string {
 		return ""
 	}
 
+	if str, ok := (i.Value).(fmt.Stringer); ok {
+		return ShortString(str.String(), 50)
+	}
+
 	if reflect.ValueOf(i.Value).IsZero() {
+		if reflect.TypeOf(i.Value).ConvertibleTo(reflect.TypeOf(0)) {
+			return "0"
+		}
 		return ""
 	}
 	var derefv interface{}
@@ -47,6 +55,9 @@ func (i *Item) DisplayValue() string {
 	case state.MethodCall:
 		method := derefv.(state.MethodCall)
 		return method.MethodName
+	case signer.Signer:
+		signer := derefv.(signer.Signer)
+		return signer.String()
 	default:
 		return ShortString(fmt.Sprint(derefv), 50)
 	}

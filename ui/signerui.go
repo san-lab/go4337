@@ -9,7 +9,7 @@ import (
 
 var AddSignerItem = &Item{Label: "Add Signer", Details: "Add a new signer"}
 
-func SignerUI() {
+func SignerUI(signerItem *Item) {
 	for {
 		items := []*Item{}
 		for _, s := range state.State.Signers {
@@ -35,7 +35,7 @@ func SignerUI() {
 			AddSignerUI()
 		default:
 			if i < len(state.State.Signers) {
-				SignerItem.Value = state.State.Signers[i]
+				signerItem.Value = state.State.Signers[i]
 				//SignerItem.DisplayValue = state.State.Signers[i].String()
 				return
 			}

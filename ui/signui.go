@@ -46,7 +46,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 		case Back.Label:
 			return
 		case ChainIDItem.Label:
-			err = InputUint(ChainIDItem, 64)
+			_, err = InputUint(ChainIDItem, 64)
 			if err != nil {
 				return
 			}
@@ -62,7 +62,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			UtilsV7UI(usop)
 
 		case SignerItem.Label:
-			SignerUI()
+			SignerUI(SignerItem)
 		case SignItem.Label:
 			signer, ok := SignerItem.Value.(signer.Signer)
 			if !ok {

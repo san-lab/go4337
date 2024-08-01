@@ -496,7 +496,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 			return InputBigInt(item)
 		case 64, 32, 16, 8:
 			it := &Item{Label: item.Label}
-			err := InputUint(it, input.Type.Size)
+			_, err := InputUint(it, input.Type.Size)
 			if err != nil {
 				return err
 			}

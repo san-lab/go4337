@@ -92,14 +92,14 @@ func InputBigInt(item *Item) error {
 	return nil
 }
 
-func InputUint(item *Item, size int) error {
+func InputUint(item *Item, size int) (uint64, error) {
 	prompt := promptui.Prompt{
 		Label:   item.Label,
 		Default: fmt.Sprint(item.Value),
 	}
 	s, err := prompt.Run()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	base := 10
 	if strings.HasPrefix(s, "0x") {
@@ -108,7 +108,7 @@ func InputUint(item *Item, size int) error {
 	}
 	u, err := strconv.ParseUint(s, base, size)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	switch size {
 	case 8:
@@ -120,11 +120,11 @@ func InputUint(item *Item, size int) error {
 	case 48, 64:
 		item.Value = u
 	default:
-		return fmt.Errorf("unsupported size: %d", size)
+		return 0, fmt.Errorf("unsupported size: %d", size)
 
 	}
 	//item.DisplayValue = fmt.Sprint(u)
-	return nil
+	return u, nil
 }
 
 func InputNewStringUI(item *Item) error {

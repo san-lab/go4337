@@ -53,20 +53,20 @@ func UtilsV7UI(usop *userop.UserOperation) {
 		case PaymasterV7HashItem.Label:
 			ChainID := ChainIDItem.Value.(uint64)
 			vafterItem := &Item{Label: "Valid After", Details: "Valid After"}
-			err := InputUint(vafterItem, 48)
+			a, err := InputUint(vafterItem, 48)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 			vuntilItem := &Item{Label: "Valid Until", Details: "Valid Until"}
-			err = InputUint(vuntilItem, 48)
+			u, err := InputUint(vuntilItem, 48)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
 			var hash []byte
-			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, vuntilItem.Value.(uint64), vafterItem.Value.(uint64))
+			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, a, u)
 			if err != nil {
 				fmt.Println(err)
 			} else {

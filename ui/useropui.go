@@ -298,10 +298,11 @@ func UserOpContentUI(topIt *Item) {
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
-			err = InputUint(it, 64)
+			nonce, err := InputUint(it, 64)
 			if err != nil {
-				copyValuesToUserOp(usop)
+				usop.Nonce = nonce
 			}
+			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
 			caldat, err := PotentiallyRecursiveCallDataUI()
@@ -309,13 +310,18 @@ func UserOpContentUI(topIt *Item) {
 				fmt.Println(err)
 			} else {
 				it.Value = caldat
+				usop.CallData = caldat
 
 			}
 		//InputBytes(it)
 		case PaymasterDataItem.Label:
 			it, _ := GetItem(sel, items)
 			SetPaymasterDataUI(it, usop)
-			copyValuesToUserOp(usop)
+			if it.Value != nil {
+				usop.PaymasterData = it.Value.([]byte)
+			}
+
+			//copyValuesToUserOp(usop)
 		case SignatureItem.Label:
 			copyValuesToUserOp(usop)
 			ret, err := SetSignatureUI(usop)
@@ -333,6 +339,7 @@ func UserOpContentUI(topIt *Item) {
 			if ok {
 
 				it.Value = addr
+				usop.Sender = SenderItem.Value.(*common.Address)
 
 			}
 		default:

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/signer"
@@ -22,6 +23,7 @@ func SetPaymasterDataUI(it *Item, usop *userop.UserOperation) error {
 		Label:     "Select an option",
 		Items:     []*Item{InputAsHexItem, EthInfVPMV7Item, Back},
 		Templates: ItemTemplate,
+		Size:      10,
 	}
 
 	for {
@@ -43,6 +45,7 @@ func SetPaymasterDataUI(it *Item, usop *userop.UserOperation) error {
 
 		case EthInfVPMV7Item.Label:
 			it.DisplayValueString = ""
+			copyValuesToUserOp(usop)
 			return SetEthInfVPMV7DataUI(it, usop)
 		default:
 			fmt.Println("Invalid selection")
@@ -52,14 +55,24 @@ func SetPaymasterDataUI(it *Item, usop *userop.UserOperation) error {
 
 }
 
+var PaymasterSignerItem = &Item{Label: "Paymaster Signer", Details: "Signer for Paymaster"}
+
 func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 	prompt := promptui.Select{
 		Label:     "Set Validation Parameters",
-		Items:     []*Item{ChainIDItem, AfterItem, UntilItem, SignerItem, PaymasterSignatureItem, Set, Back},
+		Items:     []*Item{ChainIDItem, AfterItem, UntilItem, PaymasterSignerItem, PaymasterSignatureItem, Set, Back},
 		Templates: ItemTemplate,
+		Size:      10,
 	}
-
+	var after, until uint64
+	if len(usop.PaymasterData) > 64 {
+		a := new(big.Int).SetBytes(usop.PaymasterData[:32])
+		b := new(big.Int).SetBytes(usop.PaymasterData[32:64])
+		AfterItem.Value = a.Uint64()
+		UntilItem.Value = b.Uint64()
+	}
 	for {
+
 		_, sel, err := prompt.Run()
 		if err != nil {
 			return err
@@ -67,17 +80,17 @@ func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 		switch sel {
 		case Back.Label:
 			return nil
-		case SignerItem.Label:
-			SignerUI()
+		case PaymasterSignerItem.Label:
+			SignerUI(PaymasterSignerItem)
 
 		case AfterItem.Label:
-			err := InputUint(AfterItem, 48)
+			after, err = InputUint(AfterItem, 48)
 			if err != nil {
 				fmt.Println(err)
 			}
 
 		case UntilItem.Label:
-			err := InputUint(UntilItem, 48)
+			until, err = InputUint(UntilItem, 48)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -85,14 +98,11 @@ func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 		case Set.Label:
 			pmd := []byte{}
 
-			after, oka := AfterItem.Value.(uint64)
-			until, oku := UntilItem.Value.(uint64)
-			if oka && oku {
-				a := userop.PackUints(0, after)
-				u := userop.PackUints(0, until)
-				pmd = append(pmd, a[:]...)
-				pmd = append(pmd, u[:]...)
-			}
+			a := userop.PackUints(0, after)
+			u := userop.PackUints(0, until)
+			pmd = append(pmd, a[:]...)
+			pmd = append(pmd, u[:]...)
+
 			sig, ok := PaymasterSignatureItem.Value.([]byte)
 			if ok {
 				pmd = append(pmd, sig...)
@@ -107,24 +117,21 @@ func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 		}
 
 		chainid := ChainIDItem.Value.(uint64)
-		after, oka := AfterItem.Value.(uint64)
-		until, oku := UntilItem.Value.(uint64)
-		if oka && oku {
 
-			_, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), chainid, until, after)
+		_, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), chainid, until, after)
+		if err != nil {
+			return fmt.Errorf("error hashing for paymaster: %v", err)
+		}
+		signer, ok := PaymasterSignerItem.Value.(signer.Signer)
+
+		if ok {
+			sig, err := signer.Sign(hash)
 			if err != nil {
-				return fmt.Errorf("error hashing for paymaster: %v", err)
+				return fmt.Errorf("error signing for paymaster: %v", err)
 			}
-			signer, ok := SignerItem.Value.(signer.Signer)
-
-			if ok {
-				sig, err := signer.Sign(hash)
-				if err != nil {
-					return fmt.Errorf("error signing for paymaster: %v", err)
-				}
-				PaymasterSignatureItem.Value = sig
-			}
-
+			PaymasterSignatureItem.Value = sig
+		} else {
+			fmt.Println("No signer set")
 		}
 
 	}

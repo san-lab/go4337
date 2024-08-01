@@ -290,7 +290,7 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 		initCode = append(u.Factory.Bytes(), u.FactoryData...)
 	} else {
-		fmt.Println("Factory is nil")
+		//fmt.Println("Factory is nil")
 	}
 	paymasterData := []byte{}
 	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {

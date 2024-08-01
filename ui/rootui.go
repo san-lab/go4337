@@ -53,7 +53,7 @@ func RootUI() {
 		case UserOpItem.Label:
 			TopUserOpUI(nil)
 		case SignerItem.Label:
-			SignerUI()
+			SignerUI(SignerItem)
 		case AbisItem.Label:
 			AbisUI(nil)
 		case EntryPointItem.Label:
@@ -91,7 +91,7 @@ func SettingsUI() {
 		case PaymasterItem.Label:
 			PaymasterUI()
 		case SignerItem.Label:
-			SignerUI()
+			SignerUI(SignerItem)
 		case ChainIDItem.Label:
 			InputUint(ChainIDItem, 64)
 			state.State.ChainID = ChainIDItem.Value.(uint64)
