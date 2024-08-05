@@ -122,12 +122,13 @@ var DeleteAbiItem = &Item{Label: "Delete ABI", Details: "Delete this ABI"}
 var EncodeAbiItem = &Item{Label: "Encode ABI", Details: "Encode this ABI"}
 
 var SelectMethodItem = &Item{Label: "Select a Method"}
+var ConstructorItem = &Item{Label: "Constructor", Details: "Encode constructor parameters"}
 var MethodItem = &Item{Label: "Method", Details: "Manage method"}
 
 func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return error?
 	var label string
 	var proceed bool
-	_, _, err := state.GetABI(contract)
+	abi, _, err := state.GetABI(contract)
 	if err != nil {
 		label = fmt.Sprintf("Invalid ABI: %v", err)
 		proceed = false
@@ -143,7 +144,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 			MethodItem.Value = nil
 			MethodItem.DisplayValueString = ""
 		}
-		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, Back)
+		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, ConstructorItem, Back)
 		// Create a new select prompt
 		prompt := promptui.Select{
 			Label:     label,
@@ -171,6 +172,8 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 				if MethodUI(callbackItem) {
 					return true
 				}
+			case ConstructorItem.Label:
+				EncodeConstructorParamsUI(ConstructorItem, abi)
 
 			default:
 				fmt.Println("Not implemented yet:", sel)
@@ -537,4 +540,72 @@ func DisplayInputsTypes(inputs abi.Arguments) string {
 		types = append(types, input.Type.String())
 	}
 	return "(" + strings.Join(types, ", ") + ")"
+}
+
+func EncodeConstructorParamsUI(item *Item, mabi *abi.ABI) {
+	if mabi == nil {
+		fmt.Println("No ABI")
+		return
+	}
+	constr := mabi.Constructor
+	params := constr.Inputs
+	values := make([]interface{}, len(params))
+	for {
+		allSet := true
+		items := []*Item{}
+
+		for i, input := range constr.Inputs {
+			allSet = allSet && values[i] != nil
+			items = append(items, &Item{Label: input.Name, Details: input.Type.String(), Value: input})
+		}
+		if allSet {
+			items = append(items, &Item{Label: "Encode", Details: "Encode these parameters"})
+		}
+		items = append(items, Back)
+		// Create a new select prompt
+		prompt := promptui.Select{
+			Label:     "Set parameters of the constructor",
+			Items:     items,
+			Templates: ItemTemplate,
+			Size:      10,
+		}
+
+		i, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch sel {
+		case Back.Label:
+			return
+		case "Encode":
+			data, err := userop.EncodeWithParams(mabi, "", values...)
+			if err != nil {
+				fmt.Println("Errrrorrr!!!!!", err)
+				continue
+			}
+			fmt.Printf("Encoded call: 0x%x\n", data)
+		default:
+			it, ok := GetItem(sel, items)
+			if ok {
+				arg, okk := it.Value.(abi.Argument)
+				if !okk {
+					fmt.Println("Not an ABI argument")
+					continue
+				}
+				it.Value = params[i]
+				err := SetParamUI(it, &arg)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					//t := reflect.TypeOf(v)
+					//fmt.Println("Type", t)
+
+					values[i] = it.Value
+					//it.DisplayValue = fmt.Sprint(v)
+				}
+			}
+		}
+	}
+
 }
