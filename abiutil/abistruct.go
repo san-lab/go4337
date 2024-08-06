@@ -2,6 +2,15 @@ package abiutil
 
 import "encoding/json"
 
+type SolcCombinedJsonOutput struct {
+	Contracts struct {
+		GreeterSolGreeter struct {
+			Bin string `json:"bin"`
+		} `json:"Greeter.sol:Greeter"`
+	} `json:"contracts"`
+	Version string `json:"version"`
+}
+
 type ABIStruct struct {
 	Compiler struct {
 		Version string `json:"version"`
