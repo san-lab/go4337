@@ -12,10 +12,11 @@ import (
 
 func TestIdentifyUsOpV6(t *testing.T) {
 	abistr := entrypoint.EntryPointV6AbiJson
-	abi, _, err := state.ParseABI("EntrypointV6", abistr)
+	abia, err := state.ParseABI("EntrypointV6", abistr)
 	if err != nil {
 		t.Error(err)
 	}
+	abi := abia.ABI
 	simHops, ok := abi.Methods["simulateHandleOp"]
 	if !ok {
 		t.Error("Method not found")

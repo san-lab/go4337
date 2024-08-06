@@ -2,20 +2,24 @@ package ui
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/userop"
 )
 
 func TestSlice(t *testing.T) {
 	//state.InitState()
 	abistr := abiutil.TestABI
-	abi, _, err := state.ParseABI("AcceptintSlice", abistr)
+	abia, err := state.ParseABI("AcceptintSlice", abistr)
 	if err != nil {
 
 		t.Error(err)
 	}
+	abi := abia.ABI
 	acceptintslice := abi.Methods["AcceptintSlice"]
 	arg := acceptintslice.Inputs[0]
 	slice := abiutil.MakeSliceOfType(*arg.Type.Elem, 0, 0)
@@ -24,4 +28,19 @@ func TestSlice(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println(slice)
+}
+
+func TestDisplayValue(t *testing.T) {
+	//state.InitState()
+	it := new(Item)
+	it.Value = common.Address{}
+	fmt.Println(it.DisplayValue())
+	it.Value = &it.Value
+	fmt.Println(it.DisplayValue())
+	usop := new(userop.UserOperation)
+	it.Value = usop.Sender
+	fmt.Println(it.Value == nil)
+	fmt.Println(reflect.ValueOf(it.Value).IsNil())
+	//fmt.Println(elem)
+	fmt.Println(">>" + it.DisplayValue() + "<<")
 }

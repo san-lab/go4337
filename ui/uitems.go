@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
@@ -23,6 +24,13 @@ func (i *Item) DisplayValue() string {
 	}
 	if i.Value == nil {
 		return ""
+	}
+
+	if addr, ok := (i.Value).(*common.Address); ok {
+		if addr == nil {
+			return ""
+		}
+		return addr.String()
 	}
 
 	if str, ok := (i.Value).(fmt.Stringer); ok {
@@ -96,6 +104,6 @@ var ItemTemplate = &promptui.SelectTemplates{
 	Label:    "{{ . | bold | cyan}}",
 	Inactive: `{{if eq .Label "BACK"}}{{.Label | yellow}}{{else if eq .Label "EXIT"}}{{.Label | red}}{{else if eq .Label "Set"}}{{.Label | green}}{{else}}{{ .Label }}{{with .DisplayValue}}: {{.}}{{end}}{{end}}`,
 	Active:   `{{if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if eq .Label "Set"}}{{.Label | green | bold | underline}}{{else}}{{ .Label | bold | underline }}{{with .DisplayValue}}: {{. | bold}}{{end}}{{end}}`,
-	Selected: "{{ .Label | red }}",
+	Selected: "{{. | faint}}",
 	Details:  "{{ .Details | faint }}",
 }
