@@ -13,6 +13,7 @@ func ParseABIFromString(abistr string) (ABI *abi.ABI, clearABIString string, err
 	abistr = Sanitize(abistr, -1)
 	err = json.Unmarshal([]byte(abistr), abistuct)
 	if err == nil {
+		//fmt.Println("Not the METADATA file")
 		abistr = string(abistuct.Output.Abi)
 	}
 

@@ -89,9 +89,9 @@ func AddAbiUI() {
 			return
 		}
 		abistr := string(bts)
-		_, _, err = state.ParseABI(contract, abistr)
+		_, err = state.ParseABI(contract, abistr)
 		if err != nil {
-			fmt.Printf("Error %e when parsing abi:\n>>%s<<\n", err, abistr)
+			fmt.Printf("Error %e when parsing abi:\n>>%s<<\n", err, ShortString(abistr, 100))
 		}
 	default:
 		fmt.Println("Not implemented yet:", sel)
@@ -111,7 +111,7 @@ func AddAbiManuallyUI() {
 		fmt.Println(err)
 		return
 	}
-	_, _, err = state.ParseABI(contract, abistr)
+	_, err = state.ParseABI(contract, abistr)
 	if err != nil {
 		fmt.Printf("Error %e when parsing abi:\n>>%s<<\n", err, abistr)
 	}
@@ -124,17 +124,22 @@ var EncodeAbiItem = &Item{Label: "Encode ABI", Details: "Encode this ABI"}
 var SelectMethodItem = &Item{Label: "Select a Method"}
 var ConstructorItem = &Item{Label: "Constructor", Details: "Encode constructor parameters"}
 var MethodItem = &Item{Label: "Method", Details: "Manage method"}
+var DeployBytecodeItem = &Item{Label: "Deploy Bytecode", Details: "Deploy Bytecode"}
+var ExecuteBytecodeItem = &Item{Label: "Execute Bytecode", Details: "Execute Bytecode"}
 
 func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return error?
 	var label string
 	var proceed bool
-	abi, _, err := state.GetABI(contract)
+	abiart, err := state.GetABI(contract)
 	if err != nil {
 		label = fmt.Sprintf("Invalid ABI: %v", err)
 		proceed = false
 	} else {
 		label = fmt.Sprintf("ABI for %s", contract)
 		proceed = true
+		DeployBytecodeItem.Value = abiart.DeployBytecode
+		ExecuteBytecodeItem.Value = abiart.ExecuteBytecode
+
 	}
 
 	if proceed {
@@ -144,7 +149,8 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 			MethodItem.Value = nil
 			MethodItem.DisplayValueString = ""
 		}
-		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, ConstructorItem, Back)
+		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, ConstructorItem, DeployBytecodeItem,
+			ExecuteBytecodeItem, Back)
 		// Create a new select prompt
 		prompt := promptui.Select{
 			Label:     label,
@@ -173,7 +179,27 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 					return true
 				}
 			case ConstructorItem.Label:
-				EncodeConstructorParamsUI(ConstructorItem, abi)
+				if EncodeConstructorParamsUI(callbackItem, abiart.ABI) {
+					return true
+				}
+
+			case DeployBytecodeItem.Label:
+				err := InputBytes(DeployBytecodeItem, -1)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					abiart.DeployBytecode = DeployBytecodeItem.Value.([]byte)
+				}
+				state.State.Save()
+
+			case ExecuteBytecodeItem.Label:
+				err := InputBytes(ExecuteBytecodeItem, -1)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					abiart.ExecuteBytecode = ExecuteBytecodeItem.Value.([]byte)
+				}
+				state.State.Save()
 
 			default:
 				fmt.Println("Not implemented yet:", sel)
@@ -255,11 +281,12 @@ func MethodUI(callbackItem *Item) (ret bool) {
 
 func SelectMethodUI(contractName string) {
 	items := []*Item{}
-	_, methods, err := state.GetABI(contractName)
+	abiart, err := state.GetABI(contractName)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	methods := abiart.MethodCalls
 	keys := make([]string, 0, len(methods))
 	for k := range methods {
 		keys = append(keys, k)
@@ -542,7 +569,7 @@ func DisplayInputsTypes(inputs abi.Arguments) string {
 	return "(" + strings.Join(types, ", ") + ")"
 }
 
-func EncodeConstructorParamsUI(item *Item, mabi *abi.ABI) {
+func EncodeConstructorParamsUI(callBackItem *Item, mabi *abi.ABI) (ret bool) {
 	if mabi == nil {
 		fmt.Println("No ABI")
 		return
@@ -550,16 +577,23 @@ func EncodeConstructorParamsUI(item *Item, mabi *abi.ABI) {
 	constr := mabi.Constructor
 	params := constr.Inputs
 	values := make([]interface{}, len(params))
+	encodeItem := &Item{Label: "Encode", Details: "Encode these parameters"}
+	encodeWithBytecodeItem := &Item{Label: "Encode with Bytecode", Details: "Encode with Bytecode"}
 	for {
 		allSet := true
 		items := []*Item{}
 
 		for i, input := range constr.Inputs {
 			allSet = allSet && values[i] != nil
-			items = append(items, &Item{Label: input.Name, Details: input.Type.String(), Value: input})
+			items = append(items, &Item{Label: input.Name, Details: input.Type.String(), Value: input, DisplayValueString: fmt.Sprint(values[i])})
 		}
 		if allSet {
-			items = append(items, &Item{Label: "Encode", Details: "Encode these parameters"})
+			items = append(items, encodeItem)
+			if DeployBytecodeItem.Value != nil {
+
+				items = append(items, encodeWithBytecodeItem)
+			}
+
 		}
 		items = append(items, Back)
 		// Create a new select prompt
@@ -578,13 +612,33 @@ func EncodeConstructorParamsUI(item *Item, mabi *abi.ABI) {
 		switch sel {
 		case Back.Label:
 			return
-		case "Encode":
+		case encodeItem.Label:
 			data, err := userop.EncodeWithParams(mabi, "", values...)
 			if err != nil {
 				fmt.Println("Errrrorrr!!!!!", err)
 				continue
 			}
+			if callBackItem != nil {
+				callBackItem.Value = data
+				ret = true
+				return //a bit controversial hack
+			}
 			fmt.Printf("Encoded call: 0x%x\n", data)
+		case encodeWithBytecodeItem.Label:
+			data, err := userop.EncodeWithParams(mabi, "", values...)
+			if err != nil {
+				fmt.Println("Error encoding with bytecode!", err)
+				continue
+			}
+			btc := DeployBytecodeItem.Value.([]byte)
+			data = append(btc, data...)
+			if callBackItem != nil {
+				callBackItem.Value = data
+				ret = true
+				return //a bit controversial hack
+			}
+			fmt.Printf("Encoded call with bytecode: 0x%x\n", data)
+
 		default:
 			it, ok := GetItem(sel, items)
 			if ok {

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -18,9 +19,17 @@ func InputBytes(item *Item, bytecount int) error {
 		bytelab = ""
 	}
 	label := fmt.Sprintf("%s (bytes%s)", item.Label, bytelab)
+	defval := ""
+	if item.Value != nil {
+		defbytes, ok := item.Value.([]byte)
+		if ok {
+			defval = hex.EncodeToString(defbytes)
+		}
+	}
 
 	prompt := promptui.Prompt{
-		Label: label,
+		Label:   label,
+		Default: defval,
 	}
 	s, err := prompt.Run()
 	if err != nil {

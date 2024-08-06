@@ -11,13 +11,13 @@ import (
 func TestLoadState(t *testing.T) {
 	//ecsigner.Init()
 	//state.InitState()
-	mabi, _, err := state.GetABI("Subject")
+	mabi, err := state.GetABI("Subject")
 
 	if err != nil {
 		t.Error(err)
 	}
 	methodName := "AcceptTuple"
-	guoh := mabi.Methods[methodName]
+	guoh := mabi.ABI.Methods[methodName]
 	fmt.Println(len(guoh.Inputs))
 	tup := guoh.Inputs[0]
 	fmt.Println(tup.Type)

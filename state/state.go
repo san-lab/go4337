@@ -27,7 +27,7 @@ type StateStruct struct {
 	//Default Gas Costs?
 	Signers    []signer.Signer `json:"-"`
 	SignersRaw []string
-	ABIs       map[string]string //ABI strings memorized
+	ABIArts    map[string]*AbiArtifacts //ABI strings memorized
 	UserOps    map[string]*userop.UserOperation
 	ChainID    uint64
 }
@@ -40,6 +40,14 @@ var stateMux = &sync.Mutex{}
 
 const EntrypointV6 = "EntrypointV6"
 const EntrypointV7 = "EntrypointV7"
+
+type AbiArtifacts struct {
+	ABIString       string
+	ABI             *abi.ABI `json:"-"`
+	DeployBytecode  []byte
+	ExecuteBytecode []byte
+	MethodCalls     map[string]*MethodCall `json:"-"`
+}
 
 func init() {
 	stateMux.Lock()
@@ -55,26 +63,26 @@ func init() {
 		State.AddressBooks[Paymaster] = &AddressBook{}
 		State.AddressBooks[CustomEntrypoint] = &AddressBook{}
 	}
-	if State.ABIs == nil {
-		State.ABIs = make(map[string]string)
+	if State.ABIArts == nil {
+		State.ABIArts = make(map[string]*AbiArtifacts)
 	}
 	if State.UserOps == nil {
 		State.UserOps = make(map[string]*userop.UserOperation)
 	}
 
 	//Add the Entrypoin abis
-	v6, _, err := ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
+	v6arts, err := ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		UserOpV6Type = v6.Methods["getUserOpHash"].Inputs[0].Type.GetType()
+		UserOpV6Type = v6arts.ABI.Methods["getUserOpHash"].Inputs[0].Type.GetType()
 
 	}
-	v7, _, err := ParseABI(EntrypointV7, entrypoint.EntryPointV7AbiJson)
+	v7arts, err := ParseABI(EntrypointV7, entrypoint.EntryPointV7AbiJson)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		PackedUserOpV7Type = v7.Methods["getUserOpHash"].Inputs[0].Type.GetType()
+		PackedUserOpV7Type = v7arts.ABI.Methods["getUserOpHash"].Inputs[0].Type.GetType()
 	}
 
 }
@@ -177,6 +185,10 @@ func (st *StateStruct) Load() error {
 		st.Signers = append(st.Signers, s)
 
 	}
+	for k, v := range st.ABIArts {
+		ParseABI(k, v.ABIString)
+	}
+	//fmt.Println("Loaded state", State)
 	return nil
 
 }
@@ -207,8 +219,8 @@ func Register(signerType string, add signer.AddSigner, unmarshal func([]byte) (s
 
 }
 
-var abicache = map[string]*abi.ABI{}                  //Transient cache
-var methodcache = map[string]map[string]*MethodCall{} //ContractName.MethodName
+// var abicache = map[string]*abi.ABI{}                  //Transient cache
+// var methodcache = map[string]map[string]*MethodCall{} //ContractName.MethodName
 
 type MethodCall struct {
 	MethodName string
@@ -217,53 +229,59 @@ type MethodCall struct {
 	Params     []interface{}
 }
 
-func ParseABI(contractname, abiString string) (*abi.ABI, map[string]*MethodCall, error) {
+func ParseABI(contractname, abiString string) (*AbiArtifacts, error) {
 
 	abi, clrabistr, err := abiutil.ParseABIFromString(abiString)
 	if err != nil {
 		fmt.Println(clrabistr)
-		return abi, nil, fmt.Errorf("Error parsing ABI: %w", err)
+		return nil, fmt.Errorf("Error parsing ABI: %w", err)
 	}
-	methodCalls := map[string]*MethodCall{}
-	for l, m := range abi.Methods {
-		params := make([]interface{}, len(m.Inputs))
-		methodCalls[m.Name] = &MethodCall{MethodName: l, ABIName: m.Name, ABI: abi, Params: params}
+
+	aart, ok := State.ABIArts[contractname]
+	if !ok {
+		aart = &AbiArtifacts{ABIString: clrabistr}
+
+		State.ABIArts[contractname] = aart
 	}
-	abicache[contractname] = abi
-	methodcache[contractname] = methodCalls
-	State.ABIs[contractname] = clrabistr
-	return abi, methodCalls, nil
+
+	aart.ABI = abi
+	if len(aart.MethodCalls) != len(abi.Methods) {
+		methodCalls := map[string]*MethodCall{}
+		for l, m := range abi.Methods {
+			params := make([]interface{}, len(m.Inputs))
+			methodCalls[m.Name] = &MethodCall{MethodName: l, ABIName: m.Name, ABI: abi, Params: params}
+		}
+		aart.MethodCalls = methodCalls
+	}
+
+	//abicache[contractname] = abi
+
+	return aart, nil
 }
 
 func RemoveABI(name string) error {
-	delete(State.ABIs, name)
+	delete(State.ABIArts, name)
 	return State.Save()
 }
 
-func GetABI(name string) (*abi.ABI, map[string]*MethodCall, error) {
-	abistring, ok := State.ABIs[name]
+func GetABI(name string) (*AbiArtifacts, error) {
+	aart, ok := State.ABIArts[name]
 	if !ok {
-		return nil, nil, fmt.Errorf("ABI not found")
+		return nil, fmt.Errorf("ABI not found")
 	}
-	cabi, ok := abicache[name]
-	if ok {
-		return cabi, methodcache[name], nil
-
-	}
-
-	return ParseABI(name, abistring)
+	return aart, nil
 }
 
 func ListABIs() [][]string {
 	abinames := []string{}
-	for k := range State.ABIs {
+	for k := range State.ABIArts {
 		abinames = append(abinames, k)
 	}
 	//sort the names
 	sort.Strings(abinames)
 	abis := [][]string{}
 	for _, k := range abinames {
-		abis = append(abis, []string{k, State.ABIs[k]})
+		abis = append(abis, []string{k, State.ABIArts[k].ABIString})
 	}
 	return abis
 }

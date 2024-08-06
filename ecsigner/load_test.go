@@ -1,10 +1,13 @@
 package ecsigner
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui"
 )
 
 func TestLoad(t *testing.T) {
@@ -22,5 +25,13 @@ func TestLoad(t *testing.T) {
 	if len(state.State.Signers) == 0 {
 		t.Error("No signers loaded")
 	}
+
+}
+
+func TestDisplayValue(t *testing.T) {
+	it := &ui.Item{Label: "Input new ECDSA private key in HEX"}
+
+	it.Value = ECSigner{SignerAddress: common.Address{0x01}, SignerKey: &ecdsa.PrivateKey{}}
+	fmt.Println(it.DisplayValue())
 
 }
