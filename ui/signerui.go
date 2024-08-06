@@ -8,19 +8,30 @@ import (
 )
 
 var AddSignerItem = &Item{Label: "Add Signer", Details: "Add a new signer"}
+var RemoveSignerItem = &Item{Label: "Remove Signer", Details: "Remove a signer"}
 
 func SignerUI(signerItem *Item) {
+	selectToRemove := false
+	
 	for {
+		l := len(state.State.Signers)
 		items := []*Item{}
 		for _, s := range state.State.Signers {
 			items = append(items, &Item{Label: s.String(), Details: "Signer of type " + s.Type()})
 		}
-		items = append(items, AddSignerItem, Back)
+		if !selectToRemove {
+			items = append(items, AddSignerItem)
+			if l > 0 {
+				items = append(items, RemoveSignerItem)
+			}
+		}
+		items = append(items, Back)
 
 		selec := promptui.Select{
 			Label:     "Manage Signers",
 			Items:     items,
 			Templates: ItemTemplate,
+			Size:      l + 3,
 		}
 
 		i, sel, err := selec.Run()
@@ -33,8 +44,21 @@ func SignerUI(signerItem *Item) {
 			return
 		case AddSignerItem.Label:
 			AddSignerUI()
+		case RemoveSignerItem.Label:
+			selectToRemove = true
 		default:
-			if i < len(state.State.Signers) {
+			if i < l {
+				if selectToRemove {
+					tmp := state.State.Signers[:i]
+					if i + 1 < l {
+						state.State.Signers = append(tmp, state.State.Signers[i+1:]...)  
+					} else {
+						state.State.Signers = tmp
+					}
+					state.State.Save()
+					continue
+				}	
+		
 				signerItem.Value = state.State.Signers[i]
 				//SignerItem.DisplayValue = state.State.Signers[i].String()
 				return
