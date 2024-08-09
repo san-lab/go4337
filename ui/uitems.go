@@ -15,7 +15,8 @@ type Item struct {
 	Label              string
 	Value              interface{}
 	Details            string
-	DisplayValueString string //could be a function, but I am lazy
+	DisplayValueString string // could be a function, but I am lazy
+	IsUserOp           bool   // To show them in a different color now that there are less menus
 }
 
 func (i *Item) DisplayValue() string {
@@ -89,12 +90,16 @@ func (i *Item) String() string {
 
 const unicorn = "\U0001F984"
 
+const settingsIcon = "\U0001F6E0"
+const userOpsIcon = "\U0001F464"
+const abisIcon = "\U0001F517"
+
 const (
 	EXIT = "EXIT"
 	BACK = "BACK"
 )
 
-// Rewrite the above as variable instantiation witt OK=&Item{Label: "OK"} pattern
+// Rewrite the above as variable instantiation with OK=&Item{Label: "OK"} pattern
 var OK = &Item{Label: "OK", Details: "Confirm and proceed"}
 var Back = &Item{Label: BACK, Details: "Go back to previous menu"}
 var Exit = &Item{Label: EXIT, Details: "Exit the program"}
@@ -102,8 +107,8 @@ var Set = &Item{Label: "Set", Details: "Set the value"}
 
 var ItemTemplate = &promptui.SelectTemplates{
 	Label:    "{{ . | bold | cyan}}",
-	Inactive: `{{if eq .Label "BACK"}}{{.Label | yellow}}{{else if eq .Label "EXIT"}}{{.Label | red}}{{else if eq .Label "Set"}}{{.Label | green}}{{else}}{{ .Label }}{{with .DisplayValue}}: {{.}}{{end}}{{end}}`,
-	Active:   `{{if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if eq .Label "Set"}}{{.Label | green | bold | underline}}{{else}}{{ .Label | bold | underline }}{{with .DisplayValue}}: {{. | bold}}{{end}}{{end}}`,
+	Inactive: `{{if eq .IsUserOp true}}{{.Label | magenta}}{{else if eq .Label "BACK"}}{{.Label | yellow}}{{else if eq .Label "EXIT"}}{{.Label | red}}{{else if or (eq .Label "Set") (eq .Label "Export User Operation")}}{{.Label | green}}{{else if eq .Label "Utils: hashes and signatures"}}{{.Label | faint}}{{else}}{{ .Label }}{{with .DisplayValue}}: {{.}}{{end}}{{end}}`,
+	Active:   `{{if eq .IsUserOp true}}{{.Label | magenta | bold | underline}}{{else if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if or (eq .Label "Set") (eq .Label "Export User Operation")}}{{.Label | green | bold | underline}}{{else if eq .Label "Utils: hashes and signatures"}}{{.Label | faint | bold | underline}}{{else}}{{ .Label | bold | underline }}{{with .DisplayValue}}: {{. | bold}}{{end}}{{end}}`,
 	Selected: "{{. | faint}}",
 	Details:  "{{ .Details | faint }}",
 }

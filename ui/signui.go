@@ -26,7 +26,7 @@ var PreHashV7Item = &Item{Label: "Pre Hash_v7", Details: "Hash of an encoded use
 var PreHashV6Item = &Item{Label: "Pre Hash_v6", Details: "Hash of an encoded user operation"}
 var EncodedBytesItem = &Item{Label: "Encoded Bytes", Details: "Encoded bytes of the user operation"}
 
-func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
+func UtilsUI(usop *userop.UserOperation) (sig []byte, err error) {
 	var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
 	prompt := promptui.Select{
 		Label: "Select an option",
@@ -76,7 +76,6 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 				hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
 				fmt.Println("Signing using v6 hashes")
 			} else {
-
 				hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
 				fmt.Println("Signing using v7 hashes")
 			}
@@ -160,7 +159,7 @@ func SetSignatureUI(userop *userop.UserOperation) (calldata []byte, err error) {
 			}
 			return it.Value.([]byte), err
 		case UseSignerItem.Label:
-			return GetHashUI(userop)
+			return UtilsUI(userop)
 		default:
 			fmt.Println("Unreachable reached:", sel)
 		}

@@ -13,13 +13,14 @@ func init() {
 	ApiKeyItem.Value = state.State.AlchApiKey
 }
 
+var SettingsItem = &Item{Label: settingsIcon + "  Settings", Details: "Paymasters, Signers, ChainID, ..."}
+var UserOpItem = &Item{Label: userOpsIcon + " User Operations", Details: "Manage User Operations"}
+var AbisItem = &Item{Label: abisIcon + " ABIs", Details: "Manage ABIs"}
+
 var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage Paymaster settings"}
-var UserOpItem = &Item{Label: "User Operations", Details: "Manage User Operations"}
-var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}
 var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
 var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
 var ApiKeyItem = &Item{Label: "Alchemy API Key", Details: "Set Alchemy API Key"}
-var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
 
 func RootUI() {
 	items := []*Item{
