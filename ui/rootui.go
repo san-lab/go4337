@@ -9,16 +9,16 @@ import (
 )
 
 func init() {
-
-	EntryPointItem.Value = entrypoint.E6Address
+	EntryPointItem.Value = entrypoint.E7Address
+	ApiKeyItem.Value = state.State.AlchApiKey
 }
 
-var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage paymaster settings"}
-var UserOpItem = &Item{Label: "User Operations", Details: "Manage user operations"}
+var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage Paymaster settings"}
+var UserOpItem = &Item{Label: "User Operations", Details: "Manage User Operations"}
 var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}
-var SignerItem = &Item{Label: "Signer", Details: "Manage signer settings"}
-var EntryPointItem = &Item{Label: "Entry Point", Details: "Set entry point"}
-
+var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
+var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
+var ApiKeyItem = &Item{Label: "Alchemy API Key", Details: "Set Alchemy API Key"}
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
 
 func RootUI() {
@@ -48,20 +48,12 @@ func RootUI() {
 		switch sel {
 		case SettingsItem.Label:
 			SettingsUI()
-		case PaymasterItem.Label:
-			PaymasterUI()
 		case UserOpItem.Label:
 			TopUserOpUI(nil)
-		case SignerItem.Label:
-			SignerUI(SignerItem)
 		case AbisItem.Label:
 			AbisUI(nil)
-		case EntryPointItem.Label:
-			EntryPointUI()
 		case Exit.Label:
 			return
-		case ChainIDItem.Label:
-			InputUint(ChainIDItem, 64)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -74,12 +66,14 @@ func SettingsUI() {
 		SignerItem,
 		ChainIDItem,
 		EntryPointItem,
+		ApiKeyItem,
 		Back,
 	}
 	prompt := promptui.Select{
 		Label:     "Settings",
 		Items:     items,
 		Templates: ItemTemplate,
+		Size:      len(items),
 	}
 	for {
 		_, sel, err := prompt.Run()
@@ -97,6 +91,9 @@ func SettingsUI() {
 			state.State.ChainID = ChainIDItem.Value.(uint64)
 		case EntryPointItem.Label:
 			EntryPointUI()
+		case ApiKeyItem.Label:
+			InputNewStringUI(ApiKeyItem)
+			state.State.AlchApiKey = ApiKeyItem.Value.(string)
 		case Back.Label:
 			return
 		default:

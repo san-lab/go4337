@@ -34,27 +34,27 @@ type UserOperation struct {
 	// Factory address, only for new accounts
 	Factory *common.Address `json:"factory,omitempty"`
 	// Data for account factory (only if account factory exists)
-	FactoryData []byte `json:"factorydata,omitempty"`
+	FactoryData []byte `json:"factoryData,omitempty"`
 	// Data to pass to the sender during the main execution call
-	CallData []byte `json:"calldata"`
+	CallData []byte `json:"callData"`
 	// The amount of gas to allocate the main execution call
-	CallGasLimit uint64 `json:"callgaslimit"`
+	CallGasLimit uint64 `json:"callGasLimit"`
 	// The amount of gas to allocate for the verification step
-	VerificationGasLimit uint64 `json:"verificationgaslimit"`
+	VerificationGasLimit uint64 `json:"verificationGasLimit"`
 	// Extra gas to pay the bunder
-	PreVerificationGas uint64 `json:"preverificationgas"`
+	PreVerificationGas uint64 `json:"preVerificationGas"`
 	// Maximum fee per gas (similar to EIP-1559 max_fee_per_gas)
-	MaxFeePerGas uint64 `json:"maxfeepergas"`
+	MaxFeePerGas uint64 `json:"maxFeePerGas"`
 	// Maximum priority fee per gas (similar to EIP-1559 max_priority_fee_per_gas)
-	MaxPriorityFeePerGas uint64 `json:"maxpriorityfeepergas"`
+	MaxPriorityFeePerGas uint64 `json:"maxPriorityFeePerGas"`
 	// Address of paymaster contract, (or empty, if account pays for itself)
 	Paymaster *common.Address `json:"paymaster,omitempty"`
 	// The amount of gas to allocate for the paymaster validation code
-	PaymasterVerificationGasLimit uint64 `json:"paymasterverificationgaslimit"`
+	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
 	// The amount of gas to allocate for the paymaster post-operation code
-	PaymasterPostOpGasLimit uint64 `json:"paymasterpostopgaslimit"`
+	PaymasterPostOpGasLimit uint64 `json:"paymasterPostOpGasLimit"`
 	// Data for paymaster (only if paymaster exists)
-	PaymasterData []byte `json:"paymasterdata"`
+	PaymasterData []byte `json:"paymasterData"`
 	// Data passed into the account to verify authorization
 	Signature []byte `json:"signature"`
 }
@@ -76,17 +76,17 @@ type UsOpJsonAdapter struct {
 	Sender                        string `json:"sender"`
 	Nonce                         uint64 `json:"nonce"`
 	Factory                       string `json:"factory,omitempty"`
-	FactoryData                   string `json:"factorydata,omitempty"`
-	CallData                      string `json:"calldata"`
-	CallGasLimit                  uint64 `json:"callgaslimit"`
-	VerificationGasLimit          uint64 `json:"verificationgaslimit"`
-	PreVerificationGas            uint64 `json:"preverificationgas"`
-	MaxFeePerGas                  uint64 `json:"maxfeepergas"`
-	MaxPriorityFeePerGas          uint64 `json:"maxpriorityfeepergas"`
+	FactoryData                   string `json:"factoryData,omitempty"`
+	CallData                      string `json:"callData"`
+	CallGasLimit                  uint64 `json:"callGasLimit"`
+	VerificationGasLimit          uint64 `json:"verificationGasLimit"`
+	PreVerificationGas            uint64 `json:"preVerificationGas"`
+	MaxFeePerGas                  uint64 `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas          uint64 `json:"maxPriorityFeePerGas"`
 	Paymaster                     string `json:"paymaster,omitempty"`
-	PaymasterVerificationGasLimit uint64 `json:"paymasterverificationgaslimit"`
-	PaymasterPostOpGasLimit       uint64 `json:"paymasterpostopgaslimit"`
-	PaymasterData                 string `json:"paymasterdata"`
+	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       uint64 `json:"paymasterPostOpGasLimit"`
+	PaymasterData                 string `json:"paymasterData"`
 	Signature                     string `json:"signature"`
 }
 
@@ -203,6 +203,32 @@ func (u *UserOperation) MarshalValuesV6() []interface{} {
 	values[9] = source.PaymasterAndData()
 	values[10] = source.Signature
 	return values
+}
+
+func (u *UserOperation) MarshalAlchemy() string {
+	// TODO use omitempty instead!
+	json := fmt.Sprintf("{\"sender\": \"%s\", ", u.Sender.Hex())
+	json += fmt.Sprintf("\"nonce\": \"0x%x\", ", u.Nonce)
+	if u.Factory != nil && u.Factory.Cmp(common.BytesToAddress([]byte{0})) != 0 {
+		// Non zero address, otherwise skip fields
+		json += fmt.Sprintf("\"factory\": \"%s\", ", u.Factory.Hex())
+		json += fmt.Sprintf("\"factoryData\": \"0x%x\", ", u.FactoryData)
+	}
+	json += fmt.Sprintf("\"callData\": \"0x%x\", ", u.CallData)
+	json += fmt.Sprintf("\"callGasLimit\": \"0x%x\", ", u.CallGasLimit)
+	json += fmt.Sprintf("\"maxPriorityFeePerGas\": \"0x%x\", ", u.MaxPriorityFeePerGas)
+	json += fmt.Sprintf("\"maxFeePerGas\": \"0x%x\", ", u.MaxFeePerGas)
+	json += fmt.Sprintf("\"preVerificationGas\": \"0x%x\", ", u.PreVerificationGas)
+	json += fmt.Sprintf("\"verificationGasLimit\": \"0x%x\", ", u.VerificationGasLimit)
+	json += fmt.Sprintf("\"paymasterVerificationGasLimit\": \"0x%x\", ", u.PaymasterVerificationGasLimit)
+	json += fmt.Sprintf("\"paymasterPostOpGasLimit\": \"0x%x\", ", u.PaymasterPostOpGasLimit)
+	if u.Paymaster != nil && u.Paymaster.Cmp(common.BytesToAddress([]byte{0})) != 0 {
+		// Bundler answers with paymaster signature failure...
+		// json += fmt.Sprintf("paymaster: %s,", u.Paymaster.Hex())
+		// json += fmt.Sprintf("paymasterData: 0x%x,", u.PaymasterData)
+	}
+	json += fmt.Sprintf("\"signature\": \"0x%x\"}", u.Signature)
+	return json
 }
 
 // PackedUserOp is an EntryPoint viev of UserOp

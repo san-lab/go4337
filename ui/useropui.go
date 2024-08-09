@@ -402,15 +402,17 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 var ExportAsUOPJSONItem = &Item{Label: "Export as JSON", Details: "Export as JSON"}
 var ExportAsRemixTupleV7Item = &Item{Label: "Export as Remix Tuple (V7)", Details: "Export as Remix Tuple"}
 var ExportAsRemixTupleV6Item = &Item{Label: "Export as Remix Tuple (V6)", Details: "Export as Remix Tuple"}
-var ExportAsCurlToEntryItem = &Item{Label: "Export as Curl to Entrypoint", Details: "Export as Curl to Endpoint"}
+var ExportAsCurlToAlchemyItem = &Item{Label: "Export as Curl to Alchemy's Bundler", Details: "Export as Curl to Alchemy's Bundler"}
+var ExportAsCurlToEntryItem = &Item{Label: "Export as Curl to Entrypoint", Details: "Export as Curl to Entrypoint"}
 
 func ExportUserOpUI(uop *userop.UserOperation) {
-	items := []*Item{ExportAsUOPJSONItem, ExportAsRemixTupleV6Item, ExportAsRemixTupleV7Item, ExportAsCurlToEntryItem, Back}
+	items := []*Item{ExportAsUOPJSONItem, ExportAsRemixTupleV6Item, ExportAsRemixTupleV7Item, ExportAsCurlToAlchemyItem, ExportAsCurlToEntryItem, Back}
 	// Create a new select prompt
 	prompt := promptui.Select{
 		Label:     "Select an option",
 		Items:     items,
 		Templates: ItemTemplate,
+		Size:      len(items),
 	}
 	for {
 		_, sel, err := prompt.Run()
@@ -425,7 +427,13 @@ func ExportUserOpUI(uop *userop.UserOperation) {
 		case ExportAsRemixTupleV6Item.Label:
 			fmt.Println(uop.MarshalRemixV6())
 		case ExportAsRemixTupleV7Item.Label:
-			fmt.Println(uop.Pack().MarshalRemix()) //"Pack" only makes sence for v7+ userops
+			fmt.Println(uop.Pack().MarshalRemix()) // "Pack" only makes sense for v7+ userops
+		case ExportAsCurlToAlchemyItem.Label:
+			if ApiKeyItem == nil || ApiKeyItem.Value == "" {
+				fmt.Println("Set Alchemy's API Key in Settings first!")
+				continue
+			}
+			ExportAsAlchemy(uop)
 		case ExportAsCurlToEntryItem.Label:
 			ExportAsCurl(uop)
 		default:
@@ -453,4 +461,10 @@ func ExportAsJSON(uop *userop.UserOperation) {
 
 func ExportAsCurl(uop *userop.UserOperation) {
 	fmt.Println("Not implemented yet")
+}
+
+func ExportAsAlchemy(uop *userop.UserOperation) {
+	apiKey := fmt.Sprintf("%s", ApiKeyItem.Value)
+	head := `curl --request POST --url https://eth-sepolia.g.alchemy.com/v2/` + apiKey + ` --header 'accept: application/json' --data ' { "id": 1, "jsonrpc": "2.0", "method": "eth_sendUserOperation", "params":`
+	fmt.Printf("%s [ %s, \"%s\" ] }'\n", head, uop.MarshalAlchemy(), EntryPointItem.Value) // newline or the string gets cut
 }

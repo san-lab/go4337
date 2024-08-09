@@ -14,7 +14,6 @@ import (
 
 func init() {
 	ChainIDItem.Value = state.State.ChainID
-
 }
 
 var ChainIDItem = &Item{Label: "Chain ID", Details: "Set Chain ID"}

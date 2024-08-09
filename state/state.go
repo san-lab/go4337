@@ -30,6 +30,7 @@ type StateStruct struct {
 	ABIArts    map[string]*AbiArtifacts //ABI strings memorized
 	UserOps    map[string]*userop.UserOperation
 	ChainID    uint64
+	AlchApiKey string
 }
 
 //type ABIs map[string]string
@@ -70,7 +71,7 @@ func init() {
 		State.UserOps = make(map[string]*userop.UserOperation)
 	}
 
-	//Add the Entrypoin abis
+	//Add the Entrypoint abis
 	v6arts, err := ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
 	if err != nil {
 		fmt.Println(err)
