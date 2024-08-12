@@ -16,35 +16,12 @@ import (
 var SelectUserOpItem = &Item{Label: "Select User Operation", Details: "Select a user operation"}
 var CreateUserOpItem = &Item{Label: "Create User Operation", Details: "Create a new user operation"}
 var CloneUserOpItem = &Item{Label: "Clone User Operation", Details: "Clone a user operation"}
+var DeleteUserOpItem = &Item{Label: "Delete User Operation", Details: "Delete a user operation"}
 
 func TopUserOpUI(callbackItem *Item) {
-
-	usOpItem := &Item{}
-	workItem := &Item{}
-	deleteItem := &Item{}
 	for {
-		items := []*Item{}
-		if usOpItem.Value != nil {
-			if usop, ok := usOpItem.Value.(*userop.UserOperation); ok {
-				if callbackItem != nil {
-					callbackItem.Label = "Select this UserOperation"
-					callbackItem.Value = usop
-					items = append(items, callbackItem)
-				}
-
-				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
-				deleteItem = &Item{Label: "Delete User Operation: " + usOpItem.Label, Details: "Delete this user operation"}
-				items = append(items, workItem, deleteItem)
-
-			}
-		}
-		items = append(items, []*Item{
-			SelectUserOpItem,
-			CreateUserOpItem,
-			CloneUserOpItem,
-		}...)
-		//Select a userOp, create a new one, or go back
-
+		userOpItems := GetUserOpItems()
+		items := append(userOpItems, []*Item{CreateUserOpItem, CloneUserOpItem, DeleteUserOpItem}...)
 		items = append(items, Back)
 
 		// Create a new select prompt
@@ -52,7 +29,7 @@ func TopUserOpUI(callbackItem *Item) {
 			Label:     "Select an option",
 			Items:     items,
 			Templates: ItemTemplate,
-			Size:      10,
+			Size:      len(items),
 		}
 		_, sel, err := prompt.Run()
 		if err != nil {
@@ -61,30 +38,19 @@ func TopUserOpUI(callbackItem *Item) {
 		switch sel {
 		case Back.Label:
 			return
-		case SelectUserOpItem.Label:
-
-			SelectUserOpUI(usOpItem)
 		case CreateUserOpItem.Label:
-			CreateUserOpUI(usOpItem)
+			CreateUserOpUI()
 		case CloneUserOpItem.Label:
-			CloneUserOpUI(usOpItem)
-		case workItem.Label:
-			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
-			UserOpUI(usop)
-		case deleteItem.Label:
-			delete(state.State.UserOps, usOpItem.Label)
-			state.State.Save()
-			return
-		case callbackItem.Label:
-			return
+			CloneUserOpUI()
+		case DeleteUserOpItem.Label:
+			DeleteUserOpUI()
 		default:
-			fmt.Println("Not implemented yet:", sel)
+			UserOpContentUI(state.State.UserOps[sel])
 		}
 	}
-
 }
 
-func CloneUserOpUI(topIt *Item) {
+func CloneUserOpUI() {
 	it := &Item{}
 	SelectUserOpUI(it)
 	if it.Value == nil {
@@ -121,35 +87,31 @@ func CloneUserOpUI(topIt *Item) {
 		fmt.Printf("Error cloning UserOp: %v\n", err)
 		return
 	}
-
-	topIt.Value = clone
-	topIt.Label = newname
 	state.State.UserOps[newname] = clone.(*userop.UserOperation)
 	state.State.Save()
 }
 
-func SelectUserOpUI(topit *Item) {
-	items := []*Item{}
-	keys := make([]string, 0, len(state.State.UserOps))
-	for k := range state.State.UserOps {
-		keys = append(keys, k)
-	}
-	if len(keys) == 0 {
-		fmt.Println("No UserOps available")
+func DeleteUserOpUI() {
+	it := &Item{}
+	SelectUserOpUI(it)
+	if it.Value == nil {
+		fmt.Println("Nothing to delete")
 		return
 	}
-	sort.Strings(keys)
-	for _, name := range keys {
-		uop := state.State.UserOps[name]
-		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender, uop.Nonce)})
-	}
-	items = append(items, Back)
+	delete(state.State.UserOps, it.Label)
+	state.State.Save()
+}
+
+func SelectUserOpUI(topit *Item) {
+	userOpItems := GetUserOpItems()
+	items := append(userOpItems, Back)
+
 	// Create a new select prompt
 	prompt := promptui.Select{
 		Label:     "Select UserOperation",
 		Items:     items,
 		Templates: ItemTemplate,
-		Size:      10,
+		Size:      len(items),
 	}
 	_, sel, err := prompt.Run()
 	if err != nil {
@@ -164,7 +126,25 @@ func SelectUserOpUI(topit *Item) {
 
 }
 
-func CreateUserOpUI(topIt *Item) {
+func GetUserOpItems() []*Item {
+	items := []*Item{}
+	keys := make([]string, 0, len(state.State.UserOps))
+	for k := range state.State.UserOps {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		fmt.Println("No UserOps available")
+		return items
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
+		uop := state.State.UserOps[name]
+		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender, uop.Nonce), IsUserOp: true})
+	}
+	return items
+}
+
+func CreateUserOpUI() {
 	//prompt for name
 	prompt := promptui.Prompt{
 		Label: "Enter UserOp Name",
@@ -185,21 +165,18 @@ func CreateUserOpUI(topIt *Item) {
 		fmt.Println(err)
 		return
 	}
-	topIt.Label = name
-	topIt.Value = nuop
-	UserOpContentUI(topIt)
-
+	UserOpContentUI(nuop)
 }
 
 var UserOpContentItem = &Item{Label: "User Operation Content", Details: "Manage user operation content"}
 var ExportUserOpItem = &Item{Label: "Export User Operation", Details: "Select the export format"}
-var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
+var UtilsItem = &Item{Label: "Utils: hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
 
 func UserOpUI(usop *userop.UserOperation) {
 	items := []*Item{
 		UserOpContentItem,
 		ExportUserOpItem,
-		GetHashItem,
+		UtilsItem,
 		Back,
 	}
 	// Create a new select prompt
@@ -218,12 +195,12 @@ func UserOpUI(usop *userop.UserOperation) {
 		case Back.Label:
 			return
 		case UserOpContentItem.Label:
-			it := &Item{Value: usop}
-			UserOpContentUI(it)
+			// it := &Item{Value: usop}
+			UserOpContentUI(usop)
 		case ExportUserOpItem.Label:
 			ExportUserOpUI(usop)
-		case GetHashItem.Label:
-			GetHashUI(usop)
+		case UtilsItem.Label:
+			UtilsUI(usop)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -248,12 +225,8 @@ var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verification Gas
 var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 
-func UserOpContentUI(topIt *Item) {
-	var usop *userop.UserOperation
-
-	ok := false
-	usop, ok = topIt.Value.(*userop.UserOperation)
-	if !ok || usop == nil {
+func UserOpContentUI(usop *userop.UserOperation) {
+	if usop == nil {
 		fmt.Println("Invalid UserOp passed to UserOpContentUI")
 		return
 	}
@@ -274,6 +247,8 @@ func UserOpContentUI(topIt *Item) {
 		PaymasterVerificationGasLimitItem,
 		PaymasterPostOpGasLimitItem,
 		SignatureItem,
+		ExportUserOpItem,
+		UtilsItem,
 		Back,
 	}
 	copyFromUseropToItems(usop)
@@ -282,7 +257,7 @@ func UserOpContentUI(topIt *Item) {
 		Label:     "Select an option",
 		Items:     items,
 		Templates: ItemTemplate,
-		Size:      22,
+		Size:      len(items),
 	}
 	for {
 		_, sel, err := prompt.Run()
@@ -292,7 +267,7 @@ func UserOpContentUI(topIt *Item) {
 		switch sel {
 		case Back.Label:
 			copyValuesToUserOp(usop)
-			topIt.Value = usop
+			//topIt.Value = usop
 			return
 		case NonceItem.Label, CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
@@ -337,11 +312,13 @@ func UserOpContentUI(topIt *Item) {
 			it, _ := GetItem(sel, items)
 			addr, ok := AddressFromBookUI(sel)
 			if ok {
-
 				it.Value = addr
 				usop.Sender = SenderItem.Value.(*common.Address)
-
 			}
+		case ExportUserOpItem.Label:
+			ExportUserOpUI(usop)
+		case UtilsItem.Label:
+			UtilsUI(usop)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -439,6 +416,7 @@ func ExportUserOpUI(uop *userop.UserOperation) {
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
+		// return
 	}
 }
 
