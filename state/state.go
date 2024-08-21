@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"reflect"
 	"sort"
@@ -25,12 +26,13 @@ var PackedUserOpV7Type reflect.Type
 type StateStruct struct {
 	AddressBooks map[string]*AddressBook
 	//Default Gas Costs?
-	Signers    []signer.Signer `json:"-"`
-	SignersRaw []string
-	ABIArts    map[string]*AbiArtifacts //ABI strings memorized
-	UserOps    map[string]*userop.UserOperation
-	ChainID    uint64
-	AlchApiKey string
+	Signers      []signer.Signer `json:"-"`
+	SignersRaw   []string
+	ABIArts      map[string]*AbiArtifacts //ABI strings memorized
+	UserOps      map[string]*userop.UserOperation
+	ChainID      uint64
+	AlchApiKey   string
+	RPCEndpoints map[string]*RPCEndpoint
 }
 
 //type ABIs map[string]string
@@ -48,6 +50,13 @@ type AbiArtifacts struct {
 	DeployBytecode  []byte
 	ExecuteBytecode []byte
 	MethodCalls     map[string]*MethodCall `json:"-"`
+}
+
+type RPCEndpoint struct {
+	Name    string
+	URL     string
+	ChainId *big.Int
+	APIKey  string
 }
 
 func init() {
@@ -69,6 +78,9 @@ func init() {
 	}
 	if State.UserOps == nil {
 		State.UserOps = make(map[string]*userop.UserOperation)
+	}
+	if State.RPCEndpoints == nil {
+		State.RPCEndpoints = make(map[string]*RPCEndpoint)
 	}
 
 	//Add the Entrypoint abis

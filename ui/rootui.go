@@ -2,7 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/state"
@@ -11,6 +13,25 @@ import (
 func init() {
 	EntryPointItem.Value = entrypoint.E7Address
 	ApiKeyItem.Value = state.State.AlchApiKey
+	//Get rid of the bloody bell
+	readline.Stdout = &stderr{}
+}
+
+type stderr struct{}
+
+func (s *stderr) Write(b []byte) (int, error) {
+	if len(b) == 1 && b[0] == 7 {
+		return 0, nil
+	}
+	return os.Stderr.Write(b)
+}
+
+func (s *stderr) Close() error {
+	return os.Stderr.Close()
+}
+
+func init() {
+	readline.Stdout = &stderr{}
 }
 
 var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage Paymaster settings"}
@@ -20,6 +41,7 @@ var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
 var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
 var ApiKeyItem = &Item{Label: "Alchemy API Key", Details: "Set Alchemy API Key"}
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
+var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
 
 func RootUI() {
 	items := []*Item{
@@ -67,6 +89,7 @@ func SettingsUI() {
 		ChainIDItem,
 		EntryPointItem,
 		ApiKeyItem,
+		RPCEndpointsItem,
 		Back,
 	}
 	prompt := promptui.Select{
@@ -94,6 +117,8 @@ func SettingsUI() {
 		case ApiKeyItem.Label:
 			InputNewStringUI(ApiKeyItem)
 			state.State.AlchApiKey = ApiKeyItem.Value.(string)
+		case RPCEndpointsItem.Label:
+			RPCEndpointsUI(nil)
 		case Back.Label:
 			return
 		default:

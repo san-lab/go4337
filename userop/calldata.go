@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
+// TODO Get rid of this function
 func EncodeWithParams(abis *abi.ABI, method string, params ...interface{}) (data []byte, err error) {
 	data, err = abis.Pack(method, params...)
 	if err != nil {

@@ -30,11 +30,11 @@ func (puop *PackedUserOp) EncodeToHash() ([]byte, error) {
 	}
 	return arguments.Pack(
 		puop.Sender,
-		big.NewInt(int64(puop.Nonce)),
+		puop.Nonce,
 		UnsafeSliceToBytes32(crypto.Keccak256(puop.InitCode)),
 		UnsafeSliceToBytes32(crypto.Keccak256(puop.CallData)),
 		puop.AccountGasLimits,
-		big.NewInt(int64(puop.PreVerificationGas)),
+		puop.PreVerificationGas,
 		puop.GasFees,
 		UnsafeSliceToBytes32(crypto.Keccak256(puop.PaymasterAndData)),
 	)
@@ -56,7 +56,7 @@ func (uop *UserOperation) EncodeToHash() ([]byte, error) {
 	}
 	return arguments.Pack(
 		uop.Sender,
-		big.NewInt(int64(uop.Nonce)),
+		uop.Nonce,
 		UnsafeSliceToBytes32(crypto.Keccak256(uop.InitData())),
 		UnsafeSliceToBytes32(crypto.Keccak256(uop.CallData)),
 		big.NewInt(int64(uop.CallGasLimit)),

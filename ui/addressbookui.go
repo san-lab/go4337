@@ -15,8 +15,7 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 	selectToRemove := false
 	abook, ok := state.GetAddressBook(label)
 	if !ok {
-		fmt.Println("Invalid address book: ", label)
-		return nil, false
+		state.State.AddressBooks[label] = &state.AddressBook{}
 	}
 	normalLabel := "Select a " + label
 	removeLabel := "Select a " + label + " to remove"

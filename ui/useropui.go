@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -194,12 +195,14 @@ func CreateUserOpUI(topIt *Item) {
 var UserOpContentItem = &Item{Label: "User Operation Content", Details: "Manage user operation content"}
 var ExportUserOpItem = &Item{Label: "Export User Operation", Details: "Select the export format"}
 var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
+var SendAsBundleItem = &Item{Label: "Send as Bundle", Details: "Send the user operation as a bundle"}
 
 func UserOpUI(usop *userop.UserOperation) {
 	items := []*Item{
 		UserOpContentItem,
 		ExportUserOpItem,
 		GetHashItem,
+		SendAsBundleItem,
 		Back,
 	}
 	// Create a new select prompt
@@ -224,6 +227,15 @@ func UserOpUI(usop *userop.UserOperation) {
 			ExportUserOpUI(usop)
 		case GetHashItem.Label:
 			GetHashUI(usop)
+		case SendAsBundleItem.Label:
+			h, err := SendAsBundleUI(usop)
+			if err != nil {
+				fmt.Println(err)
+			} else if h != nil {
+				fmt.Println("Transaction sent with hash:", h.Hex())
+			} else {
+				fmt.Println("Transaction not sent")
+			}
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -298,10 +310,8 @@ func UserOpContentUI(topIt *Item) {
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
-			nonce, err := InputUint(it, 64)
-			if err != nil {
-				usop.Nonce = nonce
-			}
+			//nonce, err := InputUint(it, 64)
+			InputBigInt(it)
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
@@ -368,10 +378,11 @@ func copyFromUseropToItems(uop *userop.UserOperation) {
 }
 
 func copyValuesToUserOp(uop *userop.UserOperation) {
+	defer state.State.Save()
 	if SenderItem.Value != nil {
 		uop.Sender = SenderItem.Value.(*common.Address)
 	}
-	uop.Nonce = NonceItem.Value.(uint64)
+	uop.Nonce = NonceItem.Value.(*big.Int)
 	if CallDataItem.Value != nil {
 		uop.CallData = CallDataItem.Value.([]byte)
 	}

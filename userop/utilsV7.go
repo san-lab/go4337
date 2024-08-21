@@ -73,12 +73,12 @@ func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validAfter, validUntil uint
 
 	bts, err := args.Pack(
 		puop.Sender,
-		big.NewInt(int64(puop.Nonce)),
+		puop.Nonce,
 		UnsafeSliceToBytes32(crypto.Keccak256(puop.InitCode)),
 		UnsafeSliceToBytes32(crypto.Keccak256(puop.CallData)),
 		puop.AccountGasLimits,
 		new(big.Int).SetBytes(puop.PaymasterAndData[PAYMASTER_VALIDATION_GAS_OFFSET:PAYMASTER_DATA_OFFSET]),
-		big.NewInt(int64(puop.PreVerificationGas)),
+		puop.PreVerificationGas,
 		puop.GasFees,
 		big.NewInt(int64(chainId)),
 		paymaster,

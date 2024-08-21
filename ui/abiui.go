@@ -612,11 +612,15 @@ func EncodeConstructorParamsUI(callBackItem *Item, mabi *abi.ABI) (ret bool) {
 		switch sel {
 		case Back.Label:
 			return
-		case encodeItem.Label:
+		case encodeItem.Label, encodeWithBytecodeItem.Label:
 			data, err := userop.EncodeWithParams(mabi, "", values...)
 			if err != nil {
-				fmt.Println("Errrrorrr!!!!!", err)
+				fmt.Println("Error encoding parameters", err)
 				continue
+			}
+			if sel == encodeWithBytecodeItem.Label {
+				btc := DeployBytecodeItem.Value.([]byte)
+				data = append(btc, data...)
 			}
 			if callBackItem != nil {
 				callBackItem.Value = data
@@ -624,20 +628,6 @@ func EncodeConstructorParamsUI(callBackItem *Item, mabi *abi.ABI) (ret bool) {
 				return //a bit controversial hack
 			}
 			fmt.Printf("Encoded call: 0x%x\n", data)
-		case encodeWithBytecodeItem.Label:
-			data, err := userop.EncodeWithParams(mabi, "", values...)
-			if err != nil {
-				fmt.Println("Error encoding with bytecode!", err)
-				continue
-			}
-			btc := DeployBytecodeItem.Value.([]byte)
-			data = append(btc, data...)
-			if callBackItem != nil {
-				callBackItem.Value = data
-				ret = true
-				return //a bit controversial hack
-			}
-			fmt.Printf("Encoded call with bytecode: 0x%x\n", data)
 
 		default:
 			it, ok := GetItem(sel, items)

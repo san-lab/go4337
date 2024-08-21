@@ -81,3 +81,8 @@ func Unmarshal(bt []byte) (signer.Signer, error) {
 	ecsigner.SignerAddress = common.BytesToAddress(crypto.PubkeyToAddress(privkey.PublicKey).Bytes())
 	return ecsigner, nil
 }
+
+// KeyContainer function
+func (ecsigner *ECSigner) GetKey() *ecdsa.PrivateKey {
+	return ecsigner.SignerKey
+}
