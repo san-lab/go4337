@@ -54,22 +54,23 @@ func (uop *UserOperation) EncodeToHash() ([]byte, error) {
 		{Type: bytes32Ty}, //paymasterAndData
 		//{Type: bytesTy},   //signature
 	}
+	u6 := uop.MarshalV6UserOp()
 	return arguments.Pack(
-		uop.Sender,
-		uop.Nonce,
-		UnsafeSliceToBytes32(crypto.Keccak256(uop.InitData())),
-		UnsafeSliceToBytes32(crypto.Keccak256(uop.CallData)),
-		big.NewInt(int64(uop.CallGasLimit)),
-		big.NewInt(int64(uop.VerificationGasLimit)),
-		big.NewInt(int64(uop.PreVerificationGas)),
-		big.NewInt(int64(uop.MaxFeePerGas)),
-		big.NewInt(int64(uop.MaxPriorityFeePerGas)),
-		UnsafeSliceToBytes32(crypto.Keccak256(uop.PaymasterAndData())),
+		u6.Sender,
+		u6.Nonce,
+		UnsafeSliceToBytes32(crypto.Keccak256(u6.InitCode)),
+		UnsafeSliceToBytes32(crypto.Keccak256(u6.CallData)),
+		u6.CallGasLimit,
+		u6.VerificationGasLimit,
+		u6.PreVerificationGas,
+		u6.MaxFeePerGas,
+		u6.MaxPriorityFeePerGas,
+		UnsafeSliceToBytes32(crypto.Keccak256(u6.PaymasterAndData)),
 	)
 }
 
-func GetUsOpLibPrehash(userOp *PackedUserOp) (hash [32]byte, err error) {
-	enc1, err := userOp.EncodeToHash()
+func GetUsOpLibPrehash(pUserOp *PackedUserOp) (hash [32]byte, err error) {
+	enc1, err := pUserOp.EncodeToHash()
 	if err != nil {
 		err = fmt.Errorf("encode error: %v", err)
 		return
@@ -104,7 +105,6 @@ func GetUserOpHashV7(userOp *PackedUserOp, entryPoint common.Address, chainid ui
 keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
 */
 func GetUserOpHashV6(userOp *UserOperation, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
-
 	enc2, err := GetUserOpBytesToHashV6(userOp, entryPoint, chainid)
 	if err != nil {
 		err = fmt.Errorf("pack error: %v", err)

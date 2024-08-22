@@ -41,7 +41,9 @@ var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
 var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
 var ApiKeyItem = &Item{Label: "Alchemy API Key", Details: "Set Alchemy API Key"}
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
-var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
+var ChainCallItem = &Item{Label: "Chain Call", Details: "Call a function on-chain"}
+
+//var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
 
 func RootUI() {
 	items := []*Item{
@@ -52,6 +54,7 @@ func RootUI() {
 		AbisItem,
 		//ChainIDItem,
 		//EntryPointItem,
+		ChainCallItem,
 		Exit,
 	}
 	// Create a new select prompt
@@ -74,6 +77,8 @@ func RootUI() {
 			TopUserOpUI(nil)
 		case AbisItem.Label:
 			AbisUI(nil)
+		case ChainCallItem.Label:
+			ChainCallUI()
 		case Exit.Label:
 			return
 		default:
@@ -82,6 +87,8 @@ func RootUI() {
 	}
 }
 
+var GasLimitOffsetItem = &Item{Label: "Gas Limit Offset", Details: "Set Gas Limit Offset to top the bundle gas limit", Value: state.GetGasLimitOffset()}
+
 func SettingsUI() {
 	items := []*Item{
 		PaymasterItem,
@@ -89,7 +96,8 @@ func SettingsUI() {
 		ChainIDItem,
 		EntryPointItem,
 		ApiKeyItem,
-		RPCEndpointsItem,
+		SendEndpointItem,
+		GasLimitOffsetItem,
 		Back,
 	}
 	prompt := promptui.Select{
@@ -117,8 +125,11 @@ func SettingsUI() {
 		case ApiKeyItem.Label:
 			InputNewStringUI(ApiKeyItem)
 			state.SetApiKey("Alchemmy", ApiKeyItem.Value.(string))
-		case RPCEndpointsItem.Label:
-			RPCEndpointsUI(nil)
+		case SendEndpointItem.Label:
+			RPCEndpointsUI(SendEndpointItem)
+		case GasLimitOffsetItem.Label:
+			InputUint(GasLimitOffsetItem, 64)
+			state.SetGasLimitOffset(GasLimitOffsetItem.Value.(uint64))
 		case Back.Label:
 			return
 		default:

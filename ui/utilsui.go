@@ -105,7 +105,7 @@ func UtilsV6UI(usop *userop.UserOperation) {
 			return
 
 		case PreHashV6Item.Label:
-			h, err := userop.GetUsOpLibPrehash(usop.Pack())
+			h, err := userop.GetUsOpLibPrehashV6(usop)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -116,7 +116,7 @@ func UtilsV6UI(usop *userop.UserOperation) {
 			ChainID := ChainIDItem.Value.(uint64)
 			EntryPoint := EntryPointItem.Value.(common.Address)
 			var hash [32]byte
-			hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
+			hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
 			if err != nil {
 				fmt.Println(err)
 			} else {

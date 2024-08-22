@@ -18,7 +18,7 @@ func RPCEndpointsUI(it *Item) {
 	for {
 		items := []*Item{}
 		for _, rpc := range state.GetRPCEndpoints() {
-			items = append(items, &Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId)})
+			items = append(items, &Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId), Value: rpc.URL})
 		}
 		if !deleting {
 			items = append(items, AddRPCEnpointItem, RemoveRPCEnpointItem)

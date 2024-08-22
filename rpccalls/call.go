@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -57,4 +58,21 @@ func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to common.Address, v
 		return nil, fmt.Errorf("could not create signed tx: %v", err)
 	}
 	return SendTransaction(rpc, signedTx)
+}
+
+func CallContract(rpc *state.RPCEndpoint, from, to *common.Address, calldata []byte) ([]byte, error) {
+	client, err := ethclient.Dial(rpc.URL)
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to rpc: %v", err)
+	}
+	msg := ethereum.CallMsg{
+		From: *from,
+		To:   to,
+		Data: calldata,
+	}
+	res, err := client.CallContract(context.Background(), msg, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not call contract: %v", err)
+	}
+	return res, nil
 }

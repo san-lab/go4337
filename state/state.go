@@ -23,16 +23,19 @@ import (
 var UserOpV6Type reflect.Type
 var PackedUserOpV7Type reflect.Type
 
+const GasLimitOffsetDefault = 1000000
+
 type StateStruct struct {
 	AddressBooks map[string]*AddressBook
 	//Default Gas Costs?
-	Signers      map[string]signer.Signer `json:"-"`
-	SignersRaw   []string
-	ABIArts      map[string]*AbiArtifacts //ABI strings memorized
-	UserOps      map[string]*userop.UserOperation
-	ChainID      uint64
-	AlchApiKey   string
-	RPCEndpoints map[string]*RPCEndpoint
+	Signers        map[string]signer.Signer `json:"-"`
+	SignersRaw     []string
+	ABIArts        map[string]*AbiArtifacts //ABI strings memorized
+	UserOps        map[string]*userop.UserOperation
+	ChainID        uint64
+	AlchApiKey     string
+	RPCEndpoints   map[string]*RPCEndpoint
+	GasLimitOffset uint64
 }
 
 //type ABIs map[string]string
@@ -98,6 +101,19 @@ func init() {
 		PackedUserOpV7Type = v7arts.ABI.Methods["getUserOpHash"].Inputs[0].Type.GetType()
 	}
 
+	if state.GasLimitOffset == 0 {
+		state.GasLimitOffset = GasLimitOffsetDefault
+	}
+
+}
+
+func GetGasLimitOffset() uint64 {
+	return state.GasLimitOffset
+}
+
+func SetGasLimitOffset(offset uint64) {
+	state.GasLimitOffset = offset
+	state.Save()
 }
 
 type AddressBook map[string]*common.Address

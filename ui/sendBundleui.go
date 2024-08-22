@@ -14,7 +14,7 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-var SendEndpointItem = &Item{Label: "Endpoint to send to"}
+var SendEndpointItem = &Item{Label: "Endpoint to connect to"}
 var BundleSignerItem = &Item{Label: "Signer for the bundle"}
 var SendBundleItem = &Item{Label: "Send as bundle"}
 var BeneficiaryItem = &Item{Label: "Beneficiary"}
@@ -95,8 +95,10 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 				}
 				//fmt.Println("calldata:", hex.EncodeToString(bt))
 			}
-
-			return rpccalls.CreateAndSendTransaction(endpoint, from, to, big.NewInt(0), calldata, usop.TotalGasLimit()+2000, signer)
+			gasLimit := usop.TotalGasLimit() + state.GetGasLimitOffset()
+			//fmt.Println("gasLimit:", gasLimit, len(calldata))
+			//return nil, fmt.Errorf("not implemented")
+			return rpccalls.CreateAndSendTransaction(endpoint, from, to, big.NewInt(0), calldata, gasLimit, signer)
 
 		}
 

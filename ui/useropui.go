@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/abiutil"
+	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
@@ -81,6 +82,83 @@ func TopUserOpUI(callbackItem *Item) {
 		}
 	}
 
+}
+
+func InputNonceUI(nit, ait *Item) {
+	DirectInputItem := &Item{Label: "Direct Input", Details: "Directly input the nonce"}
+	CheckOnChainItem := &Item{Label: "Check On Chain", Details: "Check the nonce on chain"}
+	items := []*Item{NonceItem, DirectInputItem, CheckOnChainItem, Back}
+	// Create a new select prompt
+	prompt := promptui.Select{
+		Label:     "Select an option",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+	_, sel, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	switch sel {
+	case Back.Label:
+		return
+	case DirectInputItem.Label:
+		InputUint(nit, 64)
+	case CheckOnChainItem.Label:
+		CallForNonceUI(nit, ait)
+	default:
+		fmt.Println("Not implemented yet:", sel)
+	}
+}
+
+var CallForNonceItem = &Item{Label: "Call for Nonce", Details: "Call for the nonce of the selected address"}
+
+func CallForNonceUI(nit, ait *Item) {
+	if ait == nil || ait.Value == nil {
+		fmt.Println("No address selected")
+		return
+	}
+	addr := ait.Value.(*common.Address)
+	items := []*Item{ait, SendEndpointItem, CallForNonceItem, Back}
+	// Create a new select prompt
+	prompt := promptui.Select{
+		Label:     "Set Nonce call parameters",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+	for {
+		_, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch sel {
+		case Back.Label:
+			return
+		case SendEndpointItem.Label:
+			RPCEndpointsUI(SendEndpointItem)
+		case CallForNonceItem.Label:
+			var endpoint *state.RPCEndpoint
+			ok1 := false
+			if SendEndpointItem.Value != nil {
+				fmt.Println("Calling Elvis")
+				if endpoint, ok1 = SendEndpointItem.Value.(*state.RPCEndpoint); ok1 {
+					n, err := rpccalls.GetNonce(endpoint, *addr)
+					if err != nil {
+						fmt.Println(err)
+						continue
+					}
+					nit.Value = n
+					return
+				} else {
+					fmt.Println("No endpoint selected")
+					continue
+				}
+			}
+		}
+	}
 }
 
 func CloneUserOpUI(topIt *Item) {
@@ -304,9 +382,9 @@ func UserOpContentUI(topIt *Item) {
 			copyValuesToUserOp(usop)
 			topIt.Value = usop
 			return
-		//case NonceItem.Label:
-		//	InputBigInt(NonceItem)
-		case NonceItem.Label, CallGasLimitItem.Label, VerificationGasLimitItem.Label,
+		case NonceItem.Label:
+			InputNonceUI(NonceItem, SenderItem)
+		case CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
