@@ -30,7 +30,10 @@ Universal Factory | [0xc0721E8bcF8Ede76e5b046b35B435B3C2B3303b9](https://sepolia
 
 Contract | Address
 ------------- | -------------
+Entrypoint (V7) | 0x0000000071727De22E5E9d8BAf0edAc6f37da032
 SimpleAccountFactory (V7) | 0xd8c9e8F357810A5E702764F626d4A380Ca462FB1
 WhitelistingPaymaster (V7) | 0xAa3f81F9b2F12a36037E06c7e009d282546B6249
 Deployer (aka Univ Factory) | 0x2b1048241475CD7033515f28653362202467953a
+Entrypoint (V6) | 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789
+SimpleAccountFactory (V6) | 0x79Ef5e7e18A5719D0b8aF4e7EA0A54818441aA06
 
