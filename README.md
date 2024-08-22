@@ -32,5 +32,5 @@ Contract | Address
 ------------- | -------------
 SimpleAccountFactory (V7) | 0xd8c9e8F357810A5E702764F626d4A380Ca462FB1
 WhitelistingPaymaster (V7) | 0xAa3f81F9b2F12a36037E06c7e009d282546B6249
-Deployer (aka Univ Factory) | 0x1d61984afF97B24d41da35BafB1432adB7A23A10
+Deployer (aka Univ Factory) | 0x2b1048241475CD7033515f28653362202467953a
 
