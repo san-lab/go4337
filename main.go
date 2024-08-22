@@ -11,9 +11,7 @@ import (
 func main() {
 	fmt.Println("Welcome to go4337!")
 	ecsigner.Init()
-	//state.InitState()
-	for state.State == nil {
-	}
+
 	ui.RootUI()
-	state.State.Save()
+	state.Save()
 }

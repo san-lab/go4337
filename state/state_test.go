@@ -21,11 +21,11 @@ func TestPersistBytecode(t *testing.T) {
 		fmt.Println("Not equal")
 	}
 	a1.ExecuteBytecode = []byte{0x01, 0x02, 0x03}
-	err = State.Save()
+	err = state.Save()
 	if err != nil {
 		t.Error(err)
 	}
-	err = State.Load()
+	err = state.Load()
 	if err != nil {
 		t.Error(err)
 	}

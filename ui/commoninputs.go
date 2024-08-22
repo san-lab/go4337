@@ -178,18 +178,26 @@ func MultiLineInput(label string) (string, error) {
 	return multiLineInput, nil
 }
 
-func InputNewAddressUI(label string) (*common.Address, error) {
+func InputNewAddressUI(label string) (string, *common.Address, error) {
 	prompt := promptui.Prompt{
-		Label: label,
+		Label: "Name for " + label,
+	}
+	name, err := prompt.Run()
+	if err != nil {
+		return "", nil, err
+	}
+
+	prompt = promptui.Prompt{
+		Label: "Input address of " + name + " (0x...)",
 	}
 	s, err := prompt.Run()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	s = strings.Trim(s, " ")
-	common.BytesToAddress(common.FromHex(s))
+	common.BytesToAddress(common.FromHex(strings.TrimSpace(s)))
 	addr := common.HexToAddress(s)
-	return &addr, nil
+	return name, &addr, nil
 }
 
 func InputBool(item *Item) error {

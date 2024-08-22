@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -18,6 +19,7 @@ func Init() {
 }
 
 type ECSigner struct {
+	name          string
 	SignerAddress common.Address
 	SignerKey     *ecdsa.PrivateKey
 }
@@ -26,6 +28,10 @@ const Type = "ECDSA plain"
 
 func (ecsigner *ECSigner) Type() string {
 	return Type
+}
+
+func (ecsigner *ECSigner) Name() string {
+	return ecsigner.name
 }
 
 func (ecsigner *ECSigner) Sign(mssg []byte) ([]byte, error) {
@@ -43,6 +49,16 @@ func (ecsigner *ECSigner) String() string {
 }
 
 func AddECSigner() (err error) {
+	nit := &ui.Item{Label: "Signer name"}
+	err = ui.InputString(nit)
+	if err != nil {
+		return
+	}
+	name, ok := nit.Value.(string)
+	if !ok {
+		return fmt.Errorf("invalid input for signer name")
+	}
+
 	it := &ui.Item{Label: "Input new ECDSA private key in HEX"}
 	err = ui.InputBytes(it, -1)
 	if err != nil {
@@ -58,26 +74,40 @@ func AddECSigner() (err error) {
 		return fmt.Errorf("invalid key: %v", err)
 	}
 	ecsigner := &ECSigner{SignerKey: privkey}
+	ecsigner.name = name
 	ecsigner.SignerAddress = common.BytesToAddress(crypto.PubkeyToAddress(privkey.PublicKey).Bytes())
-	state.State.Signers = append(state.State.Signers, ecsigner)
-	fmt.Println("Added signer", ecsigner.String())
-	state.State.Save()
+	//state.State.Signers = append(state.State.Signers, ecsigner)
+	state.AddSigner(ecsigner)
+	fmt.Println("Added signer", ecsigner.Name(), ecsigner.String())
 	return
 
 }
 
 func (ecsigner *ECSigner) Marshal() ([]byte, error) {
-	return []byte(Type + ";" + hex.EncodeToString(ecsigner.SignerKey.D.Bytes())), nil
+	return []byte(Type + ";" + ecsigner.name + ":" + hex.EncodeToString(ecsigner.SignerKey.D.Bytes())), nil
 }
 
+var nameCounter = 0
+
 func Unmarshal(bt []byte) (signer.Signer, error) {
-	hexkey := string(bt)
+	nameAndHexkey := string(bt)
+	var name, hexkey string
+	terms := strings.Split(nameAndHexkey, ":")
+	if len(terms) == 1 {
+		name = "unnamed" + fmt.Sprint(nameCounter)
+		nameCounter++
+		hexkey = terms[0]
+	} else {
+		name = terms[0]
+		hexkey = terms[1]
+	}
 	privkey, err := crypto.HexToECDSA(hexkey)
 	if err != nil {
 		return nil, fmt.Errorf("invalid key: %v", err)
 	}
 	ecsigner := new(ECSigner)
 	ecsigner.SignerKey = privkey
+	ecsigner.name = name
 	ecsigner.SignerAddress = common.BytesToAddress(crypto.PubkeyToAddress(privkey.PublicKey).Bytes())
 	return ecsigner, nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	ChainIDItem.Value = state.State.ChainID
+	ChainIDItem.Value = state.GetChainId()
 }
 
 var ChainIDItem = &Item{Label: "Chain ID", Details: "Set Chain ID"}
@@ -49,9 +49,8 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			if err != nil {
 				return
 			}
-			state.State.ChainID = ChainIDItem.Value.(uint64)
-			fmt.Println("Chain ID set to:", state.State.ChainID)
-			state.State.Save()
+			state.SetChainId(ChainIDItem.Value)
+			fmt.Println("Chain ID set to:", state.GetChainId())
 		case EntryPointItem.Label:
 			EntryPointUI()
 		case UtilsV6Item.Label:

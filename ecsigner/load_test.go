@@ -18,11 +18,11 @@ func TestLoad(t *testing.T) {
 	state.Register(Type, AddECSigner, Unmarshal)
 	_, ok := state.Unmarshalers[Type]
 	fmt.Println(ok)
-	err := state.State.Load()
+	err := state.Load()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(state.State.Signers) == 0 {
+	if len(state.GetSigners()) == 0 {
 		t.Error("No signers loaded")
 	}
 

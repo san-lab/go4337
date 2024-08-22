@@ -30,7 +30,7 @@ signature	bytes	Data passed into the account to verify authorization
 
 type UserOperation struct {
 	Sender *common.Address `json:"sender"`
-	Nonce  *big.Int        `json:"nonce"`
+	Nonce  uint64          `json:"nonce"` // internaly, for the ease of increment, etc
 	// Factory address, only for new accounts
 	Factory *common.Address `json:"factory,omitempty"`
 	// Data for account factory (only if account factory exists)
@@ -73,21 +73,21 @@ func NewUserOperationWithDefaults() *UserOperation {
 }
 
 type UsOpJsonAdapter struct {
-	Sender                        string   `json:"sender"`
-	Nonce                         *big.Int `json:"nonce"`
-	Factory                       string   `json:"factory,omitempty"`
-	FactoryData                   string   `json:"factoryData,omitempty"`
-	CallData                      string   `json:"callData"`
-	CallGasLimit                  uint64   `json:"callGasLimit"`
-	VerificationGasLimit          uint64   `json:"verificationGasLimit"`
-	PreVerificationGas            uint64   `json:"preVerificationGas"`
-	MaxFeePerGas                  uint64   `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas          uint64   `json:"maxPriorityFeePerGas"`
-	Paymaster                     string   `json:"paymaster,omitempty"`
-	PaymasterVerificationGasLimit uint64   `json:"paymasterVerificationGasLimit"`
-	PaymasterPostOpGasLimit       uint64   `json:"paymasterPostOpGasLimit"`
-	PaymasterData                 string   `json:"paymasterData"`
-	Signature                     string   `json:"signature"`
+	Sender                        string `json:"sender"`
+	Nonce                         uint64 `json:"nonce"`
+	Factory                       string `json:"factory,omitempty"`
+	FactoryData                   string `json:"factoryData,omitempty"`
+	CallData                      string `json:"callData"`
+	CallGasLimit                  uint64 `json:"callGasLimit"`
+	VerificationGasLimit          uint64 `json:"verificationGasLimit"`
+	PreVerificationGas            uint64 `json:"preVerificationGas"`
+	MaxFeePerGas                  uint64 `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas          uint64 `json:"maxPriorityFeePerGas"`
+	Paymaster                     string `json:"paymaster,omitempty"`
+	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       uint64 `json:"paymasterPostOpGasLimit"`
+	PaymasterData                 string `json:"paymasterData"`
+	Signature                     string `json:"signature"`
 }
 
 func (u UserOperation) MarshalJSON() ([]byte, error) {
@@ -172,7 +172,7 @@ func (u *UserOperation) PaymasterAndData() []byte {
 func (u *UserOperation) MarshalV6UserOp() entrypointv6.UserOperation {
 	uop6 := new(entrypointv6.UserOperation)
 	uop6.Sender = *u.Sender
-	uop6.Nonce = u.Nonce
+	uop6.Nonce = big.NewInt(int64(u.Nonce))
 	//if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 	//	uop6.InitCode = append(u.Factory.Bytes(), u.FactoryData...)
 	//}
@@ -341,7 +341,7 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	}
 	return &PackedUserOp{
 		Sender:             u.Sender,
-		Nonce:              u.Nonce,
+		Nonce:              big.NewInt(int64(u.Nonce)),
 		InitCode:           initCode,
 		CallData:           u.CallData,
 		AccountGasLimits:   PackUints(u.VerificationGasLimit, u.CallGasLimit),

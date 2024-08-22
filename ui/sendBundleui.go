@@ -105,10 +105,10 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 
 func GetBundleSignerUI(it *Item) {
 	items := []*Item{}
-	for _, signer := range state.State.Signers {
+	for _, signer := range state.GetSigners() {
 		_, ok := signer.(rpccalls.KeyContainer)
 		if ok {
-			items = append(items, &Item{Label: signer.String(), Value: signer})
+			items = append(items, &Item{Label: signer.Name(), Value: signer})
 		}
 
 	}

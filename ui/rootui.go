@@ -12,7 +12,7 @@ import (
 
 func init() {
 	EntryPointItem.Value = entrypoint.E7Address
-	ApiKeyItem.Value = state.State.AlchApiKey
+	ApiKeyItem.Value = state.GetApiKey("Alchemy")
 	//Get rid of the bloody bell
 	readline.Stdout = &stderr{}
 }
@@ -111,12 +111,12 @@ func SettingsUI() {
 			SignerUI(SignerItem)
 		case ChainIDItem.Label:
 			InputUint(ChainIDItem, 64)
-			state.State.ChainID = ChainIDItem.Value.(uint64)
+			state.SetChainId(ChainIDItem.Value)
 		case EntryPointItem.Label:
 			EntryPointUI()
 		case ApiKeyItem.Label:
 			InputNewStringUI(ApiKeyItem)
-			state.State.AlchApiKey = ApiKeyItem.Value.(string)
+			state.SetApiKey("Alchemmy", ApiKeyItem.Value.(string))
 		case RPCEndpointsItem.Label:
 			RPCEndpointsUI(nil)
 		case Back.Label:

@@ -26,7 +26,7 @@ var PackedUserOpV7Type reflect.Type
 type StateStruct struct {
 	AddressBooks map[string]*AddressBook
 	//Default Gas Costs?
-	Signers      []signer.Signer `json:"-"`
+	Signers      map[string]signer.Signer `json:"-"`
 	SignersRaw   []string
 	ABIArts      map[string]*AbiArtifacts //ABI strings memorized
 	UserOps      map[string]*userop.UserOperation
@@ -37,7 +37,7 @@ type StateStruct struct {
 
 //type ABIs map[string]string
 
-var State *StateStruct
+var state *StateStruct
 
 var stateMux = &sync.Mutex{}
 
@@ -62,25 +62,25 @@ type RPCEndpoint struct {
 func init() {
 	stateMux.Lock()
 	defer stateMux.Unlock()
-	State = new(StateStruct)
-	err := State.Load()
+	state = new(StateStruct)
+	err := state.Load()
 	if err != nil {
 		fmt.Println(err)
 	}
-	if State.AddressBooks == nil {
-		State.AddressBooks = make(map[string]*AddressBook)
-		State.AddressBooks[Sender] = &AddressBook{}
-		State.AddressBooks[Paymaster] = &AddressBook{}
-		State.AddressBooks[CustomEntrypoint] = &AddressBook{}
+	if state.AddressBooks == nil {
+		state.AddressBooks = make(map[string]*AddressBook)
+		state.AddressBooks[Sender] = &AddressBook{}
+		state.AddressBooks[Paymaster] = &AddressBook{}
+		state.AddressBooks[CustomEntrypoint] = &AddressBook{}
 	}
-	if State.ABIArts == nil {
-		State.ABIArts = make(map[string]*AbiArtifacts)
+	if state.ABIArts == nil {
+		state.ABIArts = make(map[string]*AbiArtifacts)
 	}
-	if State.UserOps == nil {
-		State.UserOps = make(map[string]*userop.UserOperation)
+	if state.UserOps == nil {
+		state.UserOps = make(map[string]*userop.UserOperation)
 	}
-	if State.RPCEndpoints == nil {
-		State.RPCEndpoints = make(map[string]*RPCEndpoint)
+	if state.RPCEndpoints == nil {
+		state.RPCEndpoints = make(map[string]*RPCEndpoint)
 	}
 
 	//Add the Entrypoint abis
@@ -100,40 +100,43 @@ func init() {
 
 }
 
-type AddressBook []*common.Address
+type AddressBook map[string]*common.Address
 
 const Sender = "Sender"
 const Paymaster = "Paymaster"
 const CustomEntrypoint = "Custom Entrypoint"
 
 func GetAddressBook(label string) (*AddressBook, bool) {
-	ab, ok := State.AddressBooks[label]
-	if !ok {
+	ab, ok := state.AddressBooks[label]
+	if !ok || ab == nil {
 		ab = &AddressBook{}
-		State.AddressBooks[label] = ab
+		state.AddressBooks[label] = ab
 	}
-	return ab, true
+	return ab, ok
 }
 
-func (ab *AddressBook) Add(addr *common.Address) {
-	*ab = append(*ab, addr)
-	State.Save()
+func (ab *AddressBook) Add(name string, addr *common.Address) {
+	(*ab)[name] = addr
+	state.Save()
 }
 
 func (ab *AddressBook) Remove(addr *common.Address) {
 	//Find the address index
-	i := 0
-	for i = 0; i < len(*ab); i++ {
-		if (*ab)[i].Hex() == addr.Hex() {
+	for n, a := range *ab {
+		if a.Hex() == addr.Hex() {
+			delete(*ab, n)
 			break
 		}
 	}
-	if i == len(*ab) {
-		return
-	}
-	//Remove the address
-	*ab = append((*ab)[:i], (*ab)[i+1:]...)
-	State.Save()
+
+	state.Save()
+}
+
+func (ab *AddressBook) RemoveByName(name string) bool {
+	_, ok := (*ab)[name]
+	delete(*ab, name)
+	state.Save()
+	return ok
 }
 
 var StateFile = "state.json"
@@ -154,7 +157,7 @@ func (st *StateStruct) Save() error {
 			st.SignersRaw = append(st.SignersRaw, k+";"+string(raw))
 		}
 	}
-	bt, err := json.MarshalIndent(State, "", "  ")
+	bt, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
 		return fmt.Errorf("Error saving: %w", err)
 
@@ -173,7 +176,7 @@ func (st *StateStruct) Load() error {
 		return err
 
 	}
-	err = json.Unmarshal(bt, State)
+	err = json.Unmarshal(bt, state)
 	if err != nil {
 		return err
 	}
@@ -195,7 +198,7 @@ func (st *StateStruct) Load() error {
 			fmt.Println("Unmarshal error:", err)
 			continue
 		}
-		st.Signers = append(st.Signers, s)
+		state.Signers[s.Name()] = s
 
 	}
 	for k, v := range st.ABIArts {
@@ -209,9 +212,9 @@ func (st *StateStruct) Load() error {
 var UnmarshalledSignersBuffer = map[string][][]byte{}
 
 var SignerTypes = map[string]signer.AddSigner{}
-var Unmarshalers = map[string]func([]byte) (signer.Signer, error){}
+var Unmarshalers = map[string]signer.Unmarshal{}
 
-func Register(signerType string, add signer.AddSigner, unmarshal func([]byte) (signer.Signer, error)) {
+func Register(signerType string, add signer.AddSigner, unmarshal signer.Unmarshal) {
 	stateMux.Lock()
 	defer stateMux.Unlock()
 	SignerTypes[signerType] = add
@@ -224,7 +227,7 @@ func Register(signerType string, add signer.AddSigner, unmarshal func([]byte) (s
 			clearBuffer = false
 			continue
 		}
-		State.Signers = append(State.Signers, s)
+		AddSigner(s)
 	}
 	if clearBuffer {
 		delete(UnmarshalledSignersBuffer, signerType)
@@ -250,11 +253,11 @@ func ParseABI(contractname, abiString string) (*AbiArtifacts, error) {
 		return nil, fmt.Errorf("Error parsing ABI: %w", err)
 	}
 
-	aart, ok := State.ABIArts[contractname]
+	aart, ok := state.ABIArts[contractname]
 	if !ok {
 		aart = &AbiArtifacts{ABIString: clrabistr}
 
-		State.ABIArts[contractname] = aart
+		state.ABIArts[contractname] = aart
 	}
 
 	aart.ABI = abi
@@ -273,12 +276,12 @@ func ParseABI(contractname, abiString string) (*AbiArtifacts, error) {
 }
 
 func RemoveABI(name string) error {
-	delete(State.ABIArts, name)
-	return State.Save()
+	delete(state.ABIArts, name)
+	return state.Save()
 }
 
 func GetABI(name string) (*AbiArtifacts, error) {
-	aart, ok := State.ABIArts[name]
+	aart, ok := state.ABIArts[name]
 	if !ok {
 		return nil, fmt.Errorf("ABI not found")
 	}
@@ -287,14 +290,107 @@ func GetABI(name string) (*AbiArtifacts, error) {
 
 func ListABIs() [][]string {
 	abinames := []string{}
-	for k := range State.ABIArts {
+	for k := range state.ABIArts {
 		abinames = append(abinames, k)
 	}
 	//sort the names
 	sort.Strings(abinames)
 	abis := [][]string{}
 	for _, k := range abinames {
-		abis = append(abis, []string{k, State.ABIArts[k].ABIString})
+		abis = append(abis, []string{k, state.ABIArts[k].ABIString})
 	}
 	return abis
+}
+
+func Save() error {
+	return state.Save()
+}
+
+func Load() error {
+	return state.Load()
+}
+
+func AddSigner(sig signer.Signer) {
+	if state.Signers == nil {
+		state.Signers = make(map[string]signer.Signer)
+	}
+	state.Signers[sig.Name()] = sig
+	state.Save()
+}
+
+func GetSigners() map[string]signer.Signer {
+	return state.Signers
+}
+
+func GetApiKey(name string) string {
+	return state.AlchApiKey
+}
+
+func GetSigner(name string) signer.Signer {
+
+	return state.Signers[name]
+}
+
+func RemoveSigner(name string) {
+	delete(state.Signers, name)
+	state.Save()
+}
+
+func SetApiKey(name, key string) {
+	state.AlchApiKey = key
+	state.Save()
+}
+
+func SetChainId(id any) {
+	uid, ok := id.(uint64)
+	if ok {
+		state.ChainID = uid
+		state.Save()
+
+	}
+}
+
+func GetChainId() uint64 {
+	return state.ChainID
+}
+
+func GetRPCEndpoints() map[string]*RPCEndpoint {
+	return state.RPCEndpoints
+}
+
+func GetRPCEndpoint(name string) *RPCEndpoint {
+	ep, ok := state.RPCEndpoints[name]
+	if !ok {
+		return nil
+	}
+	return ep
+}
+
+func RemoveRPCEndpoint(name string) {
+	delete(state.RPCEndpoints, name)
+	state.Save()
+}
+
+func AddRPCEndpoint(name, url string, chainId *big.Int) {
+	state.RPCEndpoints[name] = &RPCEndpoint{Name: name, URL: url, ChainId: chainId}
+	state.Save()
+}
+
+func AddUserOp(name string, uop *userop.UserOperation) {
+	state.UserOps[name] = uop
+	state.Save()
+}
+
+func GetUserOp(name string) (*userop.UserOperation, bool) {
+	u, ok := state.UserOps[name]
+	return u, ok
+}
+
+func GetUserOps() map[string]*userop.UserOperation {
+	return state.UserOps
+}
+
+func RemoveUserOp(name string) {
+	delete(state.UserOps, name)
+	state.Save()
 }

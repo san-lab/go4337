@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
-	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
 )
 
@@ -63,9 +62,6 @@ func (i *Item) DisplayValue() string {
 	case state.MethodCall:
 		method := derefv.(state.MethodCall)
 		return method.MethodName
-	case signer.Signer:
-		signer := derefv.(signer.Signer)
-		return signer.String()
 	default:
 		return ShortString(fmt.Sprint(derefv), 50)
 	}

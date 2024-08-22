@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
@@ -12,12 +13,12 @@ var RemoveSignerItem = &Item{Label: "Remove Signer", Details: "Remove a signer"}
 
 func SignerUI(signerItem *Item) {
 	selectToRemove := false
-	
+
 	for {
-		l := len(state.State.Signers)
+		l := len(state.GetSigners())
 		items := []*Item{}
-		for _, s := range state.State.Signers {
-			items = append(items, &Item{Label: s.String(), Details: "Signer of type " + s.Type()})
+		for _, s := range state.GetSigners() {
+			items = append(items, &Item{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type()})
 		}
 		if !selectToRemove {
 			items = append(items, AddSignerItem)
@@ -39,6 +40,7 @@ func SignerUI(signerItem *Item) {
 			fmt.Println(err)
 			return
 		}
+		name := strings.TrimSpace(strings.Split(sel, ":")[0])
 		switch sel {
 		case Back.Label:
 			return
@@ -49,17 +51,12 @@ func SignerUI(signerItem *Item) {
 		default:
 			if i < l {
 				if selectToRemove {
-					tmp := state.State.Signers[:i]
-					if i + 1 < l {
-						state.State.Signers = append(tmp, state.State.Signers[i+1:]...)  
-					} else {
-						state.State.Signers = tmp
-					}
-					state.State.Save()
+					state.RemoveSigner(name)
+					selectToRemove = false
 					continue
-				}	
-		
-				signerItem.Value = state.State.Signers[i]
+				}
+
+				signerItem.Value = state.GetSigner(name)
 				//SignerItem.DisplayValue = state.State.Signers[i].String()
 				return
 			}

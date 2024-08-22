@@ -10,7 +10,7 @@ import (
 )
 
 func TestPackUserOp(t *testing.T) {
-	uop, ok := state.State.UserOps["ThirdOne"]
+	uop, ok := state.GetUserOp("ThirdOne")
 	if !ok {
 		t.Error("UserOp not found")
 	}

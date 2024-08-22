@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
@@ -13,18 +14,14 @@ var RemoveAddressItem = &Item{Label: "Remove an Address"}
 
 func AddressFromBookUI(label string) (*common.Address, bool) {
 	selectToRemove := false
-	abook, ok := state.GetAddressBook(label)
-	if !ok {
-		state.State.AddressBooks[label] = &state.AddressBook{}
-	}
+	abook, _ := state.GetAddressBook(label)
 	normalLabel := "Select a " + label
 	removeLabel := "Select a " + label + " to remove"
 	currentLabel := normalLabel
 	for {
 		items := []*Item{}
-		for _, s := range *abook {
-			items = append(items, &Item{Label: s.String(), Details: "Select this " + label, Value: s,
-				DisplayValueString: " "})
+		for name, addr := range *abook {
+			items = append(items, &Item{Label: fmt.Sprintf("%-25s", name), Details: "Select this " + label, Value: addr})
 
 		}
 		if !selectToRemove {
@@ -43,6 +40,7 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 			fmt.Println(err)
 			return nil, false
 		}
+		name := strings.TrimSpace(strings.Split(sel, ":")[0])
 
 		switch sel {
 
@@ -50,11 +48,11 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 			return nil, false
 		case AddAddressItem.Label:
 
-			naddrs, err := InputNewAddressUI("Add a new " + label)
+			nname, naddrs, err := InputNewAddressUI("Add a new " + label)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				abook.Add(naddrs)
+				abook.Add(nname, naddrs)
 
 				continue
 			}
@@ -69,7 +67,7 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 
 			}
 			if selectToRemove {
-				abook.Remove(val.(*common.Address))
+				abook.RemoveByName(name)
 				selectToRemove = false
 				currentLabel = normalLabel
 			} else {

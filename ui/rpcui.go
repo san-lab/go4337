@@ -17,7 +17,7 @@ func RPCEndpointsUI(it *Item) {
 
 	for {
 		items := []*Item{}
-		for _, rpc := range state.State.RPCEndpoints {
+		for _, rpc := range state.GetRPCEndpoints() {
 			items = append(items, &Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId)})
 		}
 		if !deleting {
@@ -46,8 +46,7 @@ func RPCEndpointsUI(it *Item) {
 				y, err := prpt.Run()
 				if err == nil && y == "yes" {
 
-					delete(state.State.RPCEndpoints, name)
-					state.State.Save()
+					state.RemoveRPCEndpoint(name)
 				}
 				deleting = false
 			} else {
@@ -98,11 +97,11 @@ func AddRPCEnpointUI() {
 	}
 	chainId, ok := tItem.Value.(*big.Int)
 
-	state.State.RPCEndpoints[name] = &state.RPCEndpoint{Name: name, URL: url, ChainId: chainId}
-	state.State.Save()
+	state.AddRPCEndpoint(name, url, chainId)
+
 }
 
 // TODO Error handling
 func EditRPCEnpointUI(name string) *state.RPCEndpoint {
-	return state.State.RPCEndpoints[name]
+	return state.GetRPCEndpoint(name)
 }

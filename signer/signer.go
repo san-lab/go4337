@@ -8,7 +8,8 @@ import (
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
-	String() string
+	Name() string
+	String() string //Details
 	Type() string
 	Marshal() ([]byte, error)
 }
@@ -31,3 +32,5 @@ func ToEthSignedMessageHash(message []byte) [32]byte {
 }
 
 type AddSigner func() error
+
+type Unmarshal func([]byte) (Signer, error)

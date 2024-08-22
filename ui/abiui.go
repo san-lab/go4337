@@ -190,7 +190,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 				} else {
 					abiart.DeployBytecode = DeployBytecodeItem.Value.([]byte)
 				}
-				state.State.Save()
+				state.Save()
 
 			case ExecuteBytecodeItem.Label:
 				err := InputBytes(ExecuteBytecodeItem, -1)
@@ -199,7 +199,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 				} else {
 					abiart.ExecuteBytecode = ExecuteBytecodeItem.Value.([]byte)
 				}
-				state.State.Save()
+				state.Save()
 
 			default:
 				fmt.Println("Not implemented yet:", sel)

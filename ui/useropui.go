@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -73,8 +72,7 @@ func TopUserOpUI(callbackItem *Item) {
 			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
 			UserOpUI(usop)
 		case deleteItem.Label:
-			delete(state.State.UserOps, usOpItem.Label)
-			state.State.Save()
+			state.RemoveUserOp(usOpItem.Label)
 			return
 		case callbackItem.Label:
 			return
@@ -108,7 +106,7 @@ func CloneUserOpUI(topIt *Item) {
 			return
 		}
 		newname = name
-		if _, ok := state.State.UserOps[name]; !ok {
+		if _, ok := state.GetUserOps()[name]; !ok {
 			break
 		}
 		fmt.Println("UserOp already exists")
@@ -122,17 +120,18 @@ func CloneUserOpUI(topIt *Item) {
 		fmt.Printf("Error cloning UserOp: %v\n", err)
 		return
 	}
-
+	nusop := clone.(*userop.UserOperation)
+	nusop.Nonce++
 	topIt.Value = clone
 	topIt.Label = newname
-	state.State.UserOps[newname] = clone.(*userop.UserOperation)
-	state.State.Save()
+	state.AddUserOp(newname, nusop)
+
 }
 
 func SelectUserOpUI(topit *Item) {
 	items := []*Item{}
-	keys := make([]string, 0, len(state.State.UserOps))
-	for k := range state.State.UserOps {
+	keys := make([]string, 0, len(state.GetUserOps()))
+	for k := range state.GetUserOps() {
 		keys = append(keys, k)
 	}
 	if len(keys) == 0 {
@@ -141,7 +140,7 @@ func SelectUserOpUI(topit *Item) {
 	}
 	sort.Strings(keys)
 	for _, name := range keys {
-		uop := state.State.UserOps[name]
+		uop, _ := state.GetUserOp(name)
 		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender, uop.Nonce)})
 	}
 	items = append(items, Back)
@@ -160,7 +159,7 @@ func SelectUserOpUI(topit *Item) {
 	if sel == Back.Label {
 		return
 	}
-	topit.Value = state.State.UserOps[sel]
+	topit.Value, _ = state.GetUserOp(sel)
 	topit.Label = sel
 
 }
@@ -175,13 +174,12 @@ func CreateUserOpUI(topIt *Item) {
 		fmt.Println(err)
 		return
 	}
-	if _, ok := state.State.UserOps[name]; ok {
+	if _, ok := state.GetUserOps()[name]; ok {
 		fmt.Println("UserOp already exists")
 		return
 	}
 	nuop := userop.NewUserOperationWithDefaults()
-	state.State.UserOps[name] = nuop
-	err = state.State.Save()
+	state.AddUserOp(name, nuop)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -306,12 +304,13 @@ func UserOpContentUI(topIt *Item) {
 			copyValuesToUserOp(usop)
 			topIt.Value = usop
 			return
+		//case NonceItem.Label:
+		//	InputBigInt(NonceItem)
 		case NonceItem.Label, CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
-			//nonce, err := InputUint(it, 64)
-			InputBigInt(it)
+			InputUint(it, 64)
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
@@ -378,11 +377,11 @@ func copyFromUseropToItems(uop *userop.UserOperation) {
 }
 
 func copyValuesToUserOp(uop *userop.UserOperation) {
-	defer state.State.Save()
+	defer state.Save()
 	if SenderItem.Value != nil {
 		uop.Sender = SenderItem.Value.(*common.Address)
 	}
-	uop.Nonce = NonceItem.Value.(*big.Int)
+	uop.Nonce = NonceItem.Value.(uint64)
 	if CallDataItem.Value != nil {
 		uop.CallData = CallDataItem.Value.([]byte)
 	}
