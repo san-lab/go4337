@@ -145,7 +145,7 @@ func CallForNonceUI(nit, ait *Item) {
 			if SendEndpointItem.Value != nil {
 				fmt.Println("Calling Elvis")
 				if endpoint, ok1 = SendEndpointItem.Value.(*state.RPCEndpoint); ok1 {
-					n, err := rpccalls.GetNonce(endpoint, *addr)
+					n, err := rpccalls.GetWalletNonce(endpoint, *addr)
 					if err != nil {
 						fmt.Println(err)
 						continue

@@ -122,6 +122,10 @@ const Sender = "Sender"
 const Paymaster = "Paymaster"
 const CustomEntrypoint = "Custom Entrypoint"
 
+func GetAddressBooks() map[string]*AddressBook {
+	return state.AddressBooks
+}
+
 func GetAddressBook(label string) (*AddressBook, bool) {
 	ab, ok := state.AddressBooks[label]
 	if !ok || ab == nil {

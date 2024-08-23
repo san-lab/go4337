@@ -11,6 +11,7 @@ import (
 
 var AddAddressItem = &Item{Label: "Add a new Address"}
 var RemoveAddressItem = &Item{Label: "Remove an Address"}
+var FromAnotherBookItem = &Item{Label: "From another Address Book"}
 
 func AddressFromBookUI(label string) (*common.Address, bool) {
 	selectToRemove := false
@@ -25,7 +26,7 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 
 		}
 		if !selectToRemove {
-			items = append(items, AddAddressItem, RemoveAddressItem)
+			items = append(items, FromAnotherBookItem, AddAddressItem, RemoveAddressItem)
 		}
 		items = append(items, Back)
 		// Create a new select prompt
@@ -59,6 +60,12 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 		case RemoveAddressItem.Label:
 			selectToRemove = true
 			currentLabel = removeLabel
+		case FromAnotherBookItem.Label:
+			otherbook, addr, ok := AddressFromAllBooksUI()
+			if ok {
+				abook.Add(fmt.Sprintf("%s_%d", otherbook, len(*abook)), addr)
+				return addr, true
+			}
 		default:
 			val, ok := GetValue(sel, items)
 			if !ok || val == nil {
@@ -76,4 +83,30 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 		}
 	}
 
+}
+
+func AddressFromAllBooksUI() (string, *common.Address, bool) {
+	items := []*Item{}
+	for name := range state.GetAddressBooks() {
+		items = append(items, &Item{Label: name, Details: "Select an Address from " + name})
+	}
+	items = append(items, Back)
+	prompt := promptui.Select{
+		Label:     "Select an Address Book",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+	_, sel, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return "", nil, false
+	}
+	switch sel {
+	case Back.Label:
+		return "", nil, false
+	default:
+		addr, ok := AddressFromBookUI(sel)
+		return sel, addr, ok
+	}
 }
