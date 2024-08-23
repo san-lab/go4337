@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -60,10 +61,14 @@ func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to common.Address, v
 	return SendTransaction(rpc, signedTx)
 }
 
-func CallContract(rpc *state.RPCEndpoint, from, to *common.Address, calldata []byte) ([]byte, error) {
+// CallContract calls a contract with the given calldata
+// Attempts to parse the response with the given return type
+// Returns the result of parsing and the raw response
+// or error, if any
+func CallContract(rpc *state.RPCEndpoint, from, to *common.Address, calldata []byte, retType abi.Arguments) ([]interface{}, []byte, error) {
 	client, err := ethclient.Dial(rpc.URL)
 	if err != nil {
-		return nil, fmt.Errorf("could not connect to rpc: %v", err)
+		return nil, nil, fmt.Errorf("could not connect to rpc: %v", err)
 	}
 	msg := ethereum.CallMsg{
 		From: *from,
@@ -72,7 +77,16 @@ func CallContract(rpc *state.RPCEndpoint, from, to *common.Address, calldata []b
 	}
 	res, err := client.CallContract(context.Background(), msg, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not call contract: %v", err)
+		return nil, nil, fmt.Errorf("could not call contract: %v", err)
 	}
-	return res, nil
+	var ret []interface{}
+	if retType != nil {
+		ret, err = retType.Unpack(res)
+		if err != nil {
+			return nil, res, ErrRetParse
+		}
+	}
+	return ret, res, nil
 }
+
+var ErrRetParse = fmt.Errorf("could not unpack return values")

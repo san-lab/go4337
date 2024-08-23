@@ -52,7 +52,7 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 		case SendEndpointItem.Label:
 			RPCEndpointsUI(SendEndpointItem)
 		case BundleSignerItem.Label:
-			GetBundleSignerUI(BundleSignerItem)
+			GetEOASignerUI(BundleSignerItem)
 		case BeneficiaryItem.Label:
 			paddr, ok := AddressFromBookUI("Beneficiary")
 			if ok {
@@ -105,7 +105,7 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 	}
 }
 
-func GetBundleSignerUI(it *Item) {
+func GetEOASignerUI(it *Item) {
 	items := []*Item{}
 	for _, signer := range state.GetSigners() {
 		_, ok := signer.(rpccalls.KeyContainer)

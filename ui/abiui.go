@@ -250,6 +250,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 				fmt.Println("Errrrorrr!!!!!", err)
 				continue
 			}
+			currentReturnType = method.ABI.Methods[method.MethodName].Outputs
 			if callbackItem != nil {
 				callbackItem.Value = data
 				return true //a bit controversial hack
@@ -278,6 +279,8 @@ func MethodUI(callbackItem *Item) (ret bool) {
 		}
 	}
 }
+
+var currentReturnType abi.Arguments
 
 func SelectMethodUI(contractName string) {
 	items := []*Item{}
