@@ -24,6 +24,7 @@ v7 Entrypoint | [0x0000000071727De22E5E9d8BAf0edAc6f37da032](https://sepolia.eth
 WhitelistingPaymaster (V7) | [0xd8c9e8F357810A5E702764F626d4A380Ca462FB1](https://sepolia.etherscan.io/address/0xd8c9e8F357810A5E702764F626d4A380Ca462FB1)
 WhitelistingPaymaster (V6) | 0x6f26BCA296546533f3653360f8C501FDAf2cCA72
 SimpleAccountFactory (V7) | [0x6Ac14e603A2742fB919248D66c8ecB05D8Aec1e9](https://sepolia.etherscan.io/address/0x6Ac14e603A2742fB919248D66c8ecB05D8Aec1e9)
+SimpleAccountFactory (V6) | 0x9406Cc6185a346906296840746125a0E44976454
 Greeter (sample contract) | [0x5Fc1328D1bA215852Ad445510Dc72fFB29718C33](https://sepolia.etherscan.io/address/0x5Fc1328D1bA215852Ad445510Dc72fFB29718C33)
 Universal Factory | [0xc0721E8bcF8Ede76e5b046b35B435B3C2B3303b9](https://sepolia.etherscan.io/address/0xc0721E8bcF8Ede76e5b046b35B435B3C2B3303b9) 
 
