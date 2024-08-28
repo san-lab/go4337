@@ -279,6 +279,7 @@ func UserOpUI(usop *userop.UserOperation) {
 		ExportUserOpItem,
 		GetHashItem,
 		SendAsBundleItem,
+		ApiCallsItem,
 		Back,
 	}
 	// Create a new select prompt
@@ -286,6 +287,7 @@ func UserOpUI(usop *userop.UserOperation) {
 		Label:     "Select an option",
 		Items:     items,
 		Templates: ItemTemplate,
+		Size:      10,
 	}
 
 	for {
@@ -312,6 +314,8 @@ func UserOpUI(usop *userop.UserOperation) {
 			} else {
 				fmt.Println("Transaction not sent")
 			}
+		case ApiCallsItem.Label:
+			ApiKeysUI(usop)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -422,7 +426,7 @@ func UserOpContentUI(topIt *Item) {
 
 		case SenderItem.Label, PaymasterItem.Label, FactoryItem.Label:
 			it, _ := GetItem(sel, items)
-			addr, ok := AddressFromBookUI(sel)
+			_, addr, ok := AddressFromBookUI(sel)
 			if ok {
 
 				it.Value = addr
@@ -548,7 +552,9 @@ func ExportAsJSON(uop *userop.UserOperation) {
 */
 
 func ExportAsCurl(uop *userop.UserOperation) {
-	fmt.Println("Not implemented yet")
+	u6 := uop.MarshalV6UserOp()
+	bt, _ := json.MarshalIndent(u6, "", "  ")
+	fmt.Println(string(bt))
 }
 
 func ExportAsAlchemy(uop *userop.UserOperation) {

@@ -9,7 +9,7 @@ var AddPaymasterItem = &Item{Label: "Add Paymaster", Details: "Add a new paymast
 
 func PaymasterUI() (*common.Address, bool) {
 
-	addr, ok := AddressFromBookUI(state.Paymaster)
+	_, addr, ok := AddressFromBookUI(state.Paymaster)
 	if ok {
 		PaymasterItem.Value = addr
 		//PaymasterItem.DisplayValue = addr.String()

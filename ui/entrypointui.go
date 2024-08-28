@@ -52,7 +52,7 @@ func EntryPointUI() {
 func CustomEntryPointUI() {
 	//Input custom address
 
-	cadd, ok := AddressFromBookUI("Custom Entry Point")
+	_, cadd, ok := AddressFromBookUI("Custom Entry Point")
 	if !ok {
 		fmt.Println("Invalid address")
 		return

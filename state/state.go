@@ -33,7 +33,7 @@ type StateStruct struct {
 	ABIArts        map[string]*AbiArtifacts //ABI strings memorized
 	UserOps        map[string]*userop.UserOperation
 	ChainID        uint64
-	AlchApiKey     string
+	Dictionaries   map[string]map[string]string
 	RPCEndpoints   map[string]*RPCEndpoint
 	GasLimitOffset uint64
 }
@@ -85,6 +85,9 @@ func init() {
 	if state.RPCEndpoints == nil {
 		state.RPCEndpoints = make(map[string]*RPCEndpoint)
 	}
+	if state.Dictionaries == nil {
+		state.Dictionaries = make(map[string]map[string]string)
+	}
 
 	//Add the Entrypoint abis
 	v6arts, err := ParseABI(EntrypointV6, entrypoint.EntryPointV6AbiJson)
@@ -122,8 +125,13 @@ const Sender = "Sender"
 const Paymaster = "Paymaster"
 const CustomEntrypoint = "Custom Entrypoint"
 
-func GetAddressBooks() map[string]*AddressBook {
-	return state.AddressBooks
+func GetAddressBooks() []string {
+	chapters := []string{}
+	for k := range state.AddressBooks {
+		chapters = append(chapters, k)
+	}
+	sort.Strings(chapters)
+	return chapters
 }
 
 func GetAddressBook(label string) (*AddressBook, bool) {
@@ -342,10 +350,6 @@ func GetSigners() map[string]signer.Signer {
 	return state.Signers
 }
 
-func GetApiKey(name string) string {
-	return state.AlchApiKey
-}
-
 func GetSigner(name string) signer.Signer {
 
 	return state.Signers[name]
@@ -356,8 +360,54 @@ func RemoveSigner(name string) {
 	state.Save()
 }
 
-func SetApiKey(name, key string) {
-	state.AlchApiKey = key
+func GetDictionary(name string) map[string]string {
+	dict, ok := state.Dictionaries[name]
+	if !ok {
+		dict = make(map[string]string)
+		state.Dictionaries[name] = dict
+	}
+	return dict
+}
+
+const ApiKeysLabel = "ApiKeys"
+
+func ListApiKeys() []string {
+	ApiKeys := GetDictionary(ApiKeysLabel)
+	keys := []string{}
+	for k := range ApiKeys {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func GetApiKey(name string) string {
+	return GetDictionary(ApiKeysLabel)[name]
+}
+
+func AddApiKey(name, key string) {
+	GetDictionary(ApiKeysLabel)[name] = key
+	state.Save()
+}
+
+const ApiEndpointsLabel = "ApiEndpoints"
+
+func ListApiEndpoints() []string {
+	ApiEndpoints := GetDictionary(ApiEndpointsLabel)
+	keys := []string{}
+	for k := range ApiEndpoints {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func GetApiEndpoint(name string) string {
+	return GetDictionary(ApiEndpointsLabel)[name]
+}
+
+func AddApiEndpoint(name, url string) {
+	GetDictionary(ApiEndpointsLabel)[name] = url
 	state.Save()
 }
 
@@ -393,6 +443,27 @@ func RemoveRPCEndpoint(name string) {
 
 func AddRPCEndpoint(name, url string, chainId *big.Int) {
 	state.RPCEndpoints[name] = &RPCEndpoint{Name: name, URL: url, ChainId: chainId}
+	state.Save()
+}
+
+const MethodTemplatesLabel = "MethodTemplates"
+
+func ListMethodTemplates() []string {
+	templates := GetDictionary(MethodTemplatesLabel)
+	keys := []string{}
+	for k := range templates {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func GetMethodTemplate(name string) string {
+	return GetDictionary(MethodTemplatesLabel)[name]
+}
+
+func AddMethodTemplate(name, template string) {
+	GetDictionary(MethodTemplatesLabel)[name] = template
 	state.Save()
 }
 

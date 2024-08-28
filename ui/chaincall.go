@@ -14,11 +14,12 @@ import (
 
 var ViewCallItem = &Item{Label: "View Call", Details: "Call a view/pure function"}
 var TxCallItem = &Item{Label: "Tx Call", Details: "Send a transaction"}
+var GenericRPCCallITem = &Item{Label: "Generic RPC Call", Details: "Call a generic RPC function"}
 
 func ChainCallUI() {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{ViewCallItem, TxCallItem, Back},
+		Items:     []*Item{GenericRPCCallITem, ViewCallItem, TxCallItem, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -37,7 +38,8 @@ func ChainCallUI() {
 			TxCallUI(false)
 		case TxCallItem.Label:
 			TxCallUI(true)
-
+		case GenericRPCCallITem.Label:
+			GenericRPCCallUI()
 			return
 		}
 	}
@@ -82,7 +84,6 @@ func TxCallUI(transactional bool) {
 			items = append(items, CallDataViewItem) // Just to keep the calldata around when switching to/from transactional
 		}
 		if rpcOk && addressOk {
-			items = append(items, UtilCallItem)
 			if calldatOk && signerOk {
 				items = append(items, MakeTheCallItem)
 			}
@@ -109,14 +110,7 @@ func TxCallUI(transactional bool) {
 			RPCEndpointsUI(SendEndpointItem)
 			_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
 		case TargetContractItem.Label:
-			TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
-		case UtilCallItem.Label:
-			fmt.Println("Calling utility function...")
-			if rpcOk && addressOk {
-				UtilCallUI(SendEndpointItem.Value.(*state.RPCEndpoint), *TargetContractItem.Value.(*common.Address))
-			} else {
-				fmt.Println("Need RPC endpoint and target address")
-			}
+			_, TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
 
 		case CallDataViewItem.Label:
 			CallDataViewItem.Value, err = PotentiallyRecursiveCallDataUI()
@@ -174,6 +168,55 @@ func TxCallUI(transactional bool) {
 				return
 
 			}
+		}
+	}
+}
+
+func GenericRPCCallUI() {
+
+	addressOk := false
+	rpcOk := false
+	if TargetContractItem.Value != nil {
+		_, addressOk = TargetContractItem.Value.(*common.Address)
+	}
+
+	if SendEndpointItem.Value != nil {
+		_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+	}
+	for {
+		items := []*Item{TargetContractItem, SendEndpointItem}
+		if rpcOk && addressOk {
+			items = append(items, UtilCallItem)
+
+		}
+		items = append(items, Back)
+		prompt := promptui.Select{
+			Label:     "Set the Call parameters",
+			Items:     items,
+			Templates: ItemTemplate,
+		}
+		_, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch sel {
+		case TargetContractItem.Label:
+			_, addressOk = TargetContractItem.Value.(*common.Address)
+		case Back.Label:
+			return
+
+		case SendEndpointItem.Label:
+			RPCEndpointsUI(SendEndpointItem)
+			_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+		case UtilCallItem.Label:
+			fmt.Println("Calling utility function...")
+			if rpcOk && addressOk {
+				UtilCallUI(SendEndpointItem.Value.(*state.RPCEndpoint), *TargetContractItem.Value.(*common.Address))
+			} else {
+				fmt.Println("Need RPC endpoint and target address")
+			}
+
 		}
 	}
 }

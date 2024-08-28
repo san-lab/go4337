@@ -50,7 +50,7 @@ func (ecsigner *ECSigner) String() string {
 
 func AddECSigner() (err error) {
 	nit := &ui.Item{Label: "Signer name"}
-	err = ui.InputString(nit)
+	err = ui.InputNewStringUI(nit)
 	if err != nil {
 		return
 	}

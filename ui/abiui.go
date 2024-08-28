@@ -517,7 +517,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 		return SetTupleUI(item, input)
 
 	case abi.AddressTy:
-		addr, ok := AddressFromBookUI(item.Label)
+		_, addr, ok := AddressFromBookUI(item.Label)
 		if ok {
 			item.Value = *addr
 			//item.DisplayValue = addr.String()
@@ -555,7 +555,7 @@ func SetParamUI(item *Item, input *abi.Argument) error {
 	case abi.BoolTy:
 		return InputBool(item)
 	case abi.StringTy:
-		return InputString(item)
+		return InputNewStringUI(item)
 
 	default:
 		fmt.Println("Not implemented yet:", input.Type.String())

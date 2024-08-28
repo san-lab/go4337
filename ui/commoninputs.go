@@ -213,17 +213,3 @@ func InputBool(item *Item) error {
 	//item.DisplayValue() = sel
 	return nil
 }
-
-func InputString(item *Item) error {
-	prompt := promptui.Prompt{
-		Label:   item.Label,
-		Default: fmt.Sprint(item.Value),
-	}
-	s, err := prompt.Run()
-	if err != nil {
-		return err
-	}
-	item.Value = s
-	//item.DisplayValue = s
-	return nil
-}

@@ -14,7 +14,7 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-var SendEndpointItem = &Item{Label: "Endpoint to connect to"}
+var SendEndpointItem = &Item{Label: "Blockchain RPC Endpoint"}
 var BundleSignerItem = &Item{Label: "Signer for the bundle"}
 var SendBundleItem = &Item{Label: "Send as bundle"}
 var BeneficiaryItem = &Item{Label: "Beneficiary"}
@@ -54,7 +54,7 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 		case BundleSignerItem.Label:
 			GetEOASignerUI(BundleSignerItem)
 		case BeneficiaryItem.Label:
-			paddr, ok := AddressFromBookUI("Beneficiary")
+			_, paddr, ok := AddressFromBookUI("Beneficiary")
 			if ok {
 				BeneficiaryItem.Value = *paddr
 			}

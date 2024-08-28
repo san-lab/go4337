@@ -13,7 +13,8 @@ var AddAddressItem = &Item{Label: "Add a new Address"}
 var RemoveAddressItem = &Item{Label: "Remove an Address"}
 var FromAnotherBookItem = &Item{Label: "From another Address Book"}
 
-func AddressFromBookUI(label string) (*common.Address, bool) {
+// Returns selcted name, address and a bool indicating if the selection was successful
+func AddressFromBookUI(label string) (string, *common.Address, bool) {
 	selectToRemove := false
 	abook, _ := state.GetAddressBook(label)
 	normalLabel := "Select a " + label
@@ -39,14 +40,14 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 		_, sel, err := prompt.Run()
 		if err != nil {
 			fmt.Println(err)
-			return nil, false
+			return "", nil, false
 		}
 		name := strings.TrimSpace(strings.Split(sel, ":")[0])
 
 		switch sel {
 
 		case Back.Label:
-			return nil, false
+			return "", nil, false
 		case AddAddressItem.Label:
 
 			nname, naddrs, err := InputNewAddressUI("Add a new " + label)
@@ -61,16 +62,16 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 			selectToRemove = true
 			currentLabel = removeLabel
 		case FromAnotherBookItem.Label:
-			otherbook, addr, ok := AddressFromAllBooksUI()
+			otherbook, oname, addr, ok := AddressFromAllBooksUI()
 			if ok {
-				abook.Add(fmt.Sprintf("%s_%d", otherbook, len(*abook)), addr)
-				return addr, true
+				abook.Add(fmt.Sprintf("%s_%s", otherbook, oname), addr)
+				return oname, addr, true
 			}
 		default:
 			val, ok := GetValue(sel, items)
 			if !ok || val == nil {
 				fmt.Println("Invalid selection: ", sel)
-				return nil, false
+				return "", nil, false
 
 			}
 			if selectToRemove {
@@ -78,16 +79,17 @@ func AddressFromBookUI(label string) (*common.Address, bool) {
 				selectToRemove = false
 				currentLabel = normalLabel
 			} else {
-				return val.(*common.Address), true
+				return name, val.(*common.Address), true
 			}
 		}
 	}
 
 }
 
-func AddressFromAllBooksUI() (string, *common.Address, bool) {
+// Returns the selected addressbook name, selected name and address, and a bool indicating if the selection was successful
+func AddressFromAllBooksUI() (string, string, *common.Address, bool) {
 	items := []*Item{}
-	for name := range state.GetAddressBooks() {
+	for _, name := range state.GetAddressBooks() {
 		items = append(items, &Item{Label: name, Details: "Select an Address from " + name})
 	}
 	items = append(items, Back)
@@ -100,13 +102,13 @@ func AddressFromAllBooksUI() (string, *common.Address, bool) {
 	_, sel, err := prompt.Run()
 	if err != nil {
 		fmt.Println(err)
-		return "", nil, false
+		return "", "", nil, false
 	}
 	switch sel {
 	case Back.Label:
-		return "", nil, false
+		return "", "", nil, false
 	default:
-		addr, ok := AddressFromBookUI(sel)
-		return sel, addr, ok
+		oname, addr, ok := AddressFromBookUI(sel)
+		return sel, oname, addr, ok
 	}
 }

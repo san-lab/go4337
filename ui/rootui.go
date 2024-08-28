@@ -39,9 +39,9 @@ var UserOpItem = &Item{Label: "User Operations", Details: "Manage User Operation
 var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}
 var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
 var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
-var ApiKeyItem = &Item{Label: "Alchemy API Key", Details: "Set Alchemy API Key"}
+var ApiKeysItem = &Item{Label: "API's and API Keys", Details: "Manage API Access"}
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
-var ChainCallItem = &Item{Label: "Chain Call", Details: "Call a function on-chain"}
+var ChainCallItem = &Item{Label: "Chain Calls", Details: "Call a function on-chain"}
 
 //var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
 
@@ -55,6 +55,7 @@ func RootUI() {
 		//ChainIDItem,
 		//EntryPointItem,
 		ChainCallItem,
+		ApiCallsItem,
 		Exit,
 	}
 	// Create a new select prompt
@@ -79,6 +80,8 @@ func RootUI() {
 			AbisUI(nil)
 		case ChainCallItem.Label:
 			ChainCallUI()
+		case ApiCallsItem.Label:
+			ApiKeysUI(nil)
 		case Exit.Label:
 			return
 		default:
@@ -95,7 +98,7 @@ func SettingsUI() {
 		SignerItem,
 		ChainIDItem,
 		EntryPointItem,
-		ApiKeyItem,
+
 		SendEndpointItem,
 		GasLimitOffsetItem,
 		Back,
@@ -122,9 +125,7 @@ func SettingsUI() {
 			state.SetChainId(ChainIDItem.Value)
 		case EntryPointItem.Label:
 			EntryPointUI()
-		case ApiKeyItem.Label:
-			InputNewStringUI(ApiKeyItem)
-			state.SetApiKey("Alchemmy", ApiKeyItem.Value.(string))
+
 		case SendEndpointItem.Label:
 			RPCEndpointsUI(SendEndpointItem)
 		case GasLimitOffsetItem.Label:
