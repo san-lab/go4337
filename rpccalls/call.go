@@ -28,6 +28,9 @@ func CreateSignedTransaction(rpc *state.RPCEndpoint, from, to common.Address, va
 	if err != nil {
 		return nil, fmt.Errorf("could not get gas price: %v", err)
 	}
+	gasPrice = gasPrice.Add(
+		gasPrice,
+		new(big.Int).Div(gasPrice, big.NewInt(5))) // 20% more than suggested
 
 	nonce, err := client.PendingNonceAt(context.Background(), from)
 	if err != nil {

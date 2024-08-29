@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/userop"
 )
 
 type Item struct {
@@ -23,6 +24,10 @@ func (i *Item) DisplayValue() string {
 	}
 	if i.Value == nil {
 		return ""
+	}
+
+	if usop, ok := (i.Value).(*userop.UserOperation); ok {
+		return fmt.Sprintf("Sender: %s, Nonce: %d", usop.Sender.String(), usop.Nonce)
 	}
 
 	if addr, ok := (i.Value).(*common.Address); ok {

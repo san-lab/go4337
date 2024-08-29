@@ -202,7 +202,8 @@ func GenericRPCCallUI() {
 		}
 		switch sel {
 		case TargetContractItem.Label:
-			_, addressOk = TargetContractItem.Value.(*common.Address)
+			_, TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
+
 		case Back.Label:
 			return
 
@@ -222,9 +223,10 @@ func GenericRPCCallUI() {
 }
 
 func UtilCallUI(endpoint *state.RPCEndpoint, account common.Address) {
+	PendingNonceItem := &Item{Label: "Get Pending Nonce", Details: "Get pending nonce at address"}
 	NonceItem := &Item{Label: "Get Nonce", Details: "Get nonce at address"}
 	BalanceItem := &Item{Label: "Get Balance", Details: "Get balance at address"}
-	Items := []*Item{NonceItem, BalanceItem, Back}
+	Items := []*Item{PendingNonceItem, NonceItem, BalanceItem, Back}
 	prompt := promptui.Select{
 		Label:     "Select action",
 		Items:     Items,
@@ -238,8 +240,15 @@ func UtilCallUI(endpoint *state.RPCEndpoint, account common.Address) {
 			return
 		}
 		switch sel {
+		case PendingNonceItem.Label:
+			nonce, err := rpccalls.GetPendingNonce(endpoint, account)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("Pending Nonce at %s: %v\n", account, nonce)
+			}
 		case NonceItem.Label:
-			nonce, err := rpccalls.GetStdNonce(endpoint, account)
+			nonce, err := rpccalls.GetNonce(endpoint, account)
 			if err != nil {
 				fmt.Println(err)
 			} else {

@@ -178,6 +178,12 @@ func MultiLineInput(label string) (string, error) {
 	return multiLineInput, nil
 }
 
+func YesNoPromptUI(label string) bool {
+	prpt := promptui.Prompt{Label: label + "(yes/no)", Default: "no"}
+	y, err := prpt.Run()
+	return err == nil && y == "yes"
+}
+
 func InputNewAddressUI(label string) (string, *common.Address, error) {
 	prompt := promptui.Prompt{
 		Label: "Name for " + label,

@@ -32,12 +32,24 @@ func GetWalletNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error)
 
 }
 
-func GetStdNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error) {
+func GetPendingNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error) {
 	client, err := ethclient.Dial(rpc.URL)
 	if err != nil {
 		return 0, fmt.Errorf("could not connect to rpc: %v", err)
 	}
 	nonce, err := client.PendingNonceAt(context.Background(), addr)
+	if err != nil {
+		return 0, fmt.Errorf("could not get nonce: %v", err)
+	}
+	return nonce, nil
+}
+
+func GetNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error) {
+	client, err := ethclient.Dial(rpc.URL)
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to rpc: %v", err)
+	}
+	nonce, err := client.NonceAt(context.Background(), addr, nil)
 	if err != nil {
 		return 0, fmt.Errorf("could not get nonce: %v", err)
 	}

@@ -42,10 +42,9 @@ func RPCEndpointsUI(it *Item) {
 		default:
 			name := strings.Split(sel, "/")[0]
 			if deleting {
-				prpt := promptui.Prompt{Label: fmt.Sprintf("Are you sure you want to delete RPC Endpoint %s (yes/no)?", sel), Default: "no"}
-				y, err := prpt.Run()
-				if err == nil && y == "yes" {
+				label := fmt.Sprintf("Are you sure you want to delete RPC Endpoint %s (yes/no)?", sel)
 
+				if YesNoPromptUI(label) {
 					state.RemoveRPCEndpoint(name)
 				}
 				deleting = false

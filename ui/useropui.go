@@ -17,25 +17,21 @@ import (
 var SelectUserOpItem = &Item{Label: "Select User Operation", Details: "Select a user operation"}
 var CreateUserOpItem = &Item{Label: "Create User Operation", Details: "Create a new user operation"}
 var CloneUserOpItem = &Item{Label: "Clone User Operation", Details: "Clone a user operation"}
+var DeleteUserOpItem = &Item{Label: "Delete User Operation", Details: "Delete a user operation"}
 
-func TopUserOpUI(callbackItem *Item) {
-
-	usOpItem := &Item{}
+func TopUserOpUI(usOpItem *Item) {
+	if usOpItem == nil {
+		usOpItem = &Item{}
+	}
 	workItem := &Item{}
-	deleteItem := &Item{}
+
 	for {
 		items := []*Item{}
 		if usOpItem.Value != nil {
 			if usop, ok := usOpItem.Value.(*userop.UserOperation); ok {
-				if callbackItem != nil {
-					callbackItem.Label = "Select this UserOperation"
-					callbackItem.Value = usop
-					items = append(items, callbackItem)
-				}
 
 				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
-				deleteItem = &Item{Label: "Delete User Operation: " + usOpItem.Label, Details: "Delete this user operation"}
-				items = append(items, workItem, deleteItem)
+				items = append(items, workItem)
 
 			}
 		}
@@ -43,6 +39,7 @@ func TopUserOpUI(callbackItem *Item) {
 			SelectUserOpItem,
 			CreateUserOpItem,
 			CloneUserOpItem,
+			DeleteUserOpItem,
 		}...)
 		//Select a userOp, create a new one, or go back
 
@@ -72,11 +69,8 @@ func TopUserOpUI(callbackItem *Item) {
 		case workItem.Label:
 			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
 			UserOpUI(usop)
-		case deleteItem.Label:
-			state.RemoveUserOp(usOpItem.Label)
-			return
-		case callbackItem.Label:
-			return
+		case DeleteUserOpItem.Label:
+			DeleteUserOpUI(usOpItem)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -159,6 +153,36 @@ func CallForNonceUI(nit, ait *Item) {
 			}
 		}
 	}
+}
+
+func DeleteUserOpUI(topIt *Item) {
+	it := &Item{}
+	SelectUserOpUI(it)
+	if it.Value == nil {
+		return
+	}
+	usop, ok := it.Value.(*userop.UserOperation)
+	if !ok {
+		fmt.Println("Invalid UserOp selected. This should be impossible...")
+		return
+	}
+	for k, v := range state.GetUserOps() {
+		if v == usop {
+			if YesNoPromptUI(fmt.Sprintf("Delete UserOp %s?", k)) {
+
+				delete(state.GetUserOps(), k)
+				state.Save()
+				topIt.Value = nil
+				return
+			} else {
+				fmt.Println("UserOp not deleted")
+				return
+
+			}
+		}
+		fmt.Println("UserOp not found in state")
+	}
+
 }
 
 func CloneUserOpUI(topIt *Item) {
@@ -274,6 +298,18 @@ var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash o
 var SendAsBundleItem = &Item{Label: "Send as Bundle", Details: "Send the user operation as a bundle"}
 
 func UserOpUI(usop *userop.UserOperation) {
+	var uopname string
+	for k, v := range state.GetUserOps() {
+		if v == usop {
+			uopname = k
+			break
+		}
+	}
+	if len(uopname) == 0 {
+		fmt.Println("UserOp not found in state")
+		return
+	}
+
 	items := []*Item{
 		UserOpContentItem,
 		ExportUserOpItem,
@@ -284,7 +320,7 @@ func UserOpUI(usop *userop.UserOperation) {
 	}
 	// Create a new select prompt
 	prompt := promptui.Select{
-		Label:     "Select an option",
+		Label:     "Working with User Operation: " + uopname,
 		Items:     items,
 		Templates: ItemTemplate,
 		Size:      10,

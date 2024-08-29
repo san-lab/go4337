@@ -134,7 +134,7 @@ func GetUserOpBytesToHashV6(userOp *UserOperation, entryPoint common.Address, ch
 	return args.Pack(h1, entryPoint, big.NewInt(int64(chainid)))
 }
 
-type UserOpForApi struct {
+type UserOpForApiV6 struct {
 	Sender               string `json:"sender"`
 	Nonce                string `json:"nonce"`
 	InitCode             string `json:"initCode"`
@@ -148,18 +148,21 @@ type UserOpForApi struct {
 	Signature            string `json:"signature"`
 }
 
-func (uop *UserOperation) ToUserOpForApi() *UserOpForApi {
-
-	return &UserOpForApi{
-		Sender:               uop.Sender.Hex(),
-		Nonce:                fmt.Sprint(uop.Nonce),
+func (uop *UserOperation) ToUserOpForApiV6() *UserOpForApiV6 {
+	sender := uop.Sender
+	if sender == nil {
+		sender = &common.Address{}
+	}
+	return &UserOpForApiV6{
+		Sender:               sender.Hex(),
+		Nonce:                fmt.Sprintf("0x%x", uop.Nonce),
 		InitCode:             fmt.Sprintf("0x%x", uop.InitData()),
 		CallData:             fmt.Sprintf("0x%x", uop.CallData),
-		CallGasLimit:         fmt.Sprint(uop.CallGasLimit),
-		VerificationGasLimit: fmt.Sprint(uop.VerificationGasLimit),
-		PreVerificationGas:   fmt.Sprint(uop.PreVerificationGas),
-		MaxFeePerGas:         fmt.Sprint(uop.MaxFeePerGas),
-		MaxPriorityFeePerGas: fmt.Sprint(uop.MaxPriorityFeePerGas),
+		CallGasLimit:         fmt.Sprintf("0x%x", uop.CallGasLimit),
+		VerificationGasLimit: fmt.Sprintf("0x%x", uop.VerificationGasLimit),
+		PreVerificationGas:   fmt.Sprintf("0x%x", uop.PreVerificationGas),
+		MaxFeePerGas:         fmt.Sprintf("0x%x", uop.MaxFeePerGas),
+		MaxPriorityFeePerGas: fmt.Sprintf("0x%x", uop.MaxPriorityFeePerGas),
 		PaymasterAndData:     fmt.Sprintf("0x%x", uop.PaymasterAndData()),
 		Signature:            fmt.Sprintf("0x%x", uop.Signature),
 	}
