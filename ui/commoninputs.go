@@ -3,9 +3,11 @@ package ui
 import (
 	"bufio"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -78,7 +80,7 @@ func InputBytes(item *Item, bytecount int) error {
 }
 
 func InputBigInt(item *Item) error {
-	res := new(big.Int)
+
 	prompt := promptui.Prompt{
 		Label: item.Label,
 	}
@@ -86,18 +88,11 @@ func InputBigInt(item *Item) error {
 	if err != nil {
 		return err
 	}
-	base := 10
-	if strings.HasPrefix(a, "0x") {
-		base = 16
-		a = a[2:]
-	}
-	res, ok := res.SetString(a, base)
-	if !ok {
-		return fmt.Errorf("error parsing big int: %s", a)
+	res, err := ParseBigInt(a)
+	if err != nil {
+		return fmt.Errorf("error parsing big int: %w", err)
 	}
 	item.Value = res
-	//item.DisplayValue = res.String()
-
 	return nil
 }
 
@@ -218,4 +213,68 @@ func InputBool(item *Item) error {
 	item.Value = sel == "true"
 	//item.DisplayValue() = sel
 	return nil
+}
+
+var bigIntParserDec = regexp.MustCompile(`(\d*)(\.\d+)?([KMGTPE]?)$`)
+var two = big.NewInt(2)
+var kilo = big.NewInt(1000)
+var mega = big.NewInt(1000000)
+var giga = big.NewInt(1000000000)
+var tera = big.NewInt(1000000000000)
+var peta = big.NewInt(1000000000000000)
+var exa = big.NewInt(1000000000000000000)
+var ten = big.NewInt(10)
+var sixteen = big.NewInt(16)
+
+// Decimal Parsing
+func ParseBigInt(input string) (*big.Int, error) {
+	input = strings.TrimSpace(input)
+	res := new(big.Int)
+	if strings.HasPrefix(input, "0x") {
+		input = input[2:]
+		_, ok := res.SetString(input, 16)
+		if !ok {
+			return nil, errors.New("invalid hex number")
+		}
+		return res, nil
+	}
+	match := bigIntParserDec.FindStringSubmatch(input)
+	if match == nil {
+		return nil, errors.New("invalid number")
+	}
+	multiplier := big.NewInt(1)
+	divisor := big.NewInt(1)
+	alldigits := match[1]
+	divpower := 0
+	if len(match[2]) > 0 {
+		alldigits += match[2][1:]
+		divpower = len(match[2]) - 1
+	}
+	_, ok := res.SetString(alldigits, 10)
+	if !ok {
+		return nil, errors.New("invalid decimal number")
+	}
+	switch match[3] {
+	case "K":
+		multiplier = kilo
+	case "M":
+		multiplier = mega
+	case "G":
+		multiplier = giga
+	case "T":
+		multiplier = tera
+	case "P":
+		multiplier = peta
+	case "E":
+		multiplier = exa
+	}
+	if divpower > 0 {
+		divisor.Exp(ten, big.NewInt(int64(divpower)), nil)
+	}
+	if divisor.Cmp(multiplier) > 0 {
+		return nil, errors.New("invalid number")
+	}
+	res.Mul(res, multiplier)
+	res.Div(res, divisor)
+	return res, nil
 }
