@@ -2,7 +2,6 @@ package rpccalls
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -22,26 +21,19 @@ type StackUpPMPayGResult struct {
 	CallGasLimit         string `json:"callGasLimit"`
 }
 
-func StackUpPMPayCall(url, key string, usop *userop.UserOpForApiV6) (*StackUpPMPayGResult, *APIError, error) {
+func StackUpPMPayCall(url, key string, usop *userop.UserOpForApiV6) (*StackUpPMPayGResult, error) {
 	ar := &APIRequest{
 		ID:      1,
 		Jsonrpc: "2.0",
 		Method:  "pm_sponsorUserOperation",
 		Params:  []interface{}{usop, "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789", map[string]string{"type": "payg"}},
 	}
-	bt, aerr, err := ApiCall(url, key, ar)
+	result := &StackUpPMPayGResult{}
+	_, err := ApiCall(url, key, ar, result)
 	if err != nil {
-		return nil, nil, fmt.Errorf("API Call error: %v", err)
+		return nil, fmt.Errorf("API Call error: %w", err)
 	}
-	if aerr != nil {
-		return nil, aerr, nil
-	}
-	res := &StackUpPMPayGResult{}
-	err = json.Unmarshal(bt, res)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not unmarshal response: %v", err)
-	}
-	return res, nil, nil
+	return result, nil
 
 }
 

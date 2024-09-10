@@ -21,8 +21,15 @@ func GetWalletNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error)
 	if err != nil {
 		return 0, fmt.Errorf("could not create baseacc contract caller: %v", err)
 	}
+	blockNo, err := client.BlockNumber(context.Background())
+	if err != nil {
+		return 0, fmt.Errorf("could not get block number: %v", err)
+	}
+	state.Log("Block number:", blockNo)
+
 	callOpts := &bind.CallOpts{
 		Context: context.Background(),
+		//BlockNumber: big.NewInt(int64(blockNo)),
 	}
 	nonce, err := bac.GetNonce(callOpts)
 	if err != nil {

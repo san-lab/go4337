@@ -37,3 +37,12 @@ func TestIdentifyUsOpV6(t *testing.T) {
 	fmt.Println(t3.String())
 
 }
+
+func TestParseBigInt(t *testing.T) {
+	st := []string{"1", ".2K", "300", "4K", ".05M", "0xaA34"}
+
+	for _, s := range st {
+		i, err := ParseBigInt(s)
+		fmt.Printf("s: %s\n, i: %v\n, h: %x,  err: %v\n", s, i, i, err)
+	}
+}

@@ -149,6 +149,10 @@ type UserOpForApiV6 struct {
 }
 
 func (uop *UserOperation) ToUserOpForApiV6() *UserOpForApiV6 {
+	if uop == nil {
+		fmt.Println("nil userop")
+		return nil
+	}
 	sender := uop.Sender
 	if sender == nil {
 		sender = &common.Address{}

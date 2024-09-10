@@ -1,5 +1,10 @@
 package rpccalls
 
+import (
+	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/userop"
+)
+
 // USerOpV6 - standard
 
 type AlchemyV7UserOp struct {
@@ -20,12 +25,6 @@ type AlchemyV7UserOp struct {
 	PaymasterData                 string `json:"paymasterData"`
 }
 
-type AlchemyEstimateGasCostResponse struct {
-	PreVerificationGas   string `json:"preVerificationGas"`
-	CallGasLimit         string `json:"callGasLimit"`
-	VerificationGasLimit string `json:"verificationGasLimit"`
-}
-
 /*
 
 eth_sendUserOperation
@@ -42,3 +41,75 @@ eth_supportedEntryPoints
 Returns a list of Entrypoint contract addresses supported by the bunder endpoints.
 
 */
+
+func Alchemy_requestGasAndPaymasterAndData(url, key, policyID, entrypoint, dummysignature string,
+	usop userop.UserOperation, overrides *AlchemyOverrides) (*AlchemyGasAndPaymasterDataResult, error) {
+	ar := &APIRequest{
+		ID:      4338,
+		Jsonrpc: "2.0",
+		Method:  "alchemy_requestGasAndPaymasterAndData",
+		Params:  []interface{}{AlchemyReqGasAndPMandDataParams{policyID, entrypoint, dummysignature, usop.ToUserOpForApiV6(), overrides}},
+	}
+	state.Log("Alchemy Overrides:", overrides)
+	agapad := &AlchemyGasAndPaymasterDataResult{}
+	_, err := ApiCall(url, key, ar, agapad)
+	return agapad, err
+}
+
+type AlchemyGasAndPaymasterDataResult struct {
+	PaymasterAndData     string `json:"paymasterAndData"`
+	CallGasLimit         string `json:"callGasLimit"`
+	VerificationGasLimit string `json:"verificationGasLimit"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
+	MaxFeePerGas         string `json:"maxFeePerGas"`
+	PreVerificationGas   string `json:"preVerificationGas"`
+}
+
+type AlchemyReqGasAndPMandDataParams struct {
+	PolicyId       string                 `json:"policyId"`
+	EntryPoint     string                 `json:"entryPoint"`
+	DummySignature string                 `json:"dummySignature"`
+	UserOperation  *userop.UserOpForApiV6 `json:"userOperation"`
+	Overrides      *AlchemyOverrides      `json:"overrides"`
+}
+
+func Alchemy_requestPaymasterAndData(url, key, policyID, entrypoint string,
+	usop userop.UserOperation) (*PMandDataResult, error) {
+	ar := &APIRequest{
+		ID:      4337,
+		Jsonrpc: "2.0",
+		Method:  "alchemy_requestPaymasterAndData",
+		Params:  []interface{}{AlchemyReqPMandDatParams{policyID, entrypoint, usop.ToUserOpForApiV6()}},
+	}
+	pmad := &PMandDataResult{}
+	_, err := ApiCall(url, key, ar, pmad)
+	return pmad, err
+
+}
+
+type AlchemyReqPMandDatParams struct {
+	PolicyId      string                 `json:"policyId"`
+	EntryPoint    string                 `json:"entryPoint"`
+	UserOperation *userop.UserOpForApiV6 `json:"userOperation"`
+}
+
+type AlchemyOverrides struct {
+	/*
+			{
+		  "maxFeePerGas": "hex string" | { "multiplier": number },
+		  "maxPriorityFeePerGas": "hex string" | { "multiplier": number },
+		  "callGasLimit": "hex string" | { "multiplier": number },
+		  "verificationGasLimit": "hex string" | { "multiplier": number },
+		  "preVerificationGas": "hex string" | { "multiplier": number },
+		}
+	*/
+	MaxFeePerGas         interface{} `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas interface{} `json:"maxPriorityFeePerGas"`
+	CallGasLimit         interface{} `json:"callGasLimit"`
+	VerificationGasLimit interface{} `json:"verificationGasLimit"`
+	PreVerificationGas   interface{} `json:"preVerificationGas"`
+}
+
+type AlchemyOverrideMultiplier struct {
+	Multiplier float64 `json:"multiplier"`
+}

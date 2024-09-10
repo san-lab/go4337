@@ -26,6 +26,10 @@ func (i *Item) DisplayValue() string {
 		return ""
 	}
 
+	if v, ok := (i.Value).(bool); ok {
+		return fmt.Sprint(v)
+	}
+
 	if usop, ok := (i.Value).(*userop.UserOperation); ok {
 		return fmt.Sprintf("Sender: %s, Nonce: %d", usop.Sender.String(), usop.Nonce)
 	}

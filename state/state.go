@@ -44,6 +44,14 @@ var state *StateStruct
 
 var stateMux = &sync.Mutex{}
 
+var DEBUG = false
+
+func Log(a ...interface{}) {
+	if DEBUG {
+		fmt.Println(a...)
+	}
+}
+
 const EntrypointV6 = "EntrypointV6"
 const EntrypointV7 = "EntrypointV7"
 
@@ -369,6 +377,15 @@ func GetDictionary(name string) map[string]string {
 	return dict
 }
 
+func GetDictionaries() []string {
+	dicts := []string{}
+	for k := range state.Dictionaries {
+		dicts = append(dicts, k)
+	}
+	sort.Strings(dicts)
+	return dicts
+}
+
 const ApiKeysLabel = "ApiKeys"
 
 func ListApiKeys() []string {
@@ -484,4 +501,23 @@ func GetUserOps() map[string]*userop.UserOperation {
 func RemoveUserOp(name string) {
 	delete(state.UserOps, name)
 	state.Save()
+}
+
+// Dies silently if the dictionary does not exist
+func AddToDictionatyWithIndice(dict, label, value string) {
+	d, ok := state.Dictionaries[dict]
+	if !ok {
+		return
+	}
+	idx := 1
+	for {
+		lab := fmt.Sprintf("%s_%0d", label, idx)
+		if _, ok := d[lab]; !ok {
+			d[lab] = value
+			state.Save()
+			return
+		}
+		idx++
+	}
+
 }

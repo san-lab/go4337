@@ -42,6 +42,7 @@ var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
 var ApiKeysItem = &Item{Label: "API's and API Keys", Details: "Manage API Access"}
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
 var ChainCallItem = &Item{Label: "Chain Calls", Details: "Call a function on-chain"}
+var DEBUGItem = &Item{Label: "DEBUG", Details: "Toggle DEBUG", DisplayValueString: fmt.Sprint(state.DEBUG)}
 
 //var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
 
@@ -81,7 +82,7 @@ func RootUI() {
 		case ChainCallItem.Label:
 			ChainCallUI()
 		case ApiCallsItem.Label:
-			ApiKeysUI(nil)
+			ApiCallsUI(nil)
 		case Exit.Label:
 			return
 		default:
@@ -101,6 +102,7 @@ func SettingsUI() {
 
 		SendEndpointItem,
 		GasLimitOffsetItem,
+		DEBUGItem,
 		Back,
 	}
 	prompt := promptui.Select{
@@ -131,6 +133,9 @@ func SettingsUI() {
 		case GasLimitOffsetItem.Label:
 			InputUint(GasLimitOffsetItem, 64)
 			state.SetGasLimitOffset(GasLimitOffsetItem.Value.(uint64))
+		case DEBUGItem.Label:
+			state.DEBUG = !state.DEBUG
+			DEBUGItem.DisplayValueString = fmt.Sprint(state.DEBUG)
 		case Back.Label:
 			return
 		default:

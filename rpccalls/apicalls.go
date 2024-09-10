@@ -7,46 +7,46 @@ import (
 	"net/http"
 
 	"encoding/json"
+
+	"github.com/san-lab/go4337/state"
 )
 
-func POSTCall(url, key string, data []byte) (result []byte, aerr *APIError, err error) {
+func POSTCall(url, key string, data []byte) (result []byte, err error) {
 	client := http.Client{}
-	url = url + "/" + key
+	if len(key) > 0 {
+		url = url + "/" + key
+	}
 	buf := bytes.NewBuffer(data)
-	//fmt.Println("POSTing", url, "with", string(data))
+	state.Log("POSTing", url, "with", string(data))
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	req.Header.Set("accept", "application/json")
 	req.Header.Set("content-type", "application/json")
 	req.Body = io.NopCloser(buf)
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not do request: %v", err)
+		return nil, fmt.Errorf("could not do request: %v", err)
 	}
 	defer resp.Body.Close()
 	resbts, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not read response: %v", err)
+		return nil, fmt.Errorf("could not read response: %w", err)
 	}
-	aresp := &APIRPCResponse{}
-	err = json.Unmarshal(resbts, aresp)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not unmarshal response: %v", err, string(resbts))
-	}
-	if aresp.Error.Code != 0 {
-		return nil, &aresp.Error, nil
-	}
-	return aresp.Result, nil, nil
+	state.Log("RAW Response:", string(resbts))
+	return resbts, nil
 }
 
-func ApiFreeHandCall(url, key, methodTemplate string, params ...interface{}) (result []byte, aerr *APIError, err error) {
+func ApiFreeHandCall(url, key, methodTemplate string, params ...interface{}) (result []byte, err error) {
 	sparams := make([]any, len(params))
 	for i, p := range params {
+		if p == nil {
+			continue
+		}
 		sparams[i], err = json.Marshal(p)
 		if err != nil {
-			return nil, nil, fmt.Errorf("could not marshal param: %v", err)
+			return nil, fmt.Errorf("could not marshal param: %v", err)
 		}
 	}
 	calldat := fmt.Sprintf(methodTemplate, sparams...)
@@ -55,14 +55,31 @@ func ApiFreeHandCall(url, key, methodTemplate string, params ...interface{}) (re
 }
 
 // Returns unparsed "Result" if successful, otherwise nil and either *APIError or error
-func ApiCall(url, key string, ar *APIRequest) ([]byte, *APIError, error) {
+func ApiCall(url, key string, ar *APIRequest, result interface{}) ([]byte, error) {
 	data, err := ar.ToJSON()
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not marshal APIRequest: %v", err, ar)
+		return nil, fmt.Errorf("could not marshal APIRequest: %w", err)
 	}
 
-	return POSTCall(url, key, data)
-
+	bt, err := POSTCall(url, key, data)
+	if err != nil {
+		return nil, fmt.Errorf("Error in POSTCall: %v", err)
+	}
+	aresp := &APIRPCResponse{}
+	err = json.Unmarshal(bt, aresp)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal response: %w", err)
+	}
+	if aresp.Error.Code != 0 {
+		return nil, &aresp.Error
+	}
+	if result != nil {
+		err = json.Unmarshal(aresp.Result, result)
+		if err != nil {
+			return nil, fmt.Errorf("could not unmarshal result: %w", err)
+		}
+	}
+	return aresp.Result, nil
 }
 
 type APIRequest struct {
@@ -87,4 +104,8 @@ type APIError struct {
 	Code    int             `json:"code"`
 	Data    json.RawMessage `json:"data"`
 	Message string          `json:"message"`
+}
+
+func (ae *APIError) Error() string {
+	return fmt.Sprintf("APIError: %s (%d)", ae.Message, ae.Code)
 }

@@ -278,3 +278,19 @@ func ParseBigInt(input string) (*big.Int, error) {
 	res.Div(res, divisor)
 	return res, nil
 }
+
+func InputFloatUI(it *Item) error {
+	prompt := promptui.Prompt{
+		Label: it.Label,
+	}
+	s, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return err
+	}
+	it.Value = f
+	return nil
+}

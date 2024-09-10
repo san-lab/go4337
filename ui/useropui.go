@@ -351,7 +351,7 @@ func UserOpUI(usop *userop.UserOperation) {
 				fmt.Println("Transaction not sent")
 			}
 		case ApiCallsItem.Label:
-			ApiKeysUI(usop)
+			ApiCallsUI(usop)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
