@@ -1,26 +1,37 @@
 package ui
 
 import (
+	"fmt"
+	"sort"
+
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
 )
 
 var AddDictEntryItem = &Item{Label: "Add an Entry", Details: "Add a new dictionary entry"}
 var RemoveDictEntryItem = &Item{Label: "Remove an Entry", Details: "Remove a dictionary entry"}
+var RenameDictEntryItem = &Item{Label: "Rename an Entry", Details: "Rename a dictionary entry"}
 var FromAnotherDictItem = &Item{Label: "From Another Dictionary", Details: "Select a dictionary to choose from"}
 
 func StringFromDictionaryUI(dictionary string) (dictname, name, value string, success bool) {
 	selectToRemove := false
+	selectToRename := false
 
 	for {
 		items := []*Item{}
 		dict := state.GetDictionary(dictionary)
-		for k, v := range dict {
-			items = append(items, &Item{Label: k, Value: v})
+		//sort the keys
+		keys := make([]string, 0, len(dict))
+		for k := range dict {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			items = append(items, &Item{Label: k, Value: dict[k]})
 		}
 		if !selectToRemove {
 
-			items = append(items, AddDictEntryItem, RemoveDictEntryItem, FromAnotherDictItem)
+			items = append(items, AddDictEntryItem, RemoveDictEntryItem, RenameDictEntryItem, FromAnotherDictItem)
 		}
 		items = append(items, Back)
 		spr := promptui.Select{Label: "Dictionary: " + dictionary, Items: items, Templates: ItemTemplate, Size: 10}
@@ -39,6 +50,8 @@ func StringFromDictionaryUI(dictionary string) (dictname, name, value string, su
 			return AddDictEntryUI(dictionary)
 		case RemoveDictEntryItem.Label:
 			selectToRemove = true
+		case RenameDictEntryItem.Label:
+			selectToRename = true
 		case FromAnotherDictItem.Label:
 			dict_name, entry_name, entry_value, ok := StringFromAllDictionariesUI(dictionary)
 			if !ok {
@@ -53,6 +66,20 @@ func StringFromDictionaryUI(dictionary string) (dictname, name, value string, su
 				delete(dict, sel)
 				state.Save()
 				selectToRemove = false
+				continue
+			}
+			if selectToRename {
+				RenameItem := &Item{Label: fmt.Sprintf("New name for >>%s<<", sel)}
+				err := InputNewStringUI(RenameItem)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					nname := RenameItem.Value.(string)
+					dict[nname] = dict[sel]
+					delete(dict, sel)
+					state.Save()
+				}
+				selectToRename = false
 				continue
 			}
 			return dictionary, sel, dict[sel], true

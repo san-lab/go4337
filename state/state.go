@@ -151,6 +151,11 @@ func GetAddressBook(label string) (*AddressBook, bool) {
 	return ab, ok
 }
 
+func (ab *AddressBook) Get(name string) (*common.Address, bool) {
+	addr, ok := (*ab)[name]
+	return addr, ok
+}
+
 func (ab *AddressBook) Add(name string, addr *common.Address) {
 	(*ab)[name] = addr
 	state.Save()
@@ -173,6 +178,26 @@ func (ab *AddressBook) RemoveByName(name string) bool {
 	delete(*ab, name)
 	state.Save()
 	return ok
+}
+
+func (ab *AddressBook) Rename(oldname, newname string) bool {
+	addr, ok := (*ab)[oldname]
+	if !ok {
+		return false
+	}
+	delete(*ab, oldname)
+	(*ab)[newname] = addr
+	state.Save()
+	return true
+}
+
+func (ab *AddressBook) Keys() []string {
+	keys := []string{}
+	for k := range *ab {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 var StateFile = "state.json"
@@ -354,8 +379,13 @@ func AddSigner(sig signer.Signer) {
 	state.Save()
 }
 
-func GetSigners() map[string]signer.Signer {
-	return state.Signers
+func GetSigners() []string {
+	keys := []string{}
+	for k := range state.Signers {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func GetSigner(name string) signer.Signer {

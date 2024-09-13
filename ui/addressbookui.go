@@ -11,23 +11,26 @@ import (
 
 var AddAddressItem = &Item{Label: "Add a new Address"}
 var RemoveAddressItem = &Item{Label: "Remove an Address"}
+var RenameAddressItem = &Item{Label: "Rename an Address"}
 var FromAnotherBookItem = &Item{Label: "From another Address Book"}
 
 // Returns selcted name, address and a bool indicating if the selection was successful
 func AddressFromBookUI(label string) (string, *common.Address, bool) {
 	selectToRemove := false
+	selectToRename := false
 	abook, _ := state.GetAddressBook(label)
 	normalLabel := "Select a " + label
 	removeLabel := "Select a " + label + " to remove"
+	renameLabel := "Select a " + label + " to rename"
 	currentLabel := normalLabel
 	for {
 		items := []*Item{}
-		for name, addr := range *abook {
-			items = append(items, &Item{Label: fmt.Sprintf("%-25s", name), Details: "Select this " + label, Value: addr})
+		for _, key := range abook.Keys() {
+			items = append(items, &Item{Label: fmt.Sprintf("%-25s", key), Details: "Select this " + label, Value: (*abook)[key]})
 
 		}
-		if !selectToRemove {
-			items = append(items, FromAnotherBookItem, AddAddressItem, RemoveAddressItem)
+		if !selectToRemove && !selectToRename {
+			items = append(items, FromAnotherBookItem, AddAddressItem, RemoveAddressItem, RenameAddressItem)
 		}
 		items = append(items, Back)
 		// Create a new select prompt
@@ -35,7 +38,10 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 			Label:     currentLabel,
 			Items:     items,
 			Templates: ItemTemplate,
-			Size:      10,
+		}
+		prompt.Size = len(items)
+		if prompt.Size > 25 {
+			prompt.Size = 25
 		}
 		_, sel, err := prompt.Run()
 		if err != nil {
@@ -61,6 +67,9 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 		case RemoveAddressItem.Label:
 			selectToRemove = true
 			currentLabel = removeLabel
+		case RenameAddressItem.Label:
+			selectToRename = true
+			currentLabel = renameLabel
 		case FromAnotherBookItem.Label:
 			otherbook, oname, addr, ok := AddressFromAllBooksUI()
 			if ok {
@@ -77,6 +86,18 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 			if selectToRemove {
 				abook.RemoveByName(name)
 				selectToRemove = false
+				currentLabel = normalLabel
+
+			} else if selectToRename {
+				RenameItem := &Item{Label: fmt.Sprintf("New name for >>%s<<", name)}
+				err := InputNewStringUI(RenameItem)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				nname := RenameItem.Value.(string)
+				abook.Rename(name, nname)
+				selectToRename = false
 				currentLabel = normalLabel
 			} else {
 				return name, val.(*common.Address), true

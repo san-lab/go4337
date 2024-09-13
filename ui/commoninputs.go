@@ -105,15 +105,22 @@ func InputUint(item *Item, size int) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	base := 10
-	if strings.HasPrefix(s, "0x") {
-		s = s[2:]
-		base = 16
-	}
-	u, err := strconv.ParseUint(s, base, size)
+	/*
+		base := 10
+		if strings.HasPrefix(s, "0x") {
+			s = s[2:]
+			base = 16
+		}
+		u, err := strconv.ParseUint(s, base, size)
+		if err != nil {
+			return 0, err
+		}
+	*/
+	big, err := ParseBigInt(s)
 	if err != nil {
 		return 0, err
 	}
+	u := big.Uint64()
 	switch size {
 	case 8:
 		item.Value = uint8(u)

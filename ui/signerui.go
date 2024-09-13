@@ -17,7 +17,8 @@ func SignerUI(signerItem *Item) {
 	for {
 		l := len(state.GetSigners())
 		items := []*Item{}
-		for _, s := range state.GetSigners() {
+		for _, sn := range state.GetSigners() {
+			s := state.GetSigner(sn)
 			items = append(items, &Item{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type()})
 		}
 		if !selectToRemove {

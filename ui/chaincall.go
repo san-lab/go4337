@@ -58,6 +58,8 @@ var retArgs abi.Arguments
 
 var UtilCallItem = &Item{Label: "Web3Api Call", Details: "Call a Web3 API function"}
 
+var FromAddress = common.HexToAddress("0xaab05558448C8a9597287Db9F61e2d751645B12a")
+
 func TxCallUI(transactional bool) {
 
 	addressOk := false
@@ -129,7 +131,8 @@ func TxCallUI(transactional bool) {
 			if !transactional {
 
 				fmt.Println("Calling contract...")
-				ret, res, err := rpccalls.CallContract(SendEndpointItem.Value.(*state.RPCEndpoint), &common.Address{},
+				ret, res, err := rpccalls.CallContract(SendEndpointItem.Value.(*state.RPCEndpoint),
+					&FromAddress,
 					TargetContractItem.Value.(*common.Address), CallDataViewItem.Value.([]byte), retArgs)
 				if err != nil && err != rpccalls.ErrRetParse {
 					fmt.Println(err)
