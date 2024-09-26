@@ -15,7 +15,8 @@ import (
 }
 */
 
-type GetUserOperationByHashResponse_Alchemy struct {
+// Works for Alchemy, StackUp,Pimlico
+type UserOperationByHashResult_ASP struct {
 	UserOperation struct {
 		Sender               string `json:"sender"`
 		Nonce                string `json:"nonce"`
@@ -35,17 +36,6 @@ type GetUserOperationByHashResponse_Alchemy struct {
 	TransactionHash string `json:"transactionHash"`
 }
 
-func GetUserOperationByHash(url, key, hash string) (res *GetUserOperationByHashResponse_Alchemy, err error) {
-	ar := &APIRequest{Method: "eth_getUserOperationByHash", Params: []interface{}{hash}, Jsonrpc: "2.0", ID: 1}
-	res = &GetUserOperationByHashResponse_Alchemy{}
-
-	_, err = ApiCall(url, key, ar, res)
-	if err != nil {
-		return nil, fmt.Errorf("could not make API call: %w", err)
-	}
-	return res, nil
-}
-
 func SupportedEntryPoints(url, key string) (res *SupportedEntryPointsResult, err error) {
 	ar := &APIRequest{Method: "eth_supportedEntryPoints", Params: []interface{}{}, Jsonrpc: "2.0", ID: 1}
 	res = &SupportedEntryPointsResult{}
@@ -59,27 +49,17 @@ func SupportedEntryPoints(url, key string) (res *SupportedEntryPointsResult, err
 type SupportedEntryPointsResult []string
 
 type UserOperationReceipt_Alchemy struct {
-	UserOpHash    string `json:"userOpHash"`
-	EntryPoint    string `json:"entryPoint"`
-	Sender        string `json:"sender"`
-	Nonce         string `json:"nonce"`
-	Paymaster     string `json:"paymaster"`
-	ActualGasCost string `json:"actualGasCost"`
-	ActualGasUsed string `json:"actualGasUsed"`
-	Success       bool   `json:"success"`
-	Reason        string `json:"reason"`
-	Logs          []struct {
-		Address          string   `json:"address"`
-		Topics           []string `json:"topics"`
-		Data             string   `json:"data"`
-		BlockHash        string   `json:"blockHash"`
-		BlockNumber      string   `json:"blockNumber"`
-		TransactionHash  string   `json:"transactionHash"`
-		TransactionIndex string   `json:"transactionIndex"`
-		LogIndex         string   `json:"logIndex"`
-		Removed          bool     `json:"removed"`
-	} `json:"logs"`
-	Receipt struct {
+	UserOpHash    string       `json:"userOpHash"`
+	EntryPoint    string       `json:"entryPoint"`
+	Sender        string       `json:"sender"`
+	Nonce         string       `json:"nonce"`
+	Paymaster     string       `json:"paymaster"`
+	ActualGasCost string       `json:"actualGasCost"`
+	ActualGasUsed string       `json:"actualGasUsed"`
+	Success       bool         `json:"success"`
+	Reason        string       `json:"reason"`
+	Logs          []ReceiptLog `json:"logs"`
+	Receipt       struct {
 		TransactionHash   string      `json:"transactionHash"`
 		TransactionIndex  string      `json:"transactionIndex"`
 		BlockHash         string      `json:"blockHash"`
@@ -105,6 +85,18 @@ type UserOperationReceipt_Alchemy struct {
 		Type              string `json:"type"`
 		EffectiveGasPrice string `json:"effectiveGasPrice"`
 	} `json:"receipt"`
+}
+
+type ReceiptLog struct {
+	Address          string   `json:"address"`
+	Topics           []string `json:"topics"`
+	Data             string   `json:"data"`
+	BlockHash        string   `json:"blockHash"`
+	BlockNumber      string   `json:"blockNumber"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
 }
 
 type UserOperationReceipt_StackUp struct {
@@ -193,55 +185,6 @@ type UserOperationReceipt_Pimlico struct {
 		LogsBloom         string `json:"logsBloom"`
 		Status            string `json:"status"`
 		EffectiveGasPrice string `json:"effectiveGasPrice"`
-	} `json:"receipt"`
-}
-
-type UserOperationReceipt_Biconomy struct {
-	UserOpHash    string `json:"userOpHash"`
-	EntryPoint    string `json:"entryPoint"`
-	Sender        string `json:"sender"`
-	Nonce         int    `json:"nonce"`
-	Success       string `json:"success"`
-	Paymaster     string `json:"paymaster"`
-	ActualGasCost int64  `json:"actualGasCost"`
-	ActualGasUsed int    `json:"actualGasUsed"`
-	Reason        string `json:"reason"`
-	Logs          []struct {
-		Address          string   `json:"address"`
-		Topics           []string `json:"topics"`
-		Data             string   `json:"data"`
-		BlockNumber      string   `json:"blockNumber"`
-		TransactionHash  string   `json:"transactionHash"`
-		TransactionIndex string   `json:"transactionIndex"`
-		BlockHash        string   `json:"blockHash"`
-		LogIndex         string   `json:"logIndex"`
-		Removed          bool     `json:"removed"`
-	} `json:"logs"`
-	Receipt struct {
-		BlockHash         string      `json:"blockHash"`
-		BlockNumber       string      `json:"blockNumber"`
-		ContractAddress   interface{} `json:"contractAddress"`
-		CumulativeGasUsed string      `json:"cumulativeGasUsed"`
-		EffectiveGasPrice string      `json:"effectiveGasPrice"`
-		From              string      `json:"from"`
-		GasUsed           string      `json:"gasUsed"`
-		Logs              []struct {
-			Address          string   `json:"address"`
-			Topics           []string `json:"topics"`
-			Data             string   `json:"data"`
-			BlockNumber      string   `json:"blockNumber"`
-			TransactionHash  string   `json:"transactionHash"`
-			TransactionIndex string   `json:"transactionIndex"`
-			BlockHash        string   `json:"blockHash"`
-			LogIndex         string   `json:"logIndex"`
-			Removed          bool     `json:"removed"`
-		} `json:"logs"`
-		LogsBloom        string `json:"logsBloom"`
-		Status           string `json:"status"`
-		To               string `json:"to"`
-		TransactionHash  string `json:"transactionHash"`
-		TransactionIndex string `json:"transactionIndex"`
-		Type             string `json:"type"`
 	} `json:"receipt"`
 }
 

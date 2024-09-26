@@ -99,22 +99,32 @@ type AlchemyEstimateGasCostResponse struct {
 	VerificationGasLimit string `json:"verificationGasLimit"`
 }
 
-func Eth_getUserOperationByHash(url, key string, hash string, provider string) ([]byte, error) {
+func Eth_getUserOperationByHash(url, key string, hash string, provider string) (*UserOperationByHashResult_ASP, error) {
 	ar := &APIRequest{
 		ID:      1,
 		Jsonrpc: "2.0",
 		Method:  "eth_getUserOperationByHash",
 		Params:  []interface{}{hash},
 	}
-	bt, err := ApiCall(url, key, ar, nil)
+	if provider == BiconomyProvider {
+		bres := new(UserOperationByHashResult_Biconomy)
+		_, err := ApiCall(url, key, ar, bres)
+		if err != nil {
+			return nil, fmt.Errorf("API Call error: %w", err)
+		}
+		return RepackageUSOPResult(bres)
+	}
+
+	result := new(UserOperationByHashResult_ASP)
+	_, err := ApiCall(url, key, ar, result)
 	if err != nil {
 		return nil, fmt.Errorf("API Call error: %w", err)
 	}
-	return bt, nil
+	return result, nil
 
 }
 
-func Eth_getUserOperationReceipt(url, key string, hash string, provider string) ([]byte, error) {
+func Eth_getUserOperationReceipt(url, key string, hash string, provider string) (*UserOperationReceipt_Alchemy, error) {
 	//fmt.Println("eth_getUserOperationReceipt not implemented")
 	ar := &APIRequest{
 		ID:      1,
@@ -123,7 +133,17 @@ func Eth_getUserOperationReceipt(url, key string, hash string, provider string) 
 		Params:  []interface{}{hash},
 	}
 
-	return ApiCall(url, key, ar, nil)
+	if provider == BiconomyProvider {
+		bres := new(UserOperationReceipt_Biconomy)
+		_, err := ApiCall(url, key, ar, bres)
+		if err != nil {
+			return nil, fmt.Errorf("API Call error: %w", err)
+		}
+		return RepackageUSOPReceiptResult(bres)
+	}
+	arec := new(UserOperationReceipt_Alchemy)
+	_, err := ApiCall(url, key, ar, arec)
+	return arec, err
 
 }
 

@@ -85,7 +85,7 @@ func ShortString(data string, l int) string {
 	if len(data) < l+3 {
 		return data
 	}
-	return fmt.Sprintf("%s...%s", data[:l], data[len(data)-l:])
+	return fmt.Sprintf("%s...%s", data[:l/2], data[len(data)-l/2:])
 }
 
 func (i *Item) String() string {

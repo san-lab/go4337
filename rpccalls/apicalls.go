@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"text/template"
 
 	"encoding/json"
 
@@ -13,8 +15,9 @@ import (
 
 func POSTCall(url, key string, data []byte) (result []byte, err error) {
 	client := http.Client{}
-	if len(key) > 0 {
-		url = url + "/" + key
+	url, err = CombineURLWithKey(url, key)
+	if err != nil {
+		return nil, fmt.Errorf("could not combine URL with key: %v", err)
 	}
 	buf := bytes.NewBuffer(data)
 	state.Log("POSTing", url, "with", string(data))
@@ -108,4 +111,29 @@ type APIError struct {
 
 func (ae *APIError) Error() string {
 	return fmt.Sprintf("APIError: %s (%d)", ae.Message, ae.Code)
+}
+
+var ApiURLTemplates = map[string]string{}
+
+func CombineURLWithKey(url, key string) (kurl string, err error) {
+	if len(key) == 0 {
+		return url, nil
+	}
+	if strings.Contains(url, "{{.}}") {
+		turl := new(template.Template).Lookup(url)
+		if turl == nil {
+			turl, err = template.New(url).Parse(url)
+			if err != nil {
+				return url, err
+			}
+		}
+		wr := &strings.Builder{}
+		err = turl.Execute(wr, key)
+		return wr.String(), err
+	}
+
+	if url[len(url)-1] == '/' {
+		return url + key, nil
+	}
+	return url + "/" + key, nil
 }
