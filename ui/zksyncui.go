@@ -452,6 +452,7 @@ func SignEraUI(era *zksyncera.ZkSyncTxRLP) {
 				fmt.Println(err)
 				continue
 			}
+			sig[64] += 27
 			era.CustomSignature = sig
 			ERASignItem.Value = sig
 			fmt.Println("Signature:", hex.EncodeToString(sig[:]))
