@@ -77,7 +77,7 @@ func ZkSyncEraUI() {
 				continue
 			}
 			url := "http://localhost:3000"
-			call := fmt.Sprintf(`curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":[0x%x],"id":1}' %s`, enctx, url)
+			call := fmt.Sprintf(`curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0x%x"],"id":1}' %s`, enctx, url)
 			fmt.Println(call)
 		case SignEraItem.Label:
 			SignEraUI(gzktx)
