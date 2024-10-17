@@ -16,7 +16,7 @@ var ZkEIP712TxItem = &Item{Label: "ZkTx Content"}
 var PrintItem = &Item{Label: "Print"}
 var EncodeItem = &Item{Label: "RLP Encode"}
 var DecodeItem = &Item{Label: "Decode from RLP"}
-var HashItem = &Item{Label: "CalculateHash"}
+var CurlItem = &Item{Label: "CURL call"}
 var SignEraItem = &Item{Label: "Sign"}
 
 func ZkSyncEraUI() {
@@ -25,7 +25,7 @@ func ZkSyncEraUI() {
 		PrintItem,
 		EncodeItem,
 		DecodeItem,
-		HashItem,
+		CurlItem,
 		SignEraItem,
 		Back,
 	}
@@ -70,15 +70,15 @@ func ZkSyncEraUI() {
 			} else {
 				fmt.Printf("0x%x\n", bt)
 			}
-		case HashItem.Label:
-			h, err := HashEra(gzktx)
+		case CurlItem.Label:
+			enctx, err := gzktx.Encode()
 			if err != nil {
 				fmt.Println(err)
-			} else {
-				HashItem.Value = h
-				fmt.Printf("0x%x\n", h)
+				continue
 			}
-
+			url := "http://localhost:3000"
+			call := fmt.Sprintf(`curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":[0x%x],"id":1}' %s`, enctx, url)
+			fmt.Println(call)
 		case SignEraItem.Label:
 			SignEraUI(gzktx)
 		default:
@@ -312,7 +312,7 @@ func SignEraUI(era *zksyncera.ZkSyncTxRLP) {
 		return
 	}
 
-	items := []*Item{ZkChainIDItem, HashItem, ERASignerItem, ERASignItem, Back}
+	items := []*Item{ZkChainIDItem, ERASignerItem, ERASignItem, Back}
 	for {
 		spr := promptui.Select{Label: "Sign ZkSync Era EIP712 message", Items: items, Templates: ItemTemplate, Size: 10}
 		_, sel, err := spr.Run()
@@ -324,7 +324,7 @@ func SignEraUI(era *zksyncera.ZkSyncTxRLP) {
 		case Back.Label:
 			return
 		case ZkChainIDItem.Label:
-		case HashItem.Label:
+
 		case ERASignerItem.Label:
 			SignerUI(ERASignerItem)
 		case ERASignItem.Label:
