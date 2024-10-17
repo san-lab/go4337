@@ -25,6 +25,7 @@ var StdApiItem = &Item{Label: "Standard (eth_/pm_) API methods"}
 
 var ApiUserOpItem = &Item{Label: "User Operation"}
 var ApiCallItem = &Item{Label: "Call API"}
+var ZkSyncEraItem = &Item{Label: "ZkSync Era"}
 
 func ApiCallsUI(usop *userop.UserOperation) {
 	var AlchemyUIItem = &Item{Label: "Alchemy API"}
@@ -32,7 +33,7 @@ func ApiCallsUI(usop *userop.UserOperation) {
 	var BiconomyUIItem = &Item{Label: "Biconomy API"}
 	var PimlicoUIItem = &Item{Label: "Pimlico API"}
 	var CustomUIItem = &Item{Label: "Custom API"}
-	var items = []*Item{AlchemyUIItem, StackUpUIItem, BiconomyUIItem, PimlicoUIItem, CustomUIItem, Back}
+	var items = []*Item{AlchemyUIItem, StackUpUIItem, BiconomyUIItem, PimlicoUIItem, CustomUIItem, ZkSyncEraItem, Back}
 	for {
 		spr := promptui.Select{Label: "APIs", Items: items, Templates: ItemTemplate, Size: 10}
 		_, sel, err := spr.Run()
@@ -53,6 +54,8 @@ func ApiCallsUI(usop *userop.UserOperation) {
 			ProvAPIUI(rpccalls.PimlicoProvider, usop)
 		case CustomUIItem.Label:
 			CustomAPIUI(usop)
+		case ZkSyncEraItem.Label:
+			ZkSyncEraUI()
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}

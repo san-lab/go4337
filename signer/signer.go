@@ -11,7 +11,12 @@ type Signer interface {
 	Name() string
 	String() string //Details
 	Type() string
+	PlainSigner() PlainSigner
 	Marshal() ([]byte, error)
+}
+
+type PlainSigner interface {
+	Sign([]byte) ([]byte, error)
 }
 
 /*
