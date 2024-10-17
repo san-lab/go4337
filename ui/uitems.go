@@ -20,7 +20,7 @@ type Item struct {
 
 func (i *Item) DisplayValue() string {
 	if i.DisplayValueString != "" {
-		return ShortString(i.DisplayValueString, 50)
+		return ShortString(i.DisplayValueString, 72)
 	}
 	if i.Value == nil {
 		return ""

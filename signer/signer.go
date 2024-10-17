@@ -8,15 +8,11 @@ import (
 
 type Signer interface {
 	Sign([]byte) ([]byte, error)
+	SignHash([]byte) ([]byte, error) //without any decorations
 	Name() string
 	String() string //Details
 	Type() string
-	PlainSigner() PlainSigner
 	Marshal() ([]byte, error)
-}
-
-type PlainSigner interface {
-	Sign([]byte) ([]byte, error)
 }
 
 /*

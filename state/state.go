@@ -16,6 +16,7 @@ import (
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/userop"
+	"github.com/san-lab/go4337/zksyncera"
 )
 
 // Some Types that are automatically abi-generated from entrypoin contract abi's
@@ -36,6 +37,7 @@ type StateStruct struct {
 	Dictionaries   map[string]map[string]string
 	RPCEndpoints   map[string]*RPCEndpoint
 	GasLimitOffset uint64
+	ERA712s        map[string]*zksyncera.ZkSyncTxRLP
 }
 
 //type ABIs map[string]string
@@ -95,6 +97,9 @@ func init() {
 	}
 	if state.Dictionaries == nil {
 		state.Dictionaries = make(map[string]map[string]string)
+	}
+	if state.ERA712s == nil {
+		state.ERA712s = make(map[string]*zksyncera.ZkSyncTxRLP)
 	}
 
 	//Add the Entrypoint abis
@@ -550,4 +555,28 @@ func AddToDictionatyWithIndice(dict, label, value string) {
 		idx++
 	}
 
+}
+
+func GetZkERA712(name string) (*zksyncera.ZkSyncTxRLP, bool) {
+	era, ok := state.ERA712s[name]
+	return era, ok
+}
+
+func AddZkERA712(name string, era *zksyncera.ZkSyncTxRLP) {
+	state.ERA712s[name] = era
+	state.Save()
+}
+
+func RemoveZkERA712(name string) {
+	delete(state.ERA712s, name)
+	state.Save()
+}
+
+func ListZkERA712s() []string {
+	keys := []string{}
+	for k := range state.ERA712s {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

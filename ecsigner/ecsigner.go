@@ -117,16 +117,6 @@ func (ecsigner *ECSigner) GetKey() *ecdsa.PrivateKey {
 	return ecsigner.SignerKey
 }
 
-// PlainSigner function
-func (ecsigner *ECSigner) PlainSigner() signer.PlainSigner {
-	return &PlainECDSASigner{ecsigner.SignerKey}
-}
-
-type PlainECDSASigner struct {
-	pk *ecdsa.PrivateKey
-}
-
-func (pecdsa *PlainECDSASigner) Sign(mssg []byte) ([]byte, error) {
-	return crypto.Sign(mssg, pecdsa.pk)
-
+func (ecsigner ECSigner) SignHash(inhash []byte) ([]byte, error) {
+	return crypto.Sign(inhash, ecsigner.SignerKey)
 }

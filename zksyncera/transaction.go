@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/san-lab/go4337/signer"
 )
 
 func (zktx *ZkSyncTxRLP) Decode(input []byte) error {
@@ -229,4 +230,32 @@ func Types(d apitypes.TypedDataDomain) []apitypes.Type {
 		types = append(types, apitypes.Type{Name: "salt", Type: "uint256"})
 	}
 	return types
+}
+
+func (era *ZkSyncTxRLP) HashEra() ([]byte, error) {
+	td, err := era.TypedData()
+	if err != nil {
+		return nil, err
+	}
+	h, _, err := apitypes.TypedDataAndHash(*td)
+	if err != nil {
+		return nil, err
+	}
+	return h, nil
+}
+
+// At the moment this metthod IS NOT setting the CustomSignature field
+func (era *ZkSyncTxRLP) Sign(vsigner interface{}) ([]byte, error) {
+	if vsigner == nil {
+		return nil, fmt.Errorf("signer is nil")
+	}
+	signer, ok := vsigner.(signer.Signer)
+	if !ok {
+		return nil, fmt.Errorf("invalid signer type")
+	}
+	h, err := era.HashEra()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get hash of tx: %w", err)
+	}
+	return signer.SignHash(h)
 }
