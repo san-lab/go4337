@@ -217,6 +217,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 			}
 		case ZkCustomSignatureItem.Label:
 			SignEraUI(gzktx)
+			ZkCustomSignatureItem.Value = gzktx.CustomSignature
 		case ZkFactoryDepsItem.Label:
 			ZkFactoryDepsUI(zktx)
 		case ZkPaymasterParamsItem.Label:
@@ -238,16 +239,24 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 func ZkFactoryDepsUI(zktx *zksyncera.ZkSyncTxRLP) {
 	AppendItem := &Item{Label: "Append Factory Dependency"}
 	RemoveItem := &Item{Label: "Remove Factory Dependency"}
+	removing := false
 	for {
+
 		items := []*Item{}
 		for i, dep := range zktx.FactoryDeps {
 			depItem := &Item{Label: fmt.Sprintf("Dep#%v", i)}
 			depItem.Value = dep
 			items = append(items, depItem)
 		}
-		items = append(items, AppendItem, RemoveItem, Back)
-
-		spr := promptui.Select{Label: "Factory Dependencies", Items: items, Templates: ItemTemplate, Size: 10}
+		if !removing {
+			items = append(items, AppendItem, RemoveItem)
+		}
+		items = append(items, Back)
+		label := "Factory Dependencies"
+		if removing {
+			label = "Select Factory Dependency to remove"
+		}
+		spr := promptui.Select{Label: label, Items: items, Templates: ItemTemplate, Size: 10}
 		i, sel, err := spr.Run()
 		if err != nil {
 			fmt.Println("could not run prompt:", err)
@@ -268,12 +277,16 @@ func ZkFactoryDepsUI(zktx *zksyncera.ZkSyncTxRLP) {
 			}
 
 		case RemoveItem.Label:
-			if i > 0 && i < len(zktx.FactoryDeps) {
-				zktx.FactoryDeps = append(zktx.FactoryDeps[:i], zktx.FactoryDeps[i+1:]...)
-				continue
-			}
+			removing = true
 		default:
-			fmt.Println("Not implemented yet:", sel)
+			if removing {
+				fmt.Println("Removing Factory Dependency", i)
+				if i >= 0 && i < len(zktx.FactoryDeps) {
+					zktx.FactoryDeps = append(zktx.FactoryDeps[:i], zktx.FactoryDeps[i+1:]...)
+
+				}
+				removing = false
+			}
 		}
 	}
 
