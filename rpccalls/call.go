@@ -56,6 +56,14 @@ func SendTransaction(rpc *state.RPCEndpoint, signedTx *types.Transaction) (*comm
 	return &h, nil
 }
 
+func SendMethodCall(rpc *state.RPCEndpoint, result interface{}, method string, args ...interface{}) error {
+	client, err := ethclient.Dial(rpc.URL)
+	if err != nil {
+		return fmt.Errorf("could not connect to rpc: %v", err)
+	}
+	return client.Client().CallContext(context.Background(), result, method, args...)
+}
+
 func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to common.Address, value *big.Int, calldata []byte, gasLimit uint64, key KeyContainer) (*common.Hash, error) {
 	signedTx, err := CreateSignedTransaction(rpc, from, to, value, calldata, gasLimit, key.GetKey())
 	if err != nil {
