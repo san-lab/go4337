@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/zksyncera"
 )
@@ -162,7 +163,7 @@ func WorkWithERAUI(lera *zksyncera.ZkSyncTxRLP) {
 		PrintItem,
 		EncodeItem,
 		CurlItem,
-		SignEraItem,
+		EraCallItem,
 		Back,
 	}
 	for {
@@ -200,8 +201,8 @@ func WorkWithERAUI(lera *zksyncera.ZkSyncTxRLP) {
 			url := "http://localhost:3000"
 			call := fmt.Sprintf(`curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0x%x"],"id":1}' %s`, enctx, url)
 			fmt.Println(call)
-		case SignEraItem.Label:
-			SignEraUI(lera)
+		case EraCallItem.Label:
+			ERACallUI(lera)
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -476,4 +477,58 @@ func FactoryDeptsDetails(deps []hexutil.Bytes) string {
 
 	}
 	return det
+}
+
+var EraCallItem = &Item{Label: "Call RPC"}
+
+func ERACallUI(era *zksyncera.ZkSyncTxRLP) {
+	address := era.To
+
+	if address == nil {
+		fmt.Println("No target address")
+		return
+	}
+	enctx, err := era.Encode()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	rpc, rpcOk := SendEndpointItem.Value.(*state.RPCEndpoint)
+	for {
+		items := []*Item{SendEndpointItem}
+		if rpcOk {
+			items = append(items, EraCallItem)
+
+		}
+		items = append(items, Back)
+		prompt := promptui.Select{
+			Label:     "Set the Call parameters",
+			Items:     items,
+			Templates: ItemTemplate,
+		}
+		_, sel, err := prompt.Run()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch sel {
+		case Back.Label:
+			return
+
+		case SendEndpointItem.Label:
+			RPCEndpointsUI(SendEndpointItem)
+			rpc, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+		case EraCallItem.Label:
+			//ERACall(rpc, address)
+			var res string
+			err := rpccalls.SendMethodCall(rpc, &res, "eth_sendRawTransaction", fmt.Sprintf("0x%x", enctx))
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Transaction sent:", res)
+			}
+
+		}
+	}
 }

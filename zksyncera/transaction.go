@@ -259,3 +259,7 @@ func (era *ZkSyncTxRLP) Sign(vsigner interface{}) ([]byte, error) {
 	}
 	return signer.SignHash(h)
 }
+
+func (era *ZkSyncTxRLP) MarshalBinary() ([]byte, error) {
+	return era.Encode()
+}
