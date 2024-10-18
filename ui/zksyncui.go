@@ -391,14 +391,7 @@ func ZkFactoryDepsUI(zktx *zksyncera.ZkSyncTxRLP) {
 			return
 		case AppendItem.Label:
 			nit := &Item{Label: "New factory dependency"}
-			err := InputBytes(nit, -1)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				fd := nit.Value.([]byte)
-				zktx.FactoryDeps = append(zktx.FactoryDeps, fd[:])
-				continue
-			}
+			InputXexUI(nit, zktx)
 
 		case RemoveItem.Label:
 			removing = true
@@ -414,6 +407,41 @@ func ZkFactoryDepsUI(zktx *zksyncera.ZkSyncTxRLP) {
 		}
 	}
 
+}
+
+func InputXexUI(nit *Item, era *zksyncera.ZkSyncTxRLP) {
+	HexItem := &Item{Label: "Direct Hex Data"}
+	FileItem := &Item{Label: "Hex Data from file"}
+	sel := promptui.Select{Label: nit.Label, Items: []*Item{HexItem, FileItem, Back}, Templates: ItemTemplate, Size: 10}
+
+	_, s, err := sel.Run()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	switch s {
+	case Back.Label:
+		return
+	case HexItem.Label:
+		err := InputBytes(nit, -1)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fd := nit.Value.([]byte)
+			era.FactoryDeps = append(era.FactoryDeps, fd[:])
+			return
+		}
+	case FileItem.Label:
+		bt, err := InputHexFileUI("Select file with hex data")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		era.FactoryDeps = append(era.FactoryDeps, bt)
+		return
+	}
+	return
 }
 
 func ZkPaymasterParamsUI() {

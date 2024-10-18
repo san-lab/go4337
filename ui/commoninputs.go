@@ -301,3 +301,13 @@ func InputFloatUI(it *Item) error {
 	it.Value = f
 	return nil
 }
+
+func InputHexFileUI(label string) ([]byte, error) {
+	fmt.Println(label)
+	hbytes, err := SelectFileFromFS("")
+	if err != nil {
+		return nil, err
+	}
+	return hex.DecodeString(string(hbytes))
+
+}
