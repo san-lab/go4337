@@ -98,7 +98,7 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 			gasLimit := usop.TotalGasLimit() + state.GetGasLimitOffset()
 			//fmt.Println("gasLimit:", gasLimit, len(calldata))
 			//return nil, fmt.Errorf("not implemented")
-			return rpccalls.CreateAndSendTransaction(endpoint, from, to, big.NewInt(0), calldata, gasLimit, signer)
+			return rpccalls.CreateAndSendTransaction(endpoint, &from, &to, big.NewInt(0), calldata, gasLimit, signer)
 
 		}
 

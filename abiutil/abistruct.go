@@ -1,6 +1,10 @@
 package abiutil
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
+)
 
 type SolcCombinedJsonOutput struct {
 	Contracts struct {
@@ -812,4 +816,16 @@ type FullABIJsonRemix struct {
 		} `json:"methodIdentifiers"`
 	} `json:"data"`
 	Abi string `json:"abi"`
+}
+
+func GetSelectorsAsSlice(myabi *abi.ABI) [][4]byte {
+	sels := make([][4]byte, len(myabi.Methods))
+	i := 0
+	for _, m := range myabi.Methods {
+
+		copy(sels[i][:], m.ID[:4])
+		i++
+	}
+
+	return sels
 }

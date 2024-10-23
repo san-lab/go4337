@@ -14,12 +14,13 @@ import (
 
 var ViewCallItem = &Item{Label: "View Call", Details: "Call a view/pure function"}
 var TxCallItem = &Item{Label: "Tx Call", Details: "Send a transaction"}
+var DeployViaCreateItem = &Item{Label: "Deploy via Create", Details: "Deploy a contract via CREATE. TO will be left empty"}
 var GenericRPCCallITem = &Item{Label: "Generic RPC Call", Details: "Call a generic RPC function"}
 
 func ChainCallUI() {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{GenericRPCCallITem, ViewCallItem, TxCallItem, Back},
+		Items:     []*Item{GenericRPCCallITem, ViewCallItem, TxCallItem, DeployViaCreateItem, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -35,11 +36,13 @@ func ChainCallUI() {
 
 		case ViewCallItem.Label:
 			//ViewCallUI()
-			TxCallUI(false)
+			TxCallUI(false, false)
 		case TxCallItem.Label:
-			TxCallUI(true)
+			TxCallUI(true, false)
 		case GenericRPCCallITem.Label:
 			GenericRPCCallUI()
+		case DeployViaCreateItem.Label:
+			TxCallUI(true, true)
 			return
 		}
 	}
@@ -60,7 +63,7 @@ var UtilCallItem = &Item{Label: "Web3Api Call", Details: "Call a Web3 API functi
 
 var FromAddress = common.HexToAddress("0xaab05558448C8a9597287Db9F61e2d751645B12a")
 
-func TxCallUI(transactional bool) {
+func TxCallUI(transactional bool, deploy bool) {
 
 	addressOk := false
 	calldatOk := false
@@ -85,7 +88,7 @@ func TxCallUI(transactional bool) {
 		} else {
 			items = append(items, CallDataViewItem) // Just to keep the calldata around when switching to/from transactional
 		}
-		if rpcOk && addressOk {
+		if rpcOk && (addressOk || deploy) {
 			if calldatOk && signerOk {
 				items = append(items, MakeTheCallItem)
 			}
@@ -153,12 +156,17 @@ func TxCallUI(transactional bool) {
 				signer := CallSignerItem.Value.(rpccalls.KeyContainer)
 				key := signer.GetKey()
 				from := ecrypto.PubkeyToAddress(key.PublicKey)
-				to := TargetContractItem.Value.(*common.Address)
+				var to *common.Address
+				if deploy {
+					to = nil
+				} else {
+					to = TargetContractItem.Value.(*common.Address)
+				}
 				value := CallValueItem.Value.(*big.Int)
 				calldata := CallDataTxItem.Value.([]byte)
 				h, err := rpccalls.CreateAndSendTransaction(SendEndpointItem.Value.(*state.RPCEndpoint),
-					from,
-					*to,
+					&from,
+					to,
 					value,
 					calldata,
 					GasLimitItem.Value.(uint64),

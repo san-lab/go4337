@@ -18,7 +18,7 @@ type KeyContainer interface {
 	GetKey() *ecdsa.PrivateKey
 }
 
-func CreateSignedTransaction(rpc *state.RPCEndpoint, from, to common.Address, value *big.Int, calldata []byte, gasLimit uint64, key *ecdsa.PrivateKey) (*types.Transaction, error) {
+func CreateSignedTransaction(rpc *state.RPCEndpoint, from, to *common.Address, value *big.Int, calldata []byte, gasLimit uint64, key *ecdsa.PrivateKey) (*types.Transaction, error) {
 	client, err := ethclient.Dial(rpc.URL)
 	if err != nil {
 		return nil, err
@@ -32,15 +32,20 @@ func CreateSignedTransaction(rpc *state.RPCEndpoint, from, to common.Address, va
 		gasPrice,
 		new(big.Int).Div(gasPrice, big.NewInt(5))) // 20% more than suggested
 
-	nonce, err := client.PendingNonceAt(context.Background(), from)
+	nonce, err := client.PendingNonceAt(context.Background(), *from)
 	if err != nil {
 		return nil, fmt.Errorf("could not get nonce: %v", err)
 	}
 
-	tx := types.NewTransaction(nonce, to, value, gasLimit, gasPrice, calldata)
+	if to != nil && to.String() != (common.Address{}).String() {
 
-	return types.SignTx(tx, types.NewEIP155Signer(rpc.ChainId), key)
+		tx := types.NewTransaction(nonce, *to, value, gasLimit, gasPrice, calldata)
 
+		return types.SignTx(tx, types.NewEIP155Signer(rpc.ChainId), key)
+	} else {
+		tx := types.NewContractCreation(nonce, value, gasLimit, gasPrice, calldata)
+		return types.SignTx(tx, types.NewEIP155Signer(rpc.ChainId), key)
+	}
 }
 
 func SendTransaction(rpc *state.RPCEndpoint, signedTx *types.Transaction) (*common.Hash, error) {
@@ -64,7 +69,7 @@ func SendMethodCall(rpc *state.RPCEndpoint, result interface{}, method string, a
 	return client.Client().CallContext(context.Background(), result, method, args...)
 }
 
-func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to common.Address, value *big.Int, calldata []byte, gasLimit uint64, key KeyContainer) (*common.Hash, error) {
+func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to *common.Address, value *big.Int, calldata []byte, gasLimit uint64, key KeyContainer) (*common.Hash, error) {
 	signedTx, err := CreateSignedTransaction(rpc, from, to, value, calldata, gasLimit, key.GetKey())
 	if err != nil {
 		return nil, fmt.Errorf("could not create signed tx: %v", err)

@@ -16,6 +16,35 @@ import (
 var AddAbiItem = &Item{Label: "Add ABI", Details: "Add a new ABI"}
 
 // If callback is not nil, it will be set and the function will return
+func SelectAbiUI(label string) (contract string, ok bool) {
+
+	abiitems := []*Item{}
+	for _, contract := range state.ListABIs() {
+		//We can assume the abi is in the cache
+		abiitems = append(abiitems, &Item{Label: contract[0], Details: "Select this ABI", Value: contract[1]})
+	}
+	abiitems = append(abiitems, Back)
+	// Create a new select prompt
+	prompt := promptui.Select{
+		Label:     label,
+		Items:     abiitems,
+		Templates: ItemTemplate,
+		Size:      10,
+	}
+
+	_, contract, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		return "", false
+	}
+	switch contract {
+	case Back.Label:
+		return "", false
+	default:
+		return contract, true
+	}
+}
+
 func AbisUI(callbackItem *Item) (contract string, err error) {
 	for {
 		abiitems := []*Item{}
@@ -126,6 +155,7 @@ var ConstructorItem = &Item{Label: "Constructor", Details: "Encode constructor p
 var MethodItem = &Item{Label: "Method", Details: "Manage method"}
 var DeployBytecodeItem = &Item{Label: "Deploy Bytecode", Details: "Deploy Bytecode"}
 var ExecuteBytecodeItem = &Item{Label: "Execute Bytecode", Details: "Execute Bytecode"}
+var SelectrorsItem = &Item{Label: "Selectors", Details: "Manage selectors"}
 
 func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return error?
 	var label string
@@ -150,7 +180,7 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 			MethodItem.DisplayValueString = ""
 		}
 		items = append(items, EditAbiItem, DeleteAbiItem, SelectMethodItem, MethodItem, ConstructorItem, DeployBytecodeItem,
-			ExecuteBytecodeItem, Back)
+			ExecuteBytecodeItem, SelectrorsItem, Back)
 		// Create a new select prompt
 		prompt := promptui.Select{
 			Label:     label,
@@ -200,6 +230,29 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 					abiart.ExecuteBytecode = ExecuteBytecodeItem.Value.([]byte)
 				}
 				state.Save()
+			case SelectrorsItem.Label:
+				sels := make([][4]byte, len(abiart.ABI.Methods))
+				i := 0
+				for _, m := range abiart.ABI.Methods {
+					fmt.Printf("0x%x, ", m.ID)
+
+					copy(sels[i][:], m.ID[:4])
+					i++
+				}
+				fmt.Println()
+				abiselct, err := abi.NewType("bytes4[]", "", nil)
+
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				abiselc := abi.Arguments{{Type: abiselct}}
+				bt, err := abiselc.Pack(sels)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				fmt.Printf("Encoded Selectors: 0x%x\n", bt)
 
 			default:
 				fmt.Println("Not implemented yet:", sel)
@@ -323,6 +376,9 @@ func SelectMethodUI(contractName string) {
 			if ok {
 				MethodItem.Value = it.Value
 				MethodItem.DisplayValueString = it.Label + "()"
+				mc, _ := it.Value.(*state.MethodCall)
+				m := abiart.ABI.Methods[mc.MethodName]
+				MethodItem.Details = fmt.Sprintf("0x%x, %s", m.ID, m.Sig)
 				return
 			}
 		}
@@ -335,6 +391,7 @@ func Capitalize(s string) string {
 }
 
 var AppendItem = &Item{Label: "Append", Details: "Append a new value"}
+var SelectorsFromABIItem = &Item{Label: "Selectors from ABI", Details: "Get all method selectors from the ABI"}
 
 func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 	fmt.Println(topItem.Value)
@@ -351,9 +408,19 @@ func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 			valueItems = append(valueItems, &Item{Label: fmt.Sprintf("%s_%v", slice.Name, i), Details: "set " + slice.Type.Elem.String(), Value: element.Interface()})
 		}
 	}
+	//detect it this is a slice of bytes4
+	bytes4 := false
+	if slice.Type.Elem.T == abi.FixedBytesTy && slice.Type.Elem.Size == 4 {
+		bytes4 = true
+	}
+
 	loop := true
 	for loop {
-		items := valueItems
+		var items []*Item
+		if bytes4 {
+			items = append(items, SelectorsFromABIItem)
+		}
+		items = append(items, valueItems...)
 		items = append(items, AppendItem, Set, Back)
 		// Create a new select prompt
 		prompt := promptui.Select{
@@ -373,6 +440,11 @@ func SetSliceUI(topItem *Item, slice *abi.Argument) error {
 			return fmt.Errorf("Back")
 		case Set.Label:
 			loop = false
+		case SelectorsFromABIItem.Label:
+			if SelectorsFromAbiUI(topItem) {
+				return nil
+			}
+
 		case AppendItem.Label:
 			input := &abi.Argument{Type: *slice.Type.Elem}
 			newItem := &Item{Label: fmt.Sprintf("%s_%v", slice.Name, len(valueItems)), Details: "set " + slice.Type.Elem.String()}
@@ -433,7 +505,9 @@ func SetTupleUI(item *Item, tuple *abi.Argument) error {
 
 	// Expect nil or a tuple
 	if item.Value != nil && reflect.TypeOf(item.Value) != tuple.Type.GetType() {
-		return fmt.Errorf("Value passed that is not a correct struct")
+		fmt.Println("Value passed that is not a correct struct")
+		fmt.Println(item.Value)
+		item.Value = nil
 	}
 	// Create a new struct if nil
 	if item.Value == nil {
@@ -655,4 +729,19 @@ func EncodeConstructorParamsUI(callBackItem *Item, mabi *abi.ABI) (ret bool) {
 		}
 	}
 
+}
+
+func SelectorsFromAbiUI(callbackItem *Item) bool {
+
+	contract, ok := SelectAbiUI("From which abi do you want to get the Selectors?")
+	if !ok {
+		return false
+	}
+	abiart, err := state.GetABI(contract)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	callbackItem.Value = abiutil.GetSelectorsAsSlice(abiart.ABI)
+	return true
 }
