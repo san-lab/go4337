@@ -116,6 +116,8 @@ func TxCallUI(transactional bool, deploy bool) {
 			_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
 		case TargetContractItem.Label:
 			_, TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
+		case GasLimitItem.Label:
+			InputUint(GasLimitItem, 64)
 
 		case CallDataViewItem.Label:
 			CallDataViewItem.Value, err = PotentiallyRecursiveCallDataUI()

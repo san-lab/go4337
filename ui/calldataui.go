@@ -10,10 +10,12 @@ func PotentiallyRecursiveCallDataUI() (calldata []byte, err error) {
 	// SetCallDataUI sets the CallDataItem value
 	var CallDataDirectItem = &Item{Label: "Input as hex", Details: "Set Call Data Direct"}
 	var CallDataABIItem = &Item{Label: "Input by ABI", Details: "Set Call Data using ABI"}
+	var CallDataFileItem = &Item{Label: "Input by File", Details: "Set Call Data using File"}
 
 	items := []*Item{
 		CallDataDirectItem,
 		CallDataABIItem,
+		CallDataFileItem,
 		Back,
 	}
 	// Create a new select prompt
@@ -42,9 +44,15 @@ func PotentiallyRecursiveCallDataUI() (calldata []byte, err error) {
 
 			if it.Value != nil {
 				retbytes = it.Value.([]byte)
-
 			}
 			return retbytes, err
+		case CallDataFileItem.Label:
+			bts, err := SelectFileFromFS("")
+			if err != nil {
+				fmt.Println(err)
+				return nil, err
+			}
+			return bts, nil
 		default:
 			fmt.Println("Unreachable reached:", sel)
 		}
