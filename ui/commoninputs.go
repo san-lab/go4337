@@ -13,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/state"
 )
 
 func InputBytes(item *Item, bytecount int) error {
@@ -308,6 +309,13 @@ func InputHexFileUI(label string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hex.DecodeString(string(hbytes))
+	sbytes := string(hbytes)
+	if state.DEBUG {
+		fmt.Println("Selected file: ", sbytes)
+	}
+	//trim witespaces
+	sbytes = strings.TrimSpace(sbytes)
+	sbytes = strings.TrimPrefix(sbytes, "0x")
+	return hex.DecodeString(sbytes)
 
 }

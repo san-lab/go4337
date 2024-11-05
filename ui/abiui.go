@@ -275,7 +275,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 
 		for i, input := range method.ABI.Methods[method.MethodName].Inputs {
 			allSet = allSet && method.Params[i] != nil
-			items = append(items, &Item{Label: input.Name, DisplayValueString: userop.ParamToString(method.Params[i]), Details: input.Type.String(), Value: input})
+			items = append(items, &Item{Label: fmt.Sprintf("%v. %s", i, input.Name), DisplayValueString: userop.ParamToString(method.Params[i]), Details: input.Type.String(), Value: input})
 		}
 		if allSet {
 			items = append(items, &Item{Label: "Encode", Details: "Encode this method", Value: method})
@@ -308,7 +308,7 @@ func MethodUI(callbackItem *Item) (ret bool) {
 				callbackItem.Value = data
 				return true //a bit controversial hack
 			}
-			fmt.Printf("Dencoded call: 0x%x\n", data)
+			fmt.Printf("Encoded call: 0x%x\n", data)
 		default:
 			it, ok := GetItem(sel, items)
 			if ok {
