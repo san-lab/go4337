@@ -233,13 +233,19 @@ func AbiUI(contract string, callbackItem *Item) (ret bool) { //should return err
 			case SelectrorsItem.Label:
 				sels := make([][4]byte, len(abiart.ABI.Methods))
 				i := 0
+				first := true
+				fmt.Print("[")
 				for _, m := range abiart.ABI.Methods {
-					fmt.Printf("0x%x, ", m.ID)
+					if !first {
+						fmt.Print(", ")
+					}
+					fmt.Printf(`"0x%x"`, m.ID)
 
 					copy(sels[i][:], m.ID[:4])
 					i++
+					first = false
 				}
-				fmt.Println()
+				fmt.Println("]")
 				abiselct, err := abi.NewType("bytes4[]", "", nil)
 
 				if err != nil {
