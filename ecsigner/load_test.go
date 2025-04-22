@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/san-lab/go4337/state"
-	"github.com/san-lab/go4337/ui"
+	"github.com/san-lab/go4337/ui/common"
 )
 
 func TestLoad(t *testing.T) {
@@ -29,9 +29,9 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDisplayValue(t *testing.T) {
-	it := &ui.Item{Label: "Input new ECDSA private key in HEX"}
+	it := &common.Item{Label: "Input new ECDSA private key in HEX"}
 
-	it.Value = ECSigner{SignerAddress: common.Address{0x01}, SignerKey: &ecdsa.PrivateKey{}}
+	it.Value = ECSigner{SignerAddress: ecommon.Address{0x01}, SignerKey: &ecdsa.PrivateKey{}}
 	fmt.Println(it.DisplayValue())
 
 }

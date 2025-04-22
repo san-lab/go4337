@@ -8,6 +8,7 @@ import (
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/state"
+	. "github.com/san-lab/go4337/ui/common"
 )
 
 func TestIdentifyUsOpV6(t *testing.T) {

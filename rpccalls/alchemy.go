@@ -103,11 +103,11 @@ type AlchemyOverrides struct {
 		  "preVerificationGas": "hex string" | { "multiplier": number },
 		}
 	*/
-	MaxFeePerGas         interface{} `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas interface{} `json:"maxPriorityFeePerGas"`
-	CallGasLimit         interface{} `json:"callGasLimit"`
-	VerificationGasLimit interface{} `json:"verificationGasLimit"`
-	PreVerificationGas   interface{} `json:"preVerificationGas"`
+	MaxFeePerGas         any `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas any `json:"maxPriorityFeePerGas"`
+	CallGasLimit         any `json:"callGasLimit"`
+	VerificationGasLimit any `json:"verificationGasLimit"`
+	PreVerificationGas   any `json:"preVerificationGas"`
 }
 
 type AlchemyOverrideMultiplier struct {

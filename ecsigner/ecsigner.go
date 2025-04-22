@@ -11,7 +11,7 @@ import (
 
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
-	"github.com/san-lab/go4337/ui"
+	. "github.com/san-lab/go4337/ui/common"
 )
 
 func Init() {
@@ -48,9 +48,37 @@ func (ecsigner *ECSigner) String() string {
 	return ecsigner.SignerAddress.String()
 }
 
+func FromHexKey(name string, hexkey string) (*ECSigner, error) {
+	if hexkey[:2] == "0x" {
+		hexkey = hexkey[2:]
+	}
+	privkey, err := crypto.HexToECDSA(hexkey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid key: %v", err)
+	}
+
+	return NewECDASigner(name, privkey), nil
+}
+
+func NewECDASigner(name string, key *ecdsa.PrivateKey) *ECSigner {
+	ecsigner := new(ECSigner)
+	ecsigner.name = name
+	ecsigner.SignerKey = key
+	ecsigner.SignerAddress = common.BytesToAddress(crypto.PubkeyToAddress(key.PublicKey).Bytes())
+	return ecsigner
+}
+
+func (ecsigner *ECSigner) GetKey() any {
+	return ecsigner.SignerKey
+}
+
+func (ecsigner *ECSigner) GetECDSAKey() *ecdsa.PrivateKey {
+	return ecsigner.SignerKey
+}
+
 func AddECSigner() (err error) {
-	nit := &ui.Item{Label: "Signer name"}
-	err = ui.InputNewStringUI(nit)
+	nit := &Item{Label: "Signer name"}
+	err = InputNewStringUI(nit)
 	if err != nil {
 		return
 	}
@@ -59,8 +87,8 @@ func AddECSigner() (err error) {
 		return fmt.Errorf("invalid input for signer name")
 	}
 
-	it := &ui.Item{Label: "Input new ECDSA private key in HEX"}
-	err = ui.InputBytes(it, -1)
+	it := &Item{Label: "Input new ECDSA private key in HEX"}
+	err = InputBytes(it, -1)
 	if err != nil {
 		return
 	}
@@ -110,11 +138,6 @@ func Unmarshal(bt []byte) (signer.Signer, error) {
 	ecsigner.name = name
 	ecsigner.SignerAddress = common.BytesToAddress(crypto.PubkeyToAddress(privkey.PublicKey).Bytes())
 	return ecsigner, nil
-}
-
-// KeyContainer function
-func (ecsigner *ECSigner) GetKey() *ecdsa.PrivateKey {
-	return ecsigner.SignerKey
 }
 
 func (ecsigner ECSigner) SignHash(inhash []byte) ([]byte, error) {

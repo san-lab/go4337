@@ -1,4 +1,4 @@
-package ui
+package common
 
 import (
 	"bufio"
@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/holiman/uint256"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
 )
@@ -95,6 +96,24 @@ func InputBigInt(item *Item) error {
 	}
 	item.Value = res
 	return nil
+}
+
+func InputUint256(item *Item) (*uint256.Int, error) {
+	err := InputBigInt(item)
+	if err != nil {
+		return nil, err
+	}
+	if item.Value == nil {
+		return nil, fmt.Errorf("error parsing nil big int")
+	}
+	bigint, ok := item.Value.(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("error casting big int")
+	}
+	uint256int, _ := uint256.FromBig(bigint)
+	item.Value = uint256int
+	return uint256int, nil
+
 }
 
 func InputUint(item *Item, size int) (uint64, error) {

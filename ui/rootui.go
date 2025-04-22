@@ -8,6 +8,11 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/abicalldata"
+	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/ui/rpcui"
+	"github.com/san-lab/go4337/ui/setauth"
+	"github.com/san-lab/go4337/ui/signui"
 )
 
 func init() {
@@ -43,6 +48,9 @@ var ApiKeysItem = &Item{Label: "API's and API Keys", Details: "Manage API Access
 var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
 var ChainCallItem = &Item{Label: "Chain Calls", Details: "Call a function on-chain"}
 var DEBUGItem = &Item{Label: "DEBUG", Details: "Toggle DEBUG", DisplayValueString: fmt.Sprint(state.DEBUG)}
+var AddressBooksItem = &Item{Label: "Address Books", Details: "Manage Address Books"}
+
+var EIP7702Item = &Item{Label: "EIP7702 Stuff", Details: "Engage EIP-7702"}
 
 //var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
 
@@ -57,6 +65,8 @@ func RootUI() {
 		//EntryPointItem,
 		ChainCallItem,
 		ApiCallsItem,
+		EIP7702Item,
+
 		Exit,
 	}
 	// Create a new select prompt
@@ -78,11 +88,13 @@ func RootUI() {
 		case UserOpItem.Label:
 			TopUserOpUI(nil)
 		case AbisItem.Label:
-			AbisUI(nil)
+			abicalldata.AbisUI(nil)
 		case ChainCallItem.Label:
 			ChainCallUI()
 		case ApiCallsItem.Label:
 			ApiCallsUI(nil)
+		case EIP7702Item.Label:
+			setauth.AuthTxUI()
 		case Exit.Label:
 			return
 		default:
@@ -100,8 +112,9 @@ func SettingsUI() {
 		ChainIDItem,
 		EntryPointItem,
 
-		SendEndpointItem,
+		rpcui.SendEndpointItem,
 		GasLimitOffsetItem,
+		AddressBooksItem,
 		DEBUGItem,
 		Back,
 	}
@@ -121,15 +134,15 @@ func SettingsUI() {
 		case PaymasterItem.Label:
 			PaymasterUI()
 		case SignerItem.Label:
-			SignerUI(SignerItem)
+			signui.SignerUI(SignerItem)
 		case ChainIDItem.Label:
 			InputUint(ChainIDItem, 64)
 			state.SetChainId(ChainIDItem.Value)
 		case EntryPointItem.Label:
 			EntryPointUI()
 
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
+		case rpcui.SendEndpointItem.Label:
+			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
 		case GasLimitOffsetItem.Label:
 			InputUint(GasLimitOffsetItem, 64)
 			state.SetGasLimitOffset(GasLimitOffsetItem.Value.(uint64))
@@ -138,25 +151,30 @@ func SettingsUI() {
 			DEBUGItem.DisplayValueString = fmt.Sprint(state.DEBUG)
 		case Back.Label:
 			return
+		case AddressBooksItem.Label:
+			AddressBooksUI()
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
 	}
 }
 
-func GetValue(label string, items []*Item) (interface{}, bool) {
-	it, ok := GetItem(label, items)
-	if !ok {
-		return nil, false
+func AddressBooksUI() {
+	items := []*Item{}
+	for _, ab := range state.GetAddressBooks() {
+		items = append(items, &Item{Label: ab})
 	}
-	return it.Value, true
-}
+	items = append(items, Back)
+	prompt := promptui.Select{
+		Label:     "Select an Address Book",
+		Items:     items,
+		Templates: ItemTemplate,
+		Size:      len(items) + 2,
+	}
+	_, sel, _ := prompt.Run()
+	if sel == Back.Label {
+		return
+	}
+	AddressFromBookUI(sel)
 
-func GetItem(label string, items []*Item) (*Item, bool) {
-	for _, i := range items {
-		if i.Label == label {
-			return i, true
-		}
-	}
-	return nil, false
 }

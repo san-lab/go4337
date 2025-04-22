@@ -6,6 +6,8 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/signer"
+	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/ui/signui"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -81,7 +83,7 @@ func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 		case Back.Label:
 			return nil
 		case PaymasterSignerItem.Label:
-			SignerUI(PaymasterSignerItem)
+			signui.SignerUI(PaymasterSignerItem)
 
 		case AfterItem.Label:
 			after, err = InputUint(AfterItem, 48)

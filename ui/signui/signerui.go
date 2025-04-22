@@ -1,4 +1,4 @@
-package ui
+package signui
 
 import (
 	"fmt"
@@ -6,20 +6,21 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/common"
 )
 
-var AddSignerItem = &Item{Label: "Add Signer", Details: "Add a new signer"}
-var RemoveSignerItem = &Item{Label: "Remove Signer", Details: "Remove a signer"}
+var AddSignerItem = &common.Item{Label: "Add Signer", Details: "Add a new signer"}
+var RemoveSignerItem = &common.Item{Label: "Remove Signer", Details: "Remove a signer"}
 
-func SignerUI(signerItem *Item) {
+func SignerUI(signerItem *common.Item) {
 	selectToRemove := false
 
 	for {
 		l := len(state.GetSigners())
-		items := []*Item{}
+		items := []*common.Item{}
 		for _, sn := range state.GetSigners() {
 			s := state.GetSigner(sn)
-			items = append(items, &Item{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type()})
+			items = append(items, &common.Item{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type()})
 		}
 		if !selectToRemove {
 			items = append(items, AddSignerItem)
@@ -27,12 +28,12 @@ func SignerUI(signerItem *Item) {
 				items = append(items, RemoveSignerItem)
 			}
 		}
-		items = append(items, Back)
+		items = append(items, common.Back)
 
 		selec := promptui.Select{
 			Label:     "Manage Signers",
 			Items:     items,
-			Templates: ItemTemplate,
+			Templates: common.ItemTemplate,
 			Size:      l + 3,
 		}
 
@@ -43,7 +44,7 @@ func SignerUI(signerItem *Item) {
 		}
 		name := strings.TrimSpace(strings.Split(sel, ":")[0])
 		switch sel {
-		case Back.Label:
+		case common.Back.Label:
 			return
 		case AddSignerItem.Label:
 			AddSignerUI()
@@ -68,11 +69,11 @@ func SignerUI(signerItem *Item) {
 }
 
 func AddSignerUI() {
-	items := []*Item{}
+	items := []*common.Item{}
 	for k, _ := range state.SignerTypes {
-		items = append(items, &Item{Label: k, Details: "Add a new signer of type " + k})
+		items = append(items, &common.Item{Label: k, Details: "Add a new signer of type " + k})
 	}
-	items = append(items, Back)
+	items = append(items, common.Back)
 	for {
 		Label := "Select new Signer Type"
 		if len(items) == 1 {
@@ -81,7 +82,7 @@ func AddSignerUI() {
 		selec := promptui.Select{
 			Label:     Label,
 			Items:     items,
-			Templates: ItemTemplate,
+			Templates: common.ItemTemplate,
 		}
 
 		_, sel, err := selec.Run()
@@ -90,7 +91,7 @@ func AddSignerUI() {
 			return
 		}
 		switch sel {
-		case Back.Label:
+		case common.Back.Label:
 			return
 		default:
 			if state.SignerTypes[sel] != nil {

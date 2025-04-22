@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
+	ucommon "github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -32,7 +33,7 @@ func TestSlice(t *testing.T) {
 
 func TestDisplayValue(t *testing.T) {
 	//state.InitState()
-	it := new(Item)
+	it := new(ucommon.Item)
 	it.Value = common.Address{}
 	fmt.Println(it.DisplayValue())
 	it.Value = &it.Value

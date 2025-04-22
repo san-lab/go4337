@@ -4,36 +4,38 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/entrypoint/entrypointv6"
 	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/common"
+	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/ui/rpcui"
 	"github.com/san-lab/go4337/userop"
 )
 
-var SendEndpointItem = &Item{Label: "Blockchain RPC Endpoint"}
 var BundleSignerItem = &Item{Label: "Signer for the bundle"}
 var SendBundleItem = &Item{Label: "Send as bundle"}
 var BeneficiaryItem = &Item{Label: "Beneficiary"}
 
-func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
+func SendAsBundleUI(usop *userop.UserOperation) (*ecommon.Hash, error) {
 	var endpoint *state.RPCEndpoint
 	var signer rpccalls.KeyContainer
-	var beneficiary common.Address
+	var beneficiary ecommon.Address
 	var ok1, ok2, ok3 bool
 	for {
 
-		items := []*Item{EntryPointItem, SendEndpointItem, BundleSignerItem, BeneficiaryItem}
+		items := []*Item{EntryPointItem, rpcui.SendEndpointItem, BundleSignerItem, BeneficiaryItem}
 		if BeneficiaryItem.Value != nil {
-			beneficiary, ok3 = BeneficiaryItem.Value.(common.Address)
+			beneficiary, ok3 = BeneficiaryItem.Value.(ecommon.Address)
 		}
 
-		if SendEndpointItem.Value != nil && BundleSignerItem.Value != nil {
+		if rpcui.SendEndpointItem.Value != nil && BundleSignerItem.Value != nil {
 
-			endpoint, ok1 = SendEndpointItem.Value.(*state.RPCEndpoint)
+			endpoint, ok1 = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 			signer, ok2 = BundleSignerItem.Value.(rpccalls.KeyContainer)
 			if ok1 && ok2 && ok3 {
 				items = append(items, SendBundleItem)
@@ -49,8 +51,8 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 		switch sel {
 		case Back.Label:
 			return nil, nil
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
+		case rpcui.SendEndpointItem.Label:
+			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
 		case BundleSignerItem.Label:
 			GetEOASignerUI(BundleSignerItem)
 		case BeneficiaryItem.Label:
@@ -59,9 +61,9 @@ func SendAsBundleUI(usop *userop.UserOperation) (*common.Hash, error) {
 				BeneficiaryItem.Value = *paddr
 			}
 		case SendBundleItem.Label:
-			key := signer.GetKey()
+			key := signer.GetECDSAKey()
 			from := ecrypto.PubkeyToAddress(key.PublicKey)
-			to := EntryPointItem.Value.(common.Address)
+			to := EntryPointItem.Value.(ecommon.Address)
 			fmt.Println("from:", from.Hex())
 			fmt.Println("to:", to.Hex())
 			fmt.Println("endpoint:", endpoint.Name)
@@ -116,7 +118,7 @@ func GetEOASignerUI(it *Item) {
 
 	}
 	items = append(items, Back)
-	prompt := promptui.Select{Label: "Select a Signer", Items: items, Templates: ItemTemplate, Size: 10}
+	prompt := promptui.Select{Label: "Select a Signer", Items: items, Templates: common.ItemTemplate, Size: 10}
 	sel, _, err := prompt.Run()
 	if err != nil {
 		fmt.Println(err)

@@ -9,8 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/abiutil"
-	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/abicalldata"
+	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/ui/nonceui"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -76,83 +78,6 @@ func TopUserOpUI(usOpItem *Item) {
 		}
 	}
 
-}
-
-func InputNonceUI(nit, ait *Item) {
-	DirectInputItem := &Item{Label: "Direct Input", Details: "Directly input the nonce"}
-	CheckOnChainItem := &Item{Label: "Check On Chain", Details: "Check the nonce on chain"}
-	items := []*Item{NonceItem, DirectInputItem, CheckOnChainItem, Back}
-	// Create a new select prompt
-	prompt := promptui.Select{
-		Label:     "Select an option",
-		Items:     items,
-		Templates: ItemTemplate,
-		Size:      10,
-	}
-	_, sel, err := prompt.Run()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	switch sel {
-	case Back.Label:
-		return
-	case DirectInputItem.Label:
-		InputUint(nit, 64)
-	case CheckOnChainItem.Label:
-		CallForNonceUI(nit, ait)
-	default:
-		fmt.Println("Not implemented yet:", sel)
-	}
-}
-
-var CallForNonceItem = &Item{Label: "Call for Nonce", Details: "Call for the nonce of the selected address"}
-
-func CallForNonceUI(nit, ait *Item) {
-	if ait == nil || ait.Value == nil {
-		fmt.Println("No address selected")
-		return
-	}
-	addr := ait.Value.(*common.Address)
-	items := []*Item{ait, SendEndpointItem, CallForNonceItem, Back}
-	// Create a new select prompt
-	prompt := promptui.Select{
-		Label:     "Set Nonce call parameters",
-		Items:     items,
-		Templates: ItemTemplate,
-		Size:      10,
-	}
-	for {
-		_, sel, err := prompt.Run()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		switch sel {
-		case Back.Label:
-			return
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
-		case CallForNonceItem.Label:
-			var endpoint *state.RPCEndpoint
-			ok1 := false
-			if SendEndpointItem.Value != nil {
-				fmt.Println("Calling Elvis")
-				if endpoint, ok1 = SendEndpointItem.Value.(*state.RPCEndpoint); ok1 {
-					n, err := rpccalls.GetWalletNonce(endpoint, *addr)
-					if err != nil {
-						fmt.Println(err)
-						continue
-					}
-					nit.Value = n
-					return
-				} else {
-					fmt.Println("No endpoint selected")
-					continue
-				}
-			}
-		}
-	}
 }
 
 func DeleteUserOpUI(topIt *Item) {
@@ -359,7 +284,7 @@ func UserOpUI(usop *userop.UserOperation) {
 }
 
 var SenderItem = &Item{Label: state.Sender, Details: "Set sender"}
-var NonceItem = &Item{Label: "Nonce", Details: "Set nonce", Value: uint64(0)}
+
 var CallDataItem = &Item{Label: "Call Data", Details: "Set Call Data"}
 var CallGasLimitItem = &Item{Label: "Call Gas Limit", Details: "Set Call Gas Limit"}
 var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
@@ -388,7 +313,7 @@ func UserOpContentUI(topIt *Item) {
 
 	items := []*Item{
 		SenderItem,
-		NonceItem,
+		nonceui.NonceItem,
 		FactoryItem,
 		FactoryDataItem,
 		CallDataItem,
@@ -422,8 +347,8 @@ func UserOpContentUI(topIt *Item) {
 			copyValuesToUserOp(usop)
 			topIt.Value = usop
 			return
-		case NonceItem.Label:
-			InputNonceUI(NonceItem, SenderItem)
+		case nonceui.NonceItem.Label:
+			nonceui.InputNonceUI(nonceui.NonceItem, SenderItem, false)
 		case CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
@@ -432,7 +357,7 @@ func UserOpContentUI(topIt *Item) {
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
-			caldat, err := PotentiallyRecursiveCallDataUI()
+			caldat, err := abicalldata.PotentiallyRecursiveCallDataUI()
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -478,7 +403,7 @@ func UserOpContentUI(topIt *Item) {
 
 func copyFromUseropToItems(uop *userop.UserOperation) {
 	SenderItem.Value = uop.Sender
-	NonceItem.Value = uop.Nonce
+	nonceui.NonceItem.Value = uop.Nonce
 	CallDataItem.Value = uop.CallData
 	FactoryItem.Value = uop.Factory
 	FactoryDataItem.Value = uop.FactoryData
@@ -499,7 +424,7 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	if SenderItem.Value != nil {
 		uop.Sender = SenderItem.Value.(*common.Address)
 	}
-	uop.Nonce = NonceItem.Value.(uint64)
+	uop.Nonce = nonceui.NonceItem.Value.(uint64)
 	if CallDataItem.Value != nil {
 		uop.CallData = CallDataItem.Value.([]byte)
 	}

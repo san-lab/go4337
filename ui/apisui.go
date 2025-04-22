@@ -7,11 +7,12 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
+	. "github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -134,7 +135,7 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			APIURLItemMap[provider] = APIURLItem
 
 		}
-		var entrypointaddress = EntryPointItem.Value.(common.Address).String()
+		var entrypointaddress = EntryPointItem.Value.(ecommon.Address).String()
 		var entrypointversion = 0
 		if entrypointaddress == entrypoint.E6Address.String() {
 			entrypointversion = 6
@@ -463,7 +464,7 @@ func IncorporatePMandData(usop *userop.UserOperation, pmadHex string) {
 		return
 	}
 	pmadbt, _ := hex.DecodeString(pmadHex[42:])
-	paddr := common.HexToAddress(pmadHex[:42])
+	paddr := ecommon.HexToAddress(pmadHex[:42])
 	usop.Paymaster = &paddr
 	usop.PaymasterData = pmadbt
 

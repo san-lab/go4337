@@ -1,9 +1,10 @@
-package ui
+package abicalldata
 
 import (
 	"fmt"
 
 	"github.com/manifoldco/promptui"
+	. "github.com/san-lab/go4337/ui/common"
 )
 
 func PotentiallyRecursiveCallDataUI() (calldata []byte, err error) {

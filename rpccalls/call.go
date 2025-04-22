@@ -15,7 +15,7 @@ import (
 )
 
 type KeyContainer interface {
-	GetKey() *ecdsa.PrivateKey
+	GetECDSAKey() *ecdsa.PrivateKey
 }
 
 func CreateSignedTransaction(rpc *state.RPCEndpoint, from, to *common.Address, value *big.Int, calldata []byte, gasLimit uint64, key *ecdsa.PrivateKey) (*types.Transaction, error) {
@@ -70,7 +70,7 @@ func SendMethodCall(rpc *state.RPCEndpoint, result interface{}, method string, a
 }
 
 func CreateAndSendTransaction(rpc *state.RPCEndpoint, from, to *common.Address, value *big.Int, calldata []byte, gasLimit uint64, key KeyContainer) (*common.Hash, error) {
-	signedTx, err := CreateSignedTransaction(rpc, from, to, value, calldata, gasLimit, key.GetKey())
+	signedTx, err := CreateSignedTransaction(rpc, from, to, value, calldata, gasLimit, key.GetECDSAKey())
 	if err != nil {
 		return nil, fmt.Errorf("could not create signed tx: %v", err)
 	}

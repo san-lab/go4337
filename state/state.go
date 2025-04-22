@@ -12,6 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
@@ -38,6 +39,8 @@ type StateStruct struct {
 	RPCEndpoints   map[string]*RPCEndpoint
 	GasLimitOffset uint64
 	ERA712s        map[string]*zksyncera.ZkSyncTxRLP
+	SetAuthTxs     map[string]*types.SetCodeTx
+	SetAuthAuths   map[string]*types.SetCodeAuthorization
 }
 
 //type ABIs map[string]string
@@ -100,6 +103,12 @@ func init() {
 	}
 	if state.ERA712s == nil {
 		state.ERA712s = make(map[string]*zksyncera.ZkSyncTxRLP)
+	}
+	if state.SetAuthTxs == nil {
+		state.SetAuthTxs = make(map[string]*types.SetCodeTx)
+	}
+	if state.SetAuthAuths == nil {
+		state.SetAuthAuths = make(map[string]*types.SetCodeAuthorization)
 	}
 
 	//Add the Entrypoint abis
@@ -555,6 +564,54 @@ func AddToDictionatyWithIndice(dict, label, value string) {
 		idx++
 	}
 
+}
+
+func AddSetAuthTx(name string, tx *types.SetCodeTx) {
+	state.SetAuthTxs[name] = tx
+	state.Save()
+}
+
+func GetSetAuthTx(name string) (*types.SetCodeTx, bool) {
+	tx, ok := state.SetAuthTxs[name]
+	return tx, ok
+}
+
+func RemoveSetAuthTx(name string) {
+	delete(state.SetAuthTxs, name)
+	state.Save()
+}
+
+func ListSetAuthTxs() []string {
+	keys := []string{}
+	for k := range state.SetAuthTxs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func AddSetAuthAuth(name string, auth *types.SetCodeAuthorization) {
+	state.SetAuthAuths[name] = auth
+	state.Save()
+}
+
+func GetSetAuthAuth(name string) (*types.SetCodeAuthorization, bool) {
+	auth, ok := state.SetAuthAuths[name]
+	return auth, ok
+}
+
+func RemoveSetAuthAuth(name string) {
+	delete(state.SetAuthAuths, name)
+	state.Save()
+}
+
+func ListSetAuthAuths() []string {
+	keys := []string{}
+	for k := range state.SetAuthAuths {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func GetZkERA712(name string) (*zksyncera.ZkSyncTxRLP, bool) {

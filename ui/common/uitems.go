@@ -1,4 +1,4 @@
-package ui
+package common
 
 import (
 	"encoding/hex"
@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/holiman/uint256"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
@@ -30,6 +31,10 @@ func (i *Item) DisplayValue() string {
 		return fmt.Sprint(v)
 	}
 
+	if v, ok := (i.Value).(uint256.Int); ok {
+		return v.String()
+	}
+
 	if usop, ok := (i.Value).(*userop.UserOperation); ok {
 		return fmt.Sprintf("Sender: %s, Nonce: %d", usop.Sender.String(), usop.Nonce)
 	}
@@ -43,6 +48,10 @@ func (i *Item) DisplayValue() string {
 
 	if str, ok := (i.Value).(fmt.Stringer); ok {
 		return ShortString(str.String(), 50)
+	}
+
+	if str, ok := (i.Value).(*fmt.Stringer); ok {
+		return ShortString((*str).String(), 50)
 	}
 
 	if reflect.ValueOf(i.Value).IsZero() {
@@ -111,4 +120,21 @@ var ItemTemplate = &promptui.SelectTemplates{
 	Active:   `{{if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if eq .Label "Set"}}{{.Label | green | bold | underline}}{{else}}{{ .Label | bold | underline }}{{with .DisplayValue}}: {{. | bold}}{{end}}{{end}}`,
 	Selected: "{{. | faint}}",
 	Details:  "{{ .Details | faint }}",
+}
+
+func GetValue(label string, items []*Item) (interface{}, bool) {
+	it, ok := GetItem(label, items)
+	if !ok {
+		return nil, false
+	}
+	return it.Value, true
+}
+
+func GetItem(label string, items []*Item) (*Item, bool) {
+	for _, i := range items {
+		if i.Label == label {
+			return i, true
+		}
+	}
+	return nil, false
 }

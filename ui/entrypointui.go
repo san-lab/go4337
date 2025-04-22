@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
+	. "github.com/san-lab/go4337/ui/common"
 )
 
 func EntryPointUI() {

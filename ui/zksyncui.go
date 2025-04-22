@@ -10,6 +10,10 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/abicalldata"
+	. "github.com/san-lab/go4337/ui/common"
+	rpcui "github.com/san-lab/go4337/ui/rpcui"
+	"github.com/san-lab/go4337/ui/signui"
 	"github.com/san-lab/go4337/zksyncera"
 )
 
@@ -299,7 +303,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 				zktx.Value = ZkValueItem.Value.(*big.Int)
 			}
 		case ZkDataItem.Label:
-			calldat, err := PotentiallyRecursiveCallDataUI()
+			calldat, err := abicalldata.PotentiallyRecursiveCallDataUI()
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -474,7 +478,7 @@ func SignEraUI(era *zksyncera.ZkSyncTxRLP) {
 		case ZkChainIDItem.Label:
 
 		case ERASignerItem.Label:
-			SignerUI(ERASignerItem)
+			signui.SignerUI(ERASignerItem)
 		case ERASignItem.Label:
 			sig, err := era.Sign(ERASignerItem.Value)
 			if err != nil {
@@ -522,9 +526,9 @@ func ERACallUI(era *zksyncera.ZkSyncTxRLP) {
 		return
 	}
 
-	rpc, rpcOk := SendEndpointItem.Value.(*state.RPCEndpoint)
+	rpc, rpcOk := rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 	for {
-		items := []*Item{SendEndpointItem}
+		items := []*Item{rpcui.SendEndpointItem}
 		if rpcOk {
 			items = append(items, EraCallItem)
 
@@ -544,9 +548,9 @@ func ERACallUI(era *zksyncera.ZkSyncTxRLP) {
 		case Back.Label:
 			return
 
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
-			rpc, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+		case rpcui.SendEndpointItem.Label:
+			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
+			rpc, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 		case EraCallItem.Label:
 			//ERACall(rpc, address)
 			var res string

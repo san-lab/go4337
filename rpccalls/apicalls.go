@@ -116,6 +116,9 @@ func (ae *APIError) Error() string {
 var ApiURLTemplates = map[string]string{}
 
 func CombineURLWithKey(url, key string) (kurl string, err error) {
+	if len(url) < 4 {
+		fmt.Println("URL too short:", url)
+	}
 	if len(key) == 0 {
 		return url, nil
 	}

@@ -5,23 +5,28 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/abicalldata"
+	"github.com/san-lab/go4337/ui/common"
+	rpcui "github.com/san-lab/go4337/ui/rpcui"
 )
 
-var ViewCallItem = &Item{Label: "View Call", Details: "Call a view/pure function"}
-var TxCallItem = &Item{Label: "Tx Call", Details: "Send a transaction"}
-var DeployViaCreateItem = &Item{Label: "Deploy via Create", Details: "Deploy a contract via CREATE. TO will be left empty"}
-var GenericRPCCallITem = &Item{Label: "Generic RPC Call", Details: "Call a generic RPC function"}
+var ViewCallItem = &common.Item{Label: "View Call", Details: "Call a view/pure function"}
+var LegacyTxCallItem = &common.Item{Label: "Legacy Tx Call", Details: "Send a legacy transaction"}
+
+// var TxCallItem = &common.Item{Label: "NewTx Call", Details: "Send an EIP2718 transaction"}
+var DeployViaCreateItem = &common.Item{Label: "Deploy via Create", Details: "Deploy a contract via CREATE. TO will be left empty"}
+var GenericRPCCallITem = &common.Item{Label: "Generic RPC Call", Details: "Call a generic RPC function"}
 
 func ChainCallUI() {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{GenericRPCCallITem, ViewCallItem, TxCallItem, DeployViaCreateItem, Back},
-		Templates: ItemTemplate,
+		Items:     []*common.Item{GenericRPCCallITem, ViewCallItem /*TxCallItem,*/, LegacyTxCallItem, DeployViaCreateItem, common.Back},
+		Templates: common.ItemTemplate,
 	}
 
 	for {
@@ -31,13 +36,13 @@ func ChainCallUI() {
 			return
 		}
 		switch sel {
-		case Back.Label:
+		case common.Back.Label:
 			return
 
 		case ViewCallItem.Label:
 			//ViewCallUI()
 			TxCallUI(false, false)
-		case TxCallItem.Label:
+		case LegacyTxCallItem.Label:
 			TxCallUI(true, false)
 		case GenericRPCCallITem.Label:
 			GenericRPCCallUI()
@@ -49,19 +54,19 @@ func ChainCallUI() {
 
 }
 
-var TargetContractItem = &Item{Label: "Target Address ('to')", Details: "Select the target address"}
-var CallDataViewItem = &Item{Label: "CallData for View call", Details: "Enter the call data"}
-var CallDataTxItem = &Item{Label: "CallData for Tx call", Details: "Enter the call data"}
-var MakeTheCallItem = &Item{Label: "Make call", Details: "Call with the selected values"}
+var TargetContractItem = &common.Item{Label: "Target Address ('to')", Details: "Select the target address"}
+var CallDataViewItem = &common.Item{Label: "CallData for View call", Details: "Enter the call data"}
+var CallDataTxItem = &common.Item{Label: "CallData for Tx call", Details: "Enter the call data"}
+var MakeTheCallItem = &common.Item{Label: "Make call", Details: "Call with the selected values"}
 
-var CallSignerItem = &Item{Label: "Signer/Sender", Details: "Select the signer"}
-var CallValueItem = &Item{Label: "Value", Details: "Enter the value to send", Value: big.NewInt(0)}
-var GasLimitItem = &Item{Label: "Gas Limit", Details: "Enter the gas limit", Value: uint64(200000)}
+var CallSignerItem = &common.Item{Label: "Signer/Sender", Details: "Select the signer"}
+var CallValueItem = &common.Item{Label: "Value", Details: "Enter the value to send", Value: big.NewInt(0)}
+var GasLimitItem = &common.Item{Label: "Gas Limit", Details: "Enter the gas limit", Value: uint64(200000)}
 var retArgs abi.Arguments
 
-var UtilCallItem = &Item{Label: "Web3Api Call", Details: "Call a Web3 API function"}
+var UtilCallItem = &common.Item{Label: "Web3Api Call", Details: "Call a Web3 API function"}
 
-var FromAddress = common.HexToAddress("0xaab05558448C8a9597287Db9F61e2d751645B12a")
+var FromAddress = ecommon.HexToAddress("0xaab05558448C8a9597287Db9F61e2d751645B12a")
 
 func TxCallUI(transactional bool, deploy bool) {
 
@@ -70,7 +75,7 @@ func TxCallUI(transactional bool, deploy bool) {
 	signerOk := !transactional // Only if transactional, we need a signer
 	rpcOk := false
 	if TargetContractItem.Value != nil {
-		_, addressOk = TargetContractItem.Value.(*common.Address)
+		_, addressOk = TargetContractItem.Value.(*ecommon.Address)
 	}
 	if CallDataViewItem.Value != nil {
 		_, calldatOk = CallDataViewItem.Value.([]byte)
@@ -78,11 +83,11 @@ func TxCallUI(transactional bool, deploy bool) {
 	if CallSignerItem.Value != nil {
 		_, signerOk = CallSignerItem.Value.(rpccalls.KeyContainer)
 	}
-	if SendEndpointItem.Value != nil {
-		_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+	if rpcui.SendEndpointItem.Value != nil {
+		_, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 	}
 	for {
-		items := []*Item{TargetContractItem, SendEndpointItem}
+		items := []*common.Item{TargetContractItem, rpcui.SendEndpointItem}
 		if transactional {
 			items = append(items, CallDataTxItem, CallSignerItem, CallValueItem, GasLimitItem)
 		} else {
@@ -93,11 +98,11 @@ func TxCallUI(transactional bool, deploy bool) {
 				items = append(items, MakeTheCallItem)
 			}
 		}
-		items = append(items, Back)
+		items = append(items, common.Back)
 		prompt := promptui.Select{
 			Label:     "Set the Call parameters",
 			Items:     items,
-			Templates: ItemTemplate,
+			Templates: common.ItemTemplate,
 		}
 		_, sel, err := prompt.Run()
 		if err != nil {
@@ -105,40 +110,40 @@ func TxCallUI(transactional bool, deploy bool) {
 			return
 		}
 		switch sel {
-		case Back.Label:
+		case common.Back.Label:
 			return
 
 		case CallSignerItem.Label:
 			GetEOASignerUI(CallSignerItem)
 			_, signerOk = CallSignerItem.Value.(rpccalls.KeyContainer)
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
-			_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+		case rpcui.SendEndpointItem.Label:
+			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
+			_, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 		case TargetContractItem.Label:
-			_, TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
+			_, TargetContractItem.Value, addressOk = common.AddressFromBookUI("Target Contract")
 		case GasLimitItem.Label:
-			InputUint(GasLimitItem, 64)
+			common.InputUint(GasLimitItem, 64)
 
 		case CallDataViewItem.Label:
-			CallDataViewItem.Value, err = PotentiallyRecursiveCallDataUI()
+			CallDataViewItem.Value, err = abicalldata.PotentiallyRecursiveCallDataUI()
 			if err == nil {
 				calldatOk = true
-				retArgs = currentReturnType
+				retArgs = abicalldata.CurrentReturnType
 			} else {
 				fmt.Println(err)
 				calldatOk = false
 			}
 
 		case CallDataTxItem.Label:
-			CallDataTxItem.Value, err = PotentiallyRecursiveCallDataUI()
+			CallDataTxItem.Value, err = abicalldata.PotentiallyRecursiveCallDataUI()
 			calldatOk = err == nil
 		case MakeTheCallItem.Label:
 			if !transactional {
 
 				fmt.Println("Calling contract...")
-				ret, res, err := rpccalls.CallContract(SendEndpointItem.Value.(*state.RPCEndpoint),
+				ret, res, err := rpccalls.CallContract(rpcui.SendEndpointItem.Value.(*state.RPCEndpoint),
 					&FromAddress,
-					TargetContractItem.Value.(*common.Address), CallDataViewItem.Value.([]byte), retArgs)
+					TargetContractItem.Value.(*ecommon.Address), CallDataViewItem.Value.([]byte), retArgs)
 				if err != nil && err != rpccalls.ErrRetParse {
 					fmt.Println(err)
 				} else {
@@ -149,24 +154,24 @@ func TxCallUI(transactional bool, deploy bool) {
 							fmt.Printf("Return value %d: %v\n", i, v)
 						}
 					}
-					fmt.Printf("Raw response: %s\n", ShortHex(res, 256))
+					fmt.Printf("Raw response: %s\n", common.ShortHex(res, 256))
 				}
 				return
 
 			} else {
 
 				signer := CallSignerItem.Value.(rpccalls.KeyContainer)
-				key := signer.GetKey()
+				key := signer.GetECDSAKey()
 				from := ecrypto.PubkeyToAddress(key.PublicKey)
-				var to *common.Address
+				var to *ecommon.Address
 				if deploy {
 					to = nil
 				} else {
-					to = TargetContractItem.Value.(*common.Address)
+					to = TargetContractItem.Value.(*ecommon.Address)
 				}
 				value := CallValueItem.Value.(*big.Int)
 				calldata := CallDataTxItem.Value.([]byte)
-				h, err := rpccalls.CreateAndSendTransaction(SendEndpointItem.Value.(*state.RPCEndpoint),
+				h, err := rpccalls.CreateAndSendTransaction(rpcui.SendEndpointItem.Value.(*state.RPCEndpoint),
 					&from,
 					to,
 					value,
@@ -190,23 +195,23 @@ func GenericRPCCallUI() {
 	addressOk := false
 	rpcOk := false
 	if TargetContractItem.Value != nil {
-		_, addressOk = TargetContractItem.Value.(*common.Address)
+		_, addressOk = TargetContractItem.Value.(*ecommon.Address)
 	}
 
-	if SendEndpointItem.Value != nil {
-		_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+	if rpcui.SendEndpointItem.Value != nil {
+		_, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 	}
 	for {
-		items := []*Item{TargetContractItem, SendEndpointItem}
+		items := []*common.Item{TargetContractItem, rpcui.SendEndpointItem}
 		if rpcOk && addressOk {
 			items = append(items, UtilCallItem)
 
 		}
-		items = append(items, Back)
+		items = append(items, common.Back)
 		prompt := promptui.Select{
 			Label:     "Set the Call parameters",
 			Items:     items,
-			Templates: ItemTemplate,
+			Templates: common.ItemTemplate,
 		}
 		_, sel, err := prompt.Run()
 		if err != nil {
@@ -215,18 +220,18 @@ func GenericRPCCallUI() {
 		}
 		switch sel {
 		case TargetContractItem.Label:
-			_, TargetContractItem.Value, addressOk = AddressFromBookUI("Target Contract")
+			_, TargetContractItem.Value, addressOk = common.AddressFromBookUI("Target Contract")
 
-		case Back.Label:
+		case common.Back.Label:
 			return
 
-		case SendEndpointItem.Label:
-			RPCEndpointsUI(SendEndpointItem)
-			_, rpcOk = SendEndpointItem.Value.(*state.RPCEndpoint)
+		case rpcui.SendEndpointItem.Label:
+			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
+			_, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
 		case UtilCallItem.Label:
 			fmt.Println("Calling utility function...")
 			if rpcOk && addressOk {
-				UtilCallUI(SendEndpointItem.Value.(*state.RPCEndpoint), *TargetContractItem.Value.(*common.Address))
+				UtilCallUI(rpcui.SendEndpointItem.Value.(*state.RPCEndpoint), *TargetContractItem.Value.(*ecommon.Address))
 			} else {
 				fmt.Println("Need RPC endpoint and target address")
 			}
@@ -235,15 +240,15 @@ func GenericRPCCallUI() {
 	}
 }
 
-func UtilCallUI(endpoint *state.RPCEndpoint, account common.Address) {
-	PendingNonceItem := &Item{Label: "Get Pending Nonce", Details: "Get pending nonce at address"}
-	NonceItem := &Item{Label: "Get Nonce", Details: "Get nonce at address"}
-	BalanceItem := &Item{Label: "Get Balance", Details: "Get balance at address"}
-	Items := []*Item{PendingNonceItem, NonceItem, BalanceItem, Back}
+func UtilCallUI(endpoint *state.RPCEndpoint, account ecommon.Address) {
+	PendingNonceItem := &common.Item{Label: "Get Pending Nonce", Details: "Get pending nonce at address"}
+	NonceItem := &common.Item{Label: "Get Nonce", Details: "Get nonce at address"}
+	BalanceItem := &common.Item{Label: "Get Balance", Details: "Get balance at address"}
+	Items := []*common.Item{PendingNonceItem, NonceItem, BalanceItem, common.Back}
 	prompt := promptui.Select{
 		Label:     "Select action",
 		Items:     Items,
-		Templates: ItemTemplate,
+		Templates: common.ItemTemplate,
 		Size:      10,
 	}
 	for {
@@ -274,7 +279,7 @@ func UtilCallUI(endpoint *state.RPCEndpoint, account common.Address) {
 			} else {
 				fmt.Printf("Balance at %s: %v\n", account, balance)
 			}
-		case Back.Label:
+		case common.Back.Label:
 			return
 		}
 	}

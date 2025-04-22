@@ -13,6 +13,7 @@ type Signer interface {
 	String() string //Details
 	Type() string
 	Marshal() ([]byte, error)
+	GetKey() any
 }
 
 /*

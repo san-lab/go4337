@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
 
+// TODO
 func NewSigner() {
 	sig := core.SignerAPI{}
 	fmt.Println(sig)

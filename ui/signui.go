@@ -4,11 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
+	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/ui/signui"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -60,7 +62,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			UtilsV7UI(usop)
 
 		case SignerItem.Label:
-			SignerUI(SignerItem)
+			signui.SignerUI(SignerItem)
 		case SignItem.Label:
 			signer, ok := SignerItem.Value.(signer.Signer)
 			if !ok {
@@ -68,7 +70,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 				return
 			}
 			ChainID := ChainIDItem.Value.(uint64)
-			EntryPoint := EntryPointItem.Value.(common.Address)
+			EntryPoint := EntryPointItem.Value.(ecommon.Address)
 
 			var hash [32]byte
 			if EntryPoint.Hex() == entrypoint.E6Address.Hex() {
@@ -97,7 +99,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			/*
 				case HashV7Item.Label:
 					ChainID := ChainIDItem.Value.(uint64)
-					EntryPoint := EntryPointItem.Value.(common.Address)
+					EntryPoint := EntryPointItem.Value.(Address)
 					var hash [32]byte
 					hash, err = userop.GetUserOpHash(usop.Pack(), EntryPoint, ChainID)
 					if err != nil {
@@ -109,7 +111,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 					return
 				case HashV6Item.Label:
 					ChainID := ChainIDItem.Value.(uint64)
-					EntryPoint := EntryPointItem.Value.(common.Address)
+					EntryPoint := EntryPointItem.Value.(Address)
 					var hash [32]byte
 					hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
 					if err != nil {

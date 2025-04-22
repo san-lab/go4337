@@ -1,4 +1,4 @@
-package ui
+package rpcui
 
 import (
 	"fmt"
@@ -7,31 +7,34 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/ui/common"
 )
 
+var SendEndpointItem = &common.Item{Label: "Blockchain RPC Endpoint"}
+
 // Maintain a map ChainID -> RPC Endpoint
-func RPCEndpointsUI(it *Item) {
+func RPCEndpointsUI(it *common.Item) {
 	deleting := false
-	AddRPCEnpointItem := &Item{Label: "Add RPC Endpoint", Details: "Add a new RPC Endpoint"}
-	RemoveRPCEnpointItem := &Item{Label: "Remove RPC Endpoint", Details: "Select an RPC Endpoint to remove"}
+	AddRPCEnpointItem := &common.Item{Label: "Add RPC Endpoint", Details: "Add a new RPC Endpoint"}
+	RemoveRPCEnpointItem := &common.Item{Label: "Remove RPC Endpoint", Details: "Select an RPC Endpoint to remove"}
 
 	for {
-		items := []*Item{}
+		items := []*common.Item{}
 		for _, rpc := range state.GetRPCEndpoints() {
-			items = append(items, &Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId), Value: rpc.URL})
+			items = append(items, &common.Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId), Value: rpc.URL})
 		}
 		if !deleting {
 			items = append(items, AddRPCEnpointItem, RemoveRPCEnpointItem)
 		}
-		items = append(items, Back)
-		prompt := promptui.Select{Label: "RPC Endpoints", Items: items, Templates: ItemTemplate, Size: 10}
+		items = append(items, common.Back)
+		prompt := promptui.Select{Label: "RPC Endpoints", Items: items, Templates: common.ItemTemplate, Size: 10}
 		_, sel, err := prompt.Run()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		switch sel {
-		case Back.Label:
+		case common.Back.Label:
 			return
 		case RemoveRPCEnpointItem.Label:
 			deleting = true
@@ -44,7 +47,7 @@ func RPCEndpointsUI(it *Item) {
 			if deleting {
 				label := fmt.Sprintf("Are you sure you want to delete RPC Endpoint %s (yes/no)?", sel)
 
-				if YesNoPromptUI(label) {
+				if common.YesNoPromptUI(label) {
 					state.RemoveRPCEndpoint(name)
 				}
 				deleting = false
@@ -62,8 +65,8 @@ func RPCEndpointsUI(it *Item) {
 }
 
 func AddRPCEnpointUI() {
-	tItem := &Item{Label: "RPC Endpoint Name", Details: "Enter a name for the RPC Endpoint"}
-	err := InputNewStringUI(tItem)
+	tItem := &common.Item{Label: "RPC Endpoint Name", Details: "Enter a name for the RPC Endpoint"}
+	err := common.InputNewStringUI(tItem)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -76,7 +79,7 @@ func AddRPCEnpointUI() {
 	tItem.Label = "RPC Endpoint URL"
 	tItem.Details = "Enter the URL for the RPC Endpoint"
 	tItem.Value = ""
-	err = InputNewStringUI(tItem)
+	err = common.InputNewStringUI(tItem)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -89,7 +92,7 @@ func AddRPCEnpointUI() {
 	tItem.Label = "Chain ID"
 	tItem.Details = "Enter the Chain ID for the RPC Endpoint"
 	tItem.Value = nil
-	err = InputBigInt(tItem)
+	err = common.InputBigInt(tItem)
 	if err != nil {
 		fmt.Println(err)
 		return
