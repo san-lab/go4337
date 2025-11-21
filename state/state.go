@@ -24,6 +24,7 @@ import (
 // they are here, because their instantiation depends on parsing of the abi definitions
 var UserOpV6Type reflect.Type
 var PackedUserOpV7Type reflect.Type
+var PackedUserOpV8Type reflect.Type
 
 const GasLimitOffsetDefault = 1000000
 
@@ -34,7 +35,7 @@ type StateStruct struct {
 	SignersRaw     []string
 	ABIArts        map[string]*AbiArtifacts //ABI strings memorized
 	UserOps        map[string]*userop.UserOperation
-	ChainID        uint64
+	ChainID        *big.Int
 	Dictionaries   map[string]map[string]string
 	RPCEndpoints   map[string]*RPCEndpoint
 	GasLimitOffset uint64
@@ -59,6 +60,7 @@ func Log(a ...interface{}) {
 
 const EntrypointV6 = "EntrypointV6"
 const EntrypointV7 = "EntrypointV7"
+const EntrypointV8 = "EntrypointV8"
 
 type AbiArtifacts struct {
 	ABIString       string
@@ -124,6 +126,12 @@ func init() {
 		fmt.Println(err)
 	} else {
 		PackedUserOpV7Type = v7arts.ABI.Methods["getUserOpHash"].Inputs[0].Type.GetType()
+	}
+	v8arts, err := ParseABI(EntrypointV8, entrypoint.EntryPointV8AbiJson)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		PackedUserOpV8Type = v8arts.ABI.Methods["getUserOpHash"].Inputs[0].Type.GetType()
 	}
 
 	if state.GasLimitOffset == 0 {
@@ -473,7 +481,7 @@ func AddApiEndpoint(name, url string) {
 }
 
 func SetChainId(id any) {
-	uid, ok := id.(uint64)
+	uid, ok := id.(*big.Int)
 	if ok {
 		state.ChainID = uid
 		state.Save()
@@ -481,7 +489,7 @@ func SetChainId(id any) {
 	}
 }
 
-func GetChainId() uint64 {
+func GetChainId() *big.Int {
 	return state.ChainID
 }
 

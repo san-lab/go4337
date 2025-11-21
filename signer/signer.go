@@ -2,12 +2,17 @@ package signer
 
 import (
 	"fmt"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/san-lab/go4337/userop"
 )
 
 type Signer interface {
-	Sign([]byte) ([]byte, error)
+	SignMessage([]byte) ([]byte, error)
+	SignEIP712(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error)
+	SignUserop(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error)
 	SignHash([]byte) ([]byte, error) //without any decorations
 	Name() string
 	String() string //Details

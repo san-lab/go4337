@@ -3,10 +3,10 @@ package ui
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
-	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
 	. "github.com/san-lab/go4337/ui/common"
@@ -47,7 +47,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 		case Back.Label:
 			return
 		case ChainIDItem.Label:
-			_, err = InputUint(ChainIDItem, 64)
+			err = InputBigInt(ChainIDItem)
 			if err != nil {
 				return
 			}
@@ -64,68 +64,79 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 		case SignerItem.Label:
 			signui.SignerUI(SignerItem)
 		case SignItem.Label:
-			signer, ok := SignerItem.Value.(signer.Signer)
+			asigner, ok := SignerItem.Value.(signer.Signer)
 			if !ok {
 				fmt.Println("Invalid Signer")
 				return
 			}
-			ChainID := ChainIDItem.Value.(uint64)
+			ChainID := ChainIDItem.Value.(*big.Int)
 			EntryPoint := EntryPointItem.Value.(ecommon.Address)
+			/*
+				var hash [32]byte
+				switch EntryPoint.Hex() {
+				case entrypoint.E6Address.Hex():
+					hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
+					hash = signer.ToEthSignedMessageHash(hash[:])
+					fmt.Println("Signing using v6 hashes")
+				case entrypoint.E7Address.Hex():
+					hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
+					hash = signer.ToEthSignedMessageHash(hash[:])
+					fmt.Println("Signing using v7 hashes")
+				case entrypoint.E8Address.Hex():
+					hash, err = userop.GetUserOpHash(usop, EntryPoint, big.NewInt(int64(ChainID)))
+					fmt.Println("Signing using v8 eip712 hash")
+					fmt.Printf("userOpHash: 0x%x\n", hash)
+				default:
+					fmt.Println("Do not know how to sign")
+					err = fmt.Errorf("Unknown Entrypoint: %s", EntryPoint)
 
-			var hash [32]byte
-			if EntryPoint.Hex() == entrypoint.E6Address.Hex() {
-				hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
-				fmt.Println("Signing using v6 hashes")
-			} else {
+				}
 
-				hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
-				fmt.Println("Signing using v7 hashes")
-			}
-			if err != nil {
-				fmt.Println("error hashing:", err)
-				return
-			}
-			sig, err = signer.Sign(hash[:])
+				if err != nil {
+					fmt.Println("error hashing:", err)
+					return
+				}
+
+				switch v := asigner.(type) {
+
+				case *ecsigner.ECSigner:
+
+					sig, err = asigner.SignHash(hash[:])
+					if err != nil {
+						fmt.Println("error signing:", err)
+						return
+					}
+					if sig[64] < 27 {
+						sig[64] += 27
+					}
+				case *browsersigner.BrowserSigner:
+					sig, err = asigner.SignEIP712(usop, big.NewInt(int64(ChainID)), EntryPoint)
+					if err != nil {
+						fmt.Println("error signing:", err)
+						return
+					}
+				default:
+					return nil, fmt.Errorf("unknown signer type: %v", v)
+
+				}
+			*/
+			sig, err = asigner.SignUserop(usop, ChainID, EntryPoint)
 			if err != nil {
 				fmt.Println("error signing:", err)
 				return
 			}
-			usop.Signature = sig
-			SignatureItem.Value = sig
-			//SignatureItem.DisplayValue = ShortHex(sig, 6)
-			SignatureItem.Details = hex.EncodeToString(sig[:])
-			fmt.Println("Signature:", hex.EncodeToString(sig[:]))
-			return
-			/*
-				case HashV7Item.Label:
-					ChainID := ChainIDItem.Value.(uint64)
-					EntryPoint := EntryPointItem.Value.(Address)
-					var hash [32]byte
-					hash, err = userop.GetUserOpHash(usop.Pack(), EntryPoint, ChainID)
-					if err != nil {
-						fmt.Println(err)
-					} else {
-						fmt.Println("Hash:", hex.EncodeToString(hash[:]))
-					}
-
-					return
-				case HashV6Item.Label:
-					ChainID := ChainIDItem.Value.(uint64)
-					EntryPoint := EntryPointItem.Value.(Address)
-					var hash [32]byte
-					hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
-					if err != nil {
-						fmt.Println(err)
-					} else {
-						fmt.Println("Hash:", hex.EncodeToString(hash[:]))
-					}
-					return
-			*/
-		default:
-			return
+			if sig[64] < 27 {
+				sig[64] += 27
+			}
 		}
-	}
 
+		usop.Signature = sig
+		SignatureItem.Value = sig
+		//SignatureItem.DisplayValue = ShortHex(sig, 6)
+		SignatureItem.Details = hex.EncodeToString(sig[:])
+		fmt.Println("Signature:", hex.EncodeToString(sig[:]))
+
+	}
 }
 
 func SetSignatureUI(userop *userop.UserOperation) (calldata []byte, err error) {

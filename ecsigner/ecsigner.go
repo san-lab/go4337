@@ -4,14 +4,17 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
 	. "github.com/san-lab/go4337/ui/common"
+	"github.com/san-lab/go4337/userop"
 )
 
 func Init() {
@@ -34,7 +37,7 @@ func (ecsigner *ECSigner) Name() string {
 	return ecsigner.name
 }
 
-func (ecsigner *ECSigner) Sign(mssg []byte) ([]byte, error) {
+func (ecsigner *ECSigner) SignMessage(mssg []byte) ([]byte, error) {
 	mhash := signer.ToEthSignedMessageHash(mssg)
 	sig, err := crypto.Sign(mhash[:], ecsigner.SignerKey)
 	if err != nil {
@@ -42,6 +45,33 @@ func (ecsigner *ECSigner) Sign(mssg []byte) ([]byte, error) {
 	}
 	sig[64] += 27
 	return sig, nil
+}
+
+func (ecsigner *ECSigner) SignUserop(uop *userop.UserOperation, chainId *big.Int, entryPoint common.Address) (sig []byte, err error) {
+	switch entryPoint.Hex() {
+	case entrypoint.E8Address.Hex():
+		return ecsigner.SignEIP712(uop, chainId, entryPoint)
+
+	case entrypoint.E7Address.Hex():
+		hash, err := userop.GetUserOpHashV7(uop.Pack(), entryPoint, chainId)
+		if err != nil {
+			return nil, err
+		}
+		return ecsigner.SignMessage(hash[:])
+
+	default:
+		hash, err := userop.GetUserOpHashV6(uop, entryPoint, chainId)
+		if err != nil {
+			return nil, err
+		}
+		return ecsigner.SignMessage(hash[:])
+
+	}
+
+}
+
+func (ecigner *ECSigner) SignEIP712(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
+	return nil, fmt.Errorf("eip712 signature not implemented")
 }
 
 func (ecsigner *ECSigner) String() string {

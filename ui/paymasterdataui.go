@@ -118,16 +118,17 @@ func SetEthInfVPMV7DataUI(it *Item, usop *userop.UserOperation) error {
 
 		}
 
-		chainid := ChainIDItem.Value.(uint64)
+		chainid := ChainIDItem.Value.(*big.Int)
 
 		_, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), chainid, until, after)
 		if err != nil {
 			return fmt.Errorf("error hashing for paymaster: %v", err)
 		}
-		signer, ok := PaymasterSignerItem.Value.(signer.Signer)
+		asigner, ok := PaymasterSignerItem.Value.(signer.Signer)
 
 		if ok {
-			sig, err := signer.Sign(hash)
+			mhash := signer.ToEthSignedMessageHash(hash)
+			sig, err := asigner.SignHash(mhash[:])
 			if err != nil {
 				return fmt.Errorf("error signing for paymaster: %v", err)
 			}

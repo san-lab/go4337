@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
@@ -40,7 +41,7 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			}
 
 		case HashV7Item.Label:
-			ChainID := ChainIDItem.Value.(uint64)
+			ChainID := ChainIDItem.Value.(*big.Int)
 			EntryPoint := EntryPointItem.Value.(common.Address)
 			var hash [32]byte
 			hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
@@ -52,7 +53,7 @@ func UtilsV7UI(usop *userop.UserOperation) {
 
 			return
 		case PaymasterV7HashItem.Label:
-			ChainID := ChainIDItem.Value.(uint64)
+			ChainID := ChainIDItem.Value.(*big.Int)
 			vafterItem := &Item{Label: "Valid After", Details: "Valid After"}
 			a, err := InputUint(vafterItem, 48)
 			if err != nil {
@@ -114,7 +115,7 @@ func UtilsV6UI(usop *userop.UserOperation) {
 			}
 
 		case HashV6Item.Label:
-			ChainID := ChainIDItem.Value.(uint64)
+			ChainID := ChainIDItem.Value.(*big.Int)
 			EntryPoint := EntryPointItem.Value.(common.Address)
 			var hash [32]byte
 			hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)

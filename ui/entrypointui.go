@@ -14,10 +14,13 @@ func EntryPointUI() {
 		Details: fmt.Sprintf("Use the standard V6 entrypoint at: %s", entrypoint.E6Address)}
 	var EntryPointV7Item = &Item{Label: "V7 at " + entrypoint.EntryPointAddressV7,
 		Details: fmt.Sprintf("Use the standard V7 entrypoint at: %s", entrypoint.E7Address)}
+	var EntryPointV8Item = &Item{Label: "V8 at " + entrypoint.EntryPointAddressV8,
+		Details: fmt.Sprintf("Use the standard V8 entrypoint at: %s", entrypoint.E8Address)}
 	var CustomEntryPointItem = &Item{Label: "Custom", Details: "Use a custom entrypoint"}
 	items := []*Item{
 		EntryPointV6Item,
 		EntryPointV7Item,
+		EntryPointV8Item,
 		CustomEntryPointItem,
 		Back,
 	}
@@ -42,6 +45,9 @@ func EntryPointUI() {
 	case EntryPointV7Item.Label:
 		entrypoint.E7Address = common.HexToAddress(entrypoint.EntryPointAddressV7)
 		EntryPointItem.Value = entrypoint.E7Address
+	case EntryPointV8Item.Label:
+		entrypoint.E8Address = common.HexToAddress(entrypoint.EntryPointAddressV8)
+		EntryPointItem.Value = entrypoint.E8Address
 	case CustomEntryPointItem.Label:
 		CustomEntryPointUI()
 	default:

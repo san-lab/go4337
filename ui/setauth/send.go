@@ -1,6 +1,7 @@
 package setauth
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -46,7 +47,8 @@ func SendSetAuthTxUI(satx *types.SetCodeTx) {
 		case sendItem.Label:
 
 			envelope := types.NewTx(satx)
-
+			bt, _ := json.MarshalIndent(envelope, " ", " ")
+			fmt.Println(string(bt))
 			//sbytes, _ = json.MarshalIndent(envelope, "", "  ")
 			//fmt.Println("Sending SetAuthTx to", string(sbytes))
 

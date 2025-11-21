@@ -30,7 +30,7 @@ const PAYMASTER_VALIDATION_GAS_OFFSET = 20
 const PAYMASTER_POSTOP_GAS_OFFSET = 36
 const PAYMASTER_DATA_OFFSET = 52
 
-func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validAfter, validUntil uint64) ([]byte, []byte, error) {
+func GetPaymasterV7Hash(puop *PackedUserOp, chainId *big.Int, validAfter, validUntil uint64) ([]byte, []byte, error) {
 	//can't use userOp.hash(), since it contains also the paymasterAndData itself.
 	/*
 	   address sender = userOp.getSender();
@@ -80,7 +80,7 @@ func GetPaymasterV7Hash(puop *PackedUserOp, chainId, validAfter, validUntil uint
 		new(big.Int).SetBytes(puop.PaymasterAndData[PAYMASTER_VALIDATION_GAS_OFFSET:PAYMASTER_DATA_OFFSET]),
 		puop.PreVerificationGas,
 		puop.GasFees,
-		big.NewInt(int64(chainId)),
+		chainId,
 		paymaster,
 		big.NewInt(int64(validUntil)),
 		big.NewInt(int64(validAfter)),

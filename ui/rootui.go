@@ -136,7 +136,7 @@ func SettingsUI() {
 		case SignerItem.Label:
 			signui.SignerUI(SignerItem)
 		case ChainIDItem.Label:
-			InputUint(ChainIDItem, 64)
+			InputBigInt(ChainIDItem)
 			state.SetChainId(ChainIDItem.Value)
 		case EntryPointItem.Label:
 			EntryPointUI()

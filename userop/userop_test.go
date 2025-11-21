@@ -107,3 +107,38 @@ func TestPaymasterHash(t *testing.T) {
 		fmt.Println(uop.Pack().MarshalRemix())
 	*/
 }
+
+func TestUnmarshalWithAuth(t *testing.T) {
+	uopJson := `{
+      "sender": "0x06E5CaFAdF44ef2085C6cd9AEbB547f8b6d04563",
+      "nonce": 1,
+      "factory": "0x0000000000000000000000000000000000000000",
+      "factoryData": "0x",
+      "callData": "0x",
+      "callGasLimit": 2000000,
+      "verificationGasLimit": 200000,
+      "preVerificationGas": 20000,
+      "maxFeePerGas": 1000,
+      "maxPriorityFeePerGas": 1000000,
+      "paymaster": "0x0000000000000000000000000000000000000000",
+      "paymasterVerificationGasLimit": 1000,
+      "paymasterPostOpGasLimit": 100,
+      "paymasterData": "0x",
+      "signature": "0x214844ba54356b42cca3e3bd89422d73c4a40e4a07d61c5408b5275db1252ad26dfebfc28b45c0d2b27d1c65fff25afd471746d02b4864d97ce98f1f9cd5d1e11b",
+      "eip7702Auth": {
+        "chainId": "0x0",
+        "address": "0x0000000000000000000000000000000000000000",
+        "nonce": "0x11",
+        "yParity": "0x0",
+        "r": "0x0",
+        "s": "0x0"
+      }
+    }`
+
+	usop := new(UserOperation)
+	err := json.Unmarshal([]byte(uopJson), usop)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(usop)
+}

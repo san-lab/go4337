@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/san-lab/go4337/entrypoint/entrypointv6"
 )
 
@@ -56,8 +57,20 @@ type UserOperation struct {
 	// Data for paymaster (only if paymaster exists)
 	PaymasterData []byte `json:"paymasterData"`
 	// Data passed into the account to verify authorization
-	Signature []byte `json:"signature"`
+	Signature   []byte                      `json:"signature"`
+	EIP7702Auth *types.SetCodeAuthorization `json:"eip7702Auth,omitempty"`
 }
+
+/*
+"eip7702Auth": {
+    "chainId": "0xaa36a7",       // Chain ID (e.g., 11155111)
+    "address": "0x4e59b44847b379578588920ca78fbf26c0b4956c", // The Smart Account Implementation to delegate to
+    "nonce": "0x0",               // The EOA's nonce for this specific authorization
+    "yParity": "0x1",             // v (0 or 1)
+    "r": "0x4f3b...",             // r component of the EOA's signature
+    "s": "0x2a1c..."              // s component of the EOA's signature
+  }
+*/
 
 func NewUserOperationWithDefaults() *UserOperation {
 	uop := &UserOperation{
@@ -73,21 +86,22 @@ func NewUserOperationWithDefaults() *UserOperation {
 }
 
 type UsOpJsonAdapter struct {
-	Sender                        string `json:"sender"`
-	Nonce                         uint64 `json:"nonce"`
-	Factory                       string `json:"factory,omitempty"`
-	FactoryData                   string `json:"factoryData,omitempty"`
-	CallData                      string `json:"callData"`
-	CallGasLimit                  uint64 `json:"callGasLimit"`
-	VerificationGasLimit          uint64 `json:"verificationGasLimit"`
-	PreVerificationGas            uint64 `json:"preVerificationGas"`
-	MaxFeePerGas                  uint64 `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas          uint64 `json:"maxPriorityFeePerGas"`
-	Paymaster                     string `json:"paymaster,omitempty"`
-	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
-	PaymasterPostOpGasLimit       uint64 `json:"paymasterPostOpGasLimit"`
-	PaymasterData                 string `json:"paymasterData"`
-	Signature                     string `json:"signature"`
+	Sender                        string                      `json:"sender"`
+	Nonce                         uint64                      `json:"nonce"`
+	Factory                       string                      `json:"factory,omitempty"`
+	FactoryData                   string                      `json:"factoryData,omitempty"`
+	CallData                      string                      `json:"callData"`
+	CallGasLimit                  uint64                      `json:"callGasLimit"`
+	VerificationGasLimit          uint64                      `json:"verificationGasLimit"`
+	PreVerificationGas            uint64                      `json:"preVerificationGas"`
+	MaxFeePerGas                  uint64                      `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas          uint64                      `json:"maxPriorityFeePerGas"`
+	Paymaster                     string                      `json:"paymaster,omitempty"`
+	PaymasterVerificationGasLimit uint64                      `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       uint64                      `json:"paymasterPostOpGasLimit"`
+	PaymasterData                 string                      `json:"paymasterData"`
+	Signature                     string                      `json:"signature"`
+	EIP7702Auth                   *types.SetCodeAuthorization `json:"eip7702Auth,omitempty"`
 }
 
 func (u UserOperation) MarshalJSON() ([]byte, error) {
@@ -112,6 +126,7 @@ func (u UserOperation) MarshalJSON() ([]byte, error) {
 			PaymasterPostOpGasLimit:       u.PaymasterPostOpGasLimit,
 			PaymasterData:                 BytesToString(u.PaymasterData),
 			Signature:                     BytesToString(u.Signature),
+			EIP7702Auth:                   u.EIP7702Auth,
 		},
 	)
 }
@@ -146,6 +161,7 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 	u.PaymasterPostOpGasLimit = adapter.PaymasterPostOpGasLimit
 	u.PaymasterData = common.FromHex(adapter.PaymasterData)
 	u.Signature = common.FromHex(adapter.Signature)
+	u.EIP7702Auth = adapter.EIP7702Auth
 	return nil
 }
 

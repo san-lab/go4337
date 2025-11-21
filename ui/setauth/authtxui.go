@@ -184,7 +184,7 @@ func AuthListUI(satx *types.SetCodeTx) {
 			authitems = append(authitems, &Item{
 				Label:              fmt.Sprintf("%s_%d_%d", a.Address.Hex(), a.ChainID.Uint64(), a.Nonce),
 				Value:              a,
-				DisplayValueString: authorityString(&a),
+				DisplayValueString: AuthorityString(&a),
 			})
 		}
 		if !isRemoving {
@@ -202,8 +202,10 @@ func AuthListUI(satx *types.SetCodeTx) {
 			return
 		case AddAuthItem.Label:
 			auth := &types.SetCodeAuthorization{}
-			AuthUI(auth)
-			satx.AuthList = append(satx.AuthList, *auth)
+			auth = AuthUI(auth)
+			if auth != nil {
+				satx.AuthList = append(satx.AuthList, *auth)
+			}
 		case AuthImportItem.Label:
 			auth := &types.SetCodeAuthorization{}
 			it := &Item{Label: "Input hex/rlp of the authorization"}

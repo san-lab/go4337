@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
 	"github.com/san-lab/go4337/ecsigner"
 )
@@ -15,17 +16,17 @@ func TestSignature(t *testing.T) {
 	// TestSignature tests the signature of a SetCodeAuthorization struct.
 	// The test is successful if the signature is valid.
 	// The test is unsuccessful if the signature is invalid.
-	// The test is unsuccessful if the signature is invalid.
 	t.Parallel()
 
 	// Create a new SetCodeAuthorization struct.
 	sca := MockAuthorization()
-	s, err := ecsigner.FromHexKey("key", "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d")
+	s, err := ecsigner.FromHexKey("key", "503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb")
+	fmt.Println(s.SignerAddress)
 	if err != nil {
 		t.Fatal(err)
 	}
 	Sign(&sca, s)
-	fmt.Printf("R: %x, S: %x, V: %v \n", sca.R, sca.S, sca.V)
+	fmt.Printf("R: %x, S: %x, V: %v \n", sca.R.Bytes(), sca.S.Bytes(), sca.V)
 
 	//Check the serialized data against the testSignedTestAuth
 	hsa, err := Serialize(&sca)
@@ -46,13 +47,21 @@ func TestSignature(t *testing.T) {
 	}
 	fmt.Printf("Serialized2: %x\n", hsa2)
 
+	h, _ := Hash(&sca)
+	sig, _ := s.SignHash(h)
+	pub, _ := crypto.SigToPub(h, sig)
+	adr := crypto.PubkeyToAddress(*pub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(adr)
 }
 
 func MockAuthorization() types.SetCodeAuthorization {
 	return types.SetCodeAuthorization{
-		ChainID: *uint256.NewInt(31337),
-		Address: common.HexToAddress("0x663F3ad617193148711d28f5334eE4Ed07016602"),
-		Nonce:   0,
+		ChainID: *uint256.NewInt(11155111),
+		Address: common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		Nonce:   3293,
 	}
 }
 

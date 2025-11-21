@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -90,7 +91,7 @@ func GetUsOpLibPrehashV6(userOp *UserOperation) (hash [32]byte, err error) {
 /*
 keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
 */
-func GetUserOpHashV7(userOp *PackedUserOp, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
+func GetUserOpHashV7(userOp *PackedUserOp, entryPoint common.Address, chainid *big.Int) (hash [32]byte, err error) {
 
 	enc2, err := GetUserOpBytesToHash(userOp, entryPoint, chainid)
 	if err != nil {
@@ -104,7 +105,7 @@ func GetUserOpHashV7(userOp *PackedUserOp, entryPoint common.Address, chainid ui
 /*
 keccak256(abi.encode(UserOperationLib.hash(userOp), address(this), block.chainid));
 */
-func GetUserOpHashV6(userOp *UserOperation, entryPoint common.Address, chainid uint64) (hash [32]byte, err error) {
+func GetUserOpHashV6(userOp *UserOperation, entryPoint common.Address, chainid *big.Int) (hash [32]byte, err error) {
 	enc2, err := GetUserOpBytesToHashV6(userOp, entryPoint, chainid)
 	if err != nil {
 		err = fmt.Errorf("pack error: %v", err)
@@ -114,24 +115,24 @@ func GetUserOpHashV6(userOp *UserOperation, entryPoint common.Address, chainid u
 
 }
 
-func GetUserOpBytesToHash(userOp *PackedUserOp, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
+func GetUserOpBytesToHash(userOp *PackedUserOp, entryPoint common.Address, chainid *big.Int) (encoded []byte, err error) {
 	h1, err := GetUsOpLibPrehash(userOp)
 	args := abi.Arguments{
 		{Type: bytes32Ty},
 		{Type: addressTy},
 		{Type: uint256Ty},
 	}
-	return args.Pack(h1, entryPoint, big.NewInt(int64(chainid)))
+	return args.Pack(h1, entryPoint, chainid)
 }
 
-func GetUserOpBytesToHashV6(userOp *UserOperation, entryPoint common.Address, chainid uint64) (encoded []byte, err error) {
+func GetUserOpBytesToHashV6(userOp *UserOperation, entryPoint common.Address, chainid *big.Int) (encoded []byte, err error) {
 	h1, err := GetUsOpLibPrehashV6(userOp)
 	args := abi.Arguments{
 		{Type: bytes32Ty},
 		{Type: addressTy},
 		{Type: uint256Ty},
 	}
-	return args.Pack(h1, entryPoint, big.NewInt(int64(chainid)))
+	return args.Pack(h1, entryPoint, chainid)
 }
 
 type UserOpForApiV6 struct {
@@ -146,6 +147,61 @@ type UserOpForApiV6 struct {
 	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
 	PaymasterAndData     string `json:"paymasterAndData"`
 	Signature            string `json:"signature"`
+}
+
+type UserOpForApiV78 struct {
+	Sender                        string                      `json:"sender"`
+	Nonce                         string                      `json:"nonce"`
+	Factory                       any                         `json:"factory"`
+	FactoryData                   string                      `json:"factoryData"`
+	CallData                      string                      `json:"callData"`
+	CallGasLimit                  string                      `json:"callGasLimit"`
+	VerificationGasLimit          string                      `json:"verificationGasLimit"`
+	PreVerificationGas            string                      `json:"preVerificationGas"`
+	MaxFeePerGas                  string                      `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas          string                      `json:"maxPriorityFeePerGas"`
+	Paymaster                     any                         `json:"paymaster"`
+	PaymasterVerificationGasLimit any                         `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       any                         `json:"paymasterPostOpGasLimit"`
+	PaymasterData                 any                         `json:"paymasterData"`
+	Signature                     string                      `json:"signature"`
+	EIP7702Auth                   *types.SetCodeAuthorization `json:"eip7702Auth,omitempty"`
+}
+
+func (uop *UserOperation) ToUserOpForApiV78() *UserOpForApiV78 {
+	if uop == nil {
+		fmt.Println("nil userop")
+		return nil
+	}
+	sender := uop.Sender
+	if sender == nil {
+		sender = &common.Address{}
+	}
+	return &UserOpForApiV78{
+		Sender:                        sender.Hex(),
+		Nonce:                         fmt.Sprintf("0x%x", uop.Nonce),
+		Factory:                       AddressStringOrNull(*uop.Factory),
+		FactoryData:                   fmt.Sprintf("0x%x", uop.FactoryData),
+		CallData:                      fmt.Sprintf("0x%x", uop.CallData),
+		CallGasLimit:                  fmt.Sprintf("0x%x", uop.CallGasLimit),
+		VerificationGasLimit:          fmt.Sprintf("0x%x", uop.VerificationGasLimit),
+		PreVerificationGas:            fmt.Sprintf("0x%x", uop.PreVerificationGas),
+		MaxFeePerGas:                  fmt.Sprintf("0x%x", uop.MaxFeePerGas),
+		MaxPriorityFeePerGas:          fmt.Sprintf("0x%x", uop.MaxPriorityFeePerGas),
+		Paymaster:                     AddressStringOrNull(*uop.Paymaster),
+		PaymasterVerificationGasLimit: fmt.Sprintf("0x%x", uop.PaymasterVerificationGasLimit),
+		PaymasterPostOpGasLimit:       fmt.Sprintf("0x%x", uop.PaymasterPostOpGasLimit),
+		PaymasterData:                 fmt.Sprintf("0x%x", uop.PaymasterData),
+		Signature:                     fmt.Sprintf("0x%x", uop.Signature),
+		EIP7702Auth:                   uop.EIP7702Auth,
+	}
+}
+
+func AddressStringOrNull(addr common.Address) any {
+	if addr == (common.Address{}) {
+		return nil
+	}
+	return addr.Hex()
 }
 
 func (uop *UserOperation) ToUserOpForApiV6() *UserOpForApiV6 {

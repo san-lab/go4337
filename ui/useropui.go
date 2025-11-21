@@ -7,12 +7,14 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/abiutil"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/ui/abicalldata"
 	. "github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/ui/nonceui"
+	"github.com/san-lab/go4337/ui/setauth"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -300,6 +302,7 @@ var PaymasterDataItem = &Item{Label: "Paymaster Data", Details: "Set Paymaster D
 var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verification Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
 var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
+var EIP7702AuthItem = &Item{Label: "EIP7702Authorization"}
 
 func UserOpContentUI(topIt *Item) {
 	var usop *userop.UserOperation
@@ -327,6 +330,7 @@ func UserOpContentUI(topIt *Item) {
 		PaymasterVerificationGasLimitItem,
 		PaymasterPostOpGasLimitItem,
 		SignatureItem,
+		EIP7702AuthItem,
 		Back,
 	}
 	copyFromUseropToItems(usop)
@@ -394,6 +398,11 @@ func UserOpContentUI(topIt *Item) {
 				usop.Sender = SenderItem.Value.(*common.Address)
 
 			}
+		case EIP7702AuthItem.Label:
+			usop.EIP7702Auth = setauth.AuthUI(usop.EIP7702Auth)
+			EIP7702AuthItem.Value = usop.EIP7702Auth
+			EIP7702AuthItem.DisplayValueString = setauth.AuthorityString(usop.EIP7702Auth)
+
 		default:
 			fmt.Println("Not implemented yet:", sel)
 		}
@@ -417,6 +426,8 @@ func copyFromUseropToItems(uop *userop.UserOperation) {
 	PaymasterVerificationGasLimitItem.Value = uop.PaymasterVerificationGasLimit
 	PaymasterPostOpGasLimitItem.Value = uop.PaymasterPostOpGasLimit
 	SignatureItem.Value = uop.Signature
+	EIP7702AuthItem.Value = uop.EIP7702Auth
+	EIP7702AuthItem.DisplayValueString = setauth.AuthorityString(uop.EIP7702Auth)
 }
 
 func copyValuesToUserOp(uop *userop.UserOperation) {
@@ -449,6 +460,15 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	uop.PaymasterPostOpGasLimit = PaymasterPostOpGasLimitItem.Value.(uint64)
 	if SignatureItem.Value != nil {
 		uop.Signature = SignatureItem.Value.([]byte)
+	}
+	if EIP7702AuthItem.Value != nil {
+		v, ok := EIP7702AuthItem.Value.(*types.SetCodeAuthorization)
+		if ok {
+			uop.EIP7702Auth = v
+		} else {
+			fmt.Println("missed casting: ", EIP7702Item.Value)
+		}
+
 	}
 }
 

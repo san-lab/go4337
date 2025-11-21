@@ -22,16 +22,22 @@ var AuthAddressItem = &common.Item{Label: "Address", Details: "The addrss to ins
 var AuthNonceItem = &common.Item{Label: "Nonce", Details: "Current nonce at the authority "}
 var AuthSignItem = &common.Item{Label: "Sign", Details: "Sign the authorization"}
 var AuthExportItem = &common.Item{Label: "Export as rlp or json", Details: "Export the authorization as hex of the rlp encoded data or as json"}
+var AuthResetItem = &common.Item{Label: "Remove"}
 
-func AuthUI(auth *types.SetCodeAuthorization) bool {
+func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 	if auth == nil {
-		*auth = types.SetCodeAuthorization{}
+		auth = new(types.SetCodeAuthorization)
+		AuthChainIDItem.Value = nil
+		AuthAddressItem.Value = nil
+		AuthNonceItem.Value = nil
+		AuthSignItem.DisplayValueString = ""
+		AuthSignerItem.Details = ""
 	} else {
 		AuthChainIDItem.Value = auth.ChainID
 		AuthAddressItem.Value = auth.Address.String()
 		AuthNonceItem.Value = auth.Nonce
 		AuthSignItem.DisplayValueString = RSVtoString(&auth.R, &auth.S, uint256.NewInt(uint64(auth.V)))
-		AuthSignerItem.Details = authorityString(auth)
+		AuthSignerItem.Details = AuthorityString(auth)
 	}
 
 	authitems := []*common.Item{
@@ -41,6 +47,7 @@ func AuthUI(auth *types.SetCodeAuthorization) bool {
 		AuthNonceItem,
 		AuthSignItem,
 		common.Set,
+		AuthResetItem,
 		AuthExportItem,
 		common.Back,
 	}
@@ -51,16 +58,16 @@ func AuthUI(auth *types.SetCodeAuthorization) bool {
 		_, sel, err := spr.Run()
 		if err != nil {
 			fmt.Println("Prompt failed", err)
-			return false
+			return nil
 		}
 		switch sel {
 		case common.Back.Label:
-			return false
+			return nil
 		case common.Set.Label:
-			return true
+			return auth
 		case AuthExportItem.Label:
 			ExoprtAuthUI(auth)
-			return false
+			return nil
 
 		case AuthChainIDItem.Label:
 			common.InputBigInt(AuthChainIDItem)
@@ -86,6 +93,8 @@ func AuthUI(auth *types.SetCodeAuthorization) bool {
 			}
 		case AuthSignItem.Label:
 			SignAuthorizationUI(auth)
+		case AuthResetItem.Label:
+			return nil
 		}
 
 	}
@@ -141,7 +150,7 @@ func SignAuthorizationUI(auth *types.SetCodeAuthorization) {
 
 }
 
-func authorityString(auth *types.SetCodeAuthorization) string {
+func AuthorityString(auth *types.SetCodeAuthorization) string {
 	if auth == nil {
 		return "Not Set"
 	}

@@ -18,8 +18,8 @@ func Eth_sendUserOperation(url, key string, usop *userop.UserOperation, entrypoi
 	switch entrypointVersion {
 	case 6:
 		usopdata = usop.ToUserOpForApiV6()
-	case 7:
-		usopdata = usop.ToUserOpForApiV6()
+	case 7, 8:
+		usopdata = usop.ToUserOpForApiV78()
 	default:
 		return nil, fmt.Errorf("Unsupported entrypoint version: %d", entrypointVersion)
 	}
@@ -44,8 +44,9 @@ func Eth_estimateUserOperationGas(url, key string, usop *userop.UserOperation, e
 	switch entrypointVersion {
 	case 6:
 		usopdata = usop.ToUserOpForApiV6()
-	case 7:
-		usopdata = usop.ToUserOpForApiV6()
+	case 7, 8:
+		usopdata = usop.ToUserOpForApiV78()
+
 	default:
 		return nil, fmt.Errorf("Unsupported entrypoint version: %d", entrypointVersion)
 	}

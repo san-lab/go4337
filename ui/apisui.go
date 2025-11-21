@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 
@@ -141,6 +142,8 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			entrypointversion = 6
 		} else if entrypointaddress == entrypoint.E7Address.String() {
 			entrypointversion = 7
+		} else if entrypointaddress == entrypoint.E8Address.String() {
+			entrypointversion = 8
 		}
 
 		if APIKeyItem.Value != nil {
@@ -337,7 +340,7 @@ func GetPMContext(provider string) (context, chainId interface{}, ok bool) {
 			fmt.Println("Policy ID not set")
 			return nil, nil, false
 		}
-		chi, ok2 := ChainIDItem.Value.(uint64)
+		chi, ok2 := ChainIDItem.Value.(*big.Int)
 		if !ok2 {
 			fmt.Println("Chain ID not set")
 			return nil, nil, false

@@ -13,7 +13,7 @@ func TestSignature(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sig, err := s.Sign(msg)
+	sig, err := s.SignMessage(msg)
 	if err != nil {
 		t.Fatal(err)
 	}
