@@ -128,13 +128,13 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			if sig[64] < 27 {
 				sig[64] += 27
 			}
+			usop.Signature = sig
+			SignatureItem.Value = sig
+			//SignatureItem.DisplayValue = ShortHex(sig, 6)
+			SignatureItem.Details = hex.EncodeToString(sig[:])
+			fmt.Println("Signature:", hex.EncodeToString(sig[:]))
+			return
 		}
-
-		usop.Signature = sig
-		SignatureItem.Value = sig
-		//SignatureItem.DisplayValue = ShortHex(sig, 6)
-		SignatureItem.Details = hex.EncodeToString(sig[:])
-		fmt.Println("Signature:", hex.EncodeToString(sig[:]))
 
 	}
 }

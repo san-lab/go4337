@@ -44,11 +44,11 @@ func (bs *BrowserSigner) SignHash([]byte) ([]byte, error) {
 }
 
 func (bs *BrowserSigner) SignEIP712(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
-	return SignEIP712Way(uop, chainId, entrypoint)
+	return SignEIP712Way(uop, chainId, entrypoint, nil)
 }
 
 func (bs *BrowserSigner) SignUserop(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
-	return SignEIP712Way(uop, chainId, entrypoint)
+	return SignEIP712Way(uop, chainId, entrypoint, nil)
 }
 
 func (bs *BrowserSigner) Name() string {

@@ -20,7 +20,7 @@ var (
 // SignUserOp computes the EIP-712 hash and signs it with the private key.
 func SignUserOp(userOp *UserOperation, entryPoint common.Address, chainID *big.Int, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	// 1. Get the EIP-712 digest (the hash to be signed)
-	digest, err := GetUserOpHash(userOp, entryPoint, chainID)
+	digest, err := GetUserOpHashV712(userOp, entryPoint, chainID)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -42,8 +42,8 @@ func SignUserOp(userOp *UserOperation, entryPoint common.Address, chainID *big.I
 	return signature, nil
 }
 
-// GetUserOpHash calculates the EIP-712 digest: Keccak256("\x19\x01" ‖ domainSeparator ‖ hashStruct(userOp))
-func GetUserOpHash(op *UserOperation, entryPoint common.Address, chainID *big.Int) (common.Hash, error) {
+// GetUserOpHashV712 calculates the EIP-712 digest: Keccak256("\x19\x01" ‖ domainSeparator ‖ hashStruct(userOp))
+func GetUserOpHashV712(op *UserOperation, entryPoint common.Address, chainID *big.Int) (common.Hash, error) {
 	domainSeparator, err := buildDomainSeparator(entryPoint, chainID)
 	if err != nil {
 		return common.Hash{}, err

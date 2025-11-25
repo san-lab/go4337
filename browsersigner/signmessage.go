@@ -15,19 +15,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/san-lab/go4337/userop"
 )
 
 // --- MOCK DEPENDENCIES (Replace with your actual structs/functions) ---
 
-// Mocking a stripped-down UserOperation for demonstration purposes
-type MockUserOperation struct {
-	Sender common.Address
-	Nonce  *big.Int
-	// ... other fields
-}
-
 // Mock implementation of the assumed HashUserOp function
-func HashUserOp(userOp *MockUserOperation, chainId *big.Int, entrypoint common.Address) [32]byte {
+func HashUserOp(userOp *userop.UserOperation, chainId *big.Int, entrypoint common.Address) [32]byte {
 	// In a real scenario, this function would compute the final 32-byte hash
 	// using the PackedUserOperation method.
 	// We return a hardcoded, valid-looking hash for demonstration.
@@ -133,7 +127,7 @@ type ServerConfigH struct {
 }
 
 // SignHashWithPersonalSign opens a browser to sign the userOp hash using MetaMask's personal_sign.
-func SignHashWithPersonalSign(userOp *MockUserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
+func SignHashWithPersonalSign(userOp *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
 
 	// 1. Get the hash of the UserOp
 	userOpHash := HashUserOp(userOp, chainId, entrypoint)

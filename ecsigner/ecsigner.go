@@ -70,8 +70,13 @@ func (ecsigner *ECSigner) SignUserop(uop *userop.UserOperation, chainId *big.Int
 
 }
 
-func (ecigner *ECSigner) SignEIP712(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
-	return nil, fmt.Errorf("eip712 signature not implemented")
+func (ecsigner *ECSigner) SignEIP712(uop *userop.UserOperation, chainId *big.Int, entrypoint common.Address) (sig []byte, err error) {
+	var hash common.Hash
+	hash, err = userop.GetUserOpHashV712(uop, entrypoint, chainId)
+	if err != nil {
+		return
+	}
+	return ecsigner.SignHash(hash[:])
 }
 
 func (ecsigner *ECSigner) String() string {

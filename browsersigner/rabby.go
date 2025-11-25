@@ -23,6 +23,9 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
+const EIP7702Prefix = "0x7702000000000000000000000000000000000000"
+const EIP7702PrefixLength = 20
+
 // HTML Template for the browser signing page
 const signPageTemplate = `
 <!DOCTYPE html>
@@ -118,10 +121,10 @@ type ServerConfig struct {
 	Payload string
 }
 
-func SignEIP712Way(userOp *userop.UserOperation, chainId *big.Int, entrypoint common.Address) ([]byte, error) {
+func SignEIP712Way(userOp *userop.UserOperation, chainId *big.Int, entrypoint common.Address, eip7702Delegate *common.Address) ([]byte, error) {
 
 	fmt.Println("Generating EIP-712 Payload...")
-	payloadJSON, err := PrepareEIP712Payload(userOp, entrypoint, chainId)
+	payloadJSON, err := PrepareEIP712Payload(userOp, entrypoint, chainId, eip7702Delegate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack UserOp: %v", err)
 	}
@@ -257,8 +260,6 @@ func isWSL() bool {
 	return strings.Contains(strings.ToLower(string(data)), "microsoft")
 }
 
-func ptr(a common.Address) *common.Address { return &a }
-
 type TypedData struct {
 	Types       map[string][]Type      `json:"types"`
 	PrimaryType string                 `json:"primaryType"`
@@ -279,13 +280,13 @@ type Domain struct {
 }
 
 // PrepareEIP712Payload formats the UserOp into the JSON string required for browser wallets
-func PrepareEIP712Payload(op *userop.UserOperation, entryPoint common.Address, chainID *big.Int) (string, error) {
+func PrepareEIP712Payload(op *userop.UserOperation, entryPoint common.Address, chainID *big.Int, eip7702Delegate *common.Address) (string, error) {
 
 	// 1. PACKING
 	accountGasLimits := PackUint128s(op.VerificationGasLimit, op.CallGasLimit)
 	gasFees := PackUint128s(op.MaxPriorityFeePerGas, op.MaxFeePerGas)
 	paymasterAndData := GetPaymasterAndDataForPacking(op)
-	initCode := GetInitCodeForPacking(op)
+	initCode := GetInitCodeForPacking(op, eip7702Delegate)
 
 	// 2. MESSAGE CONSTRUCTION
 	message := map[string]interface{}{
@@ -356,11 +357,27 @@ func GetPaymasterAndDataForPacking(op *userop.UserOperation) []byte {
 	return packed
 }
 
-func GetInitCodeForPacking(op *userop.UserOperation) []byte {
-	if op.Factory == nil || *op.Factory == (common.Address{}) {
-		return []byte{}
+func GetInitCodeForPacking(op *userop.UserOperation, eip7702Delegate *common.Address) []byte {
+	var baseInitCode []byte
+	if op.Factory != nil && *op.Factory != (common.Address{}) {
+		baseInitCode = append(op.Factory.Bytes(), op.FactoryData...)
+	} else if len(op.FactoryData) > 0 {
+		// This path covers cases where op.InitCode is set directly (non-factory)
+		baseInitCode = op.FactoryData
 	}
-	return append(op.Factory.Bytes(), op.FactoryData...)
+
+	// *** MODIFICATION START ***
+	// Apply EIP-7702 Hash Tweak: Check for the special prefix
+	if len(baseInitCode) >= EIP7702PrefixLength && hexutil.Encode(baseInitCode[:EIP7702PrefixLength]) == EIP7702Prefix {
+		// Copy the base initCode to modify it for the hash calculation
+		modifiedInitCode := make([]byte, len(baseInitCode))
+		copy(modifiedInitCode, baseInitCode)
+
+		// Replace the first 20 bytes (the prefix) with the EIP-7702 Delegate Address
+		copy(modifiedInitCode[:EIP7702PrefixLength], eip7702Delegate.Bytes())
+		return modifiedInitCode
+	}
+	return baseInitCode
 }
 
 func PackUint128s(high, low uint64) [32]byte {
