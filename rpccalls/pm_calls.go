@@ -1,6 +1,7 @@
 package rpccalls
 
 import (
+	"github.com/san-lab/go4337/entrypoint"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -17,13 +18,26 @@ func PM_getPaymasterStubData(url, key string, usop *userop.UserOperation, contex
 	return bt, err
 }
 
-func PM_getPaymasterData(url, key string, usop *userop.UserOperation, context interface{}, entrypoint string,
+func PM_getPaymasterData(url, key string, usop *userop.UserOperation, context interface{}, entryPoint string,
 	chainId interface{}, provider string) (*PMandDataResult, error) {
+	var apiusop any
+	if entryPoint == entrypoint.EntryPointAddressV6 {
+		apiusop = usop.ToUserOpForApiV6()
+	} else {
+		apiusop = usop.ToUserOpForApiV78(provider)
+	}
+
+	params := []interface{}{apiusop, entryPoint}
+	if chainId != nil {
+		params = append(params, chainId)
+	}
+	params = append(params, context)
+
 	ar := &APIRequest{
 		ID:      17,
 		Jsonrpc: "2.0",
 		Method:  "pm_getPaymasterData",
-		Params:  []interface{}{usop.ToUserOpForApiV6(), entrypoint, chainId, context},
+		Params:  params,
 	}
 	pmad := &PMandDataResult{}
 	_, err := ApiCall(url, key, ar, pmad)
@@ -32,6 +46,8 @@ func PM_getPaymasterData(url, key string, usop *userop.UserOperation, context in
 
 type PMandDataResult struct {
 	PaymasterAndData string `json:"paymasterAndData"`
+	Paymaster        string `json:"paymaster"`
+	PaymasterData    string `json:"paymasterData"`
 }
 
 type AlchemyPMContext struct {
@@ -177,3 +193,33 @@ type PimlicoPMTokenContext struct {
 }
 
 */
+
+type PM_SponsorUOPResult struct {
+	Paymaster                     string `json:"paymaster"`
+	PaymasterData                 string `json:"paymasterData"`
+	PreVerificationGas            string `json:"preVerificationGas"`
+	VerificationGasLimit          string `json:"verificationGasLimit"`
+	CallGasLimit                  string `json:"callGasLimit"`
+	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit"`
+}
+
+func PM_SponsorUserOperation(url, key string, usop *userop.UserOperation, context interface{}, entryPoint string,
+	chainId interface{}, provider string) (*PM_SponsorUOPResult, error) {
+	var apiusop any
+	if entryPoint == entrypoint.EntryPointAddressV6 {
+		apiusop = usop.ToUserOpForApiV6()
+	} else {
+		apiusop = usop.ToUserOpForApiV78(provider)
+	}
+
+	ar := &APIRequest{
+		ID:      18,
+		Jsonrpc: "2.0",
+		Method:  "pm_sponsorUserOperation",
+		Params:  []interface{}{apiusop, entryPoint, chainId, context},
+	}
+	pmad := &PM_SponsorUOPResult{}
+	_, err := ApiCall(url, key, ar, pmad)
+	return pmad, err
+}

@@ -62,6 +62,9 @@ const signPageTemplate = `
         const typedDataString = {{.Payload}};
         const typedData = JSON.parse(typedDataString);
 
+		const urlParams = new URLSearchParams(window.location.search);
+		const requestID = urlParams.get('id'); // Get the unique ID
+
         // Display the payload for verification
         document.getElementById('payloadDisplay').textContent = JSON.stringify(typedData, null, 2);
 
@@ -95,7 +98,7 @@ const signPageTemplate = `
                 const response = await fetch('/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ signature: signature })
+                    body: JSON.stringify({ signature: signature, requestID: requestID })
                 });
 
                 if (response.ok) {
@@ -230,14 +233,16 @@ func openBrowser(url string) error {
 	switch runtime.GOOS {
 	case "windows":
 		cmd = "cmd"
-		args = []string{"/c", "start"}
+		args = []string{"/c", "start", "", url}
+		//cmd = "rundll32"
+		//args = []string{"url.dll,FileProtocolHandler", url}
 	case "darwin":
 		cmd = "open"
 	default: // "linux", "freebsd", "openbsd", "netbsd"
 		// Check if we are running in WSL (Windows Subsystem for Linux)
 		if isWSL() {
 			// In WSL, we can call the Windows explorer.exe directly to open the URL
-			cmd = "explorer.exe"
+			cmd = "wslview"
 		} else {
 			// Standard Linux
 			cmd = "xdg-open"

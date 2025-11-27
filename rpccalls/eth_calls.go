@@ -2,8 +2,9 @@ package rpccalls
 
 import (
 	"fmt"
-	"strconv"
+	"log"
 
+	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -19,7 +20,7 @@ func Eth_sendUserOperation(url, key string, usop *userop.UserOperation, entrypoi
 	case 6:
 		usopdata = usop.ToUserOpForApiV6()
 	case 7, 8:
-		usopdata = usop.ToUserOpForApiV78()
+		usopdata = usop.ToUserOpForApiV78(provider)
 	default:
 		return nil, fmt.Errorf("Unsupported entrypoint version: %d", entrypointVersion)
 	}
@@ -39,14 +40,21 @@ func Eth_sendUserOperation(url, key string, usop *userop.UserOperation, entrypoi
 
 }
 
-func Eth_estimateUserOperationGas(url, key string, usop *userop.UserOperation, entrypoint string, entrypointVersion int, provider string) (*EthEstimateUserOperationGasResult, error) {
-	var usopdata interface{}
+func Eth_estimateUserOperationGas(url, key string, usop *userop.UserOperation, entrypoint string, entrypointVersion int, provider string) (any, error) {
+	if state.DEBUG {
+		log.Println(entrypoint, entrypointVersion)
+	}
+	var usopdata, result interface{}
 	switch entrypointVersion {
 	case 6:
 		usopdata = usop.ToUserOpForApiV6()
+		result = new(EthEstimateUserOperationGasResultV6)
 	case 7, 8:
-		usopdata = usop.ToUserOpForApiV78()
-
+		usopdata = usop.ToUserOpForApiV78(provider)
+		result = new(EthEstimateUserOperationGasResultV7)
+		if provider == BiconomyProvider {
+			result = new(EthEstimateUserOperationGasResultV7Biconomy)
+		}
 	default:
 		return nil, fmt.Errorf("Unsupported entrypoint version: %d", entrypointVersion)
 	}
@@ -57,34 +65,28 @@ func Eth_estimateUserOperationGas(url, key string, usop *userop.UserOperation, e
 		Method:  "eth_estimateUserOperationGas",
 		Params:  []interface{}{usopdata, entrypoint},
 	}
-	var result interface{}
-	var finalResult = &EthEstimateUserOperationGasResult{}
-	switch provider {
-	case AlchemyProvider, PimlicoProvider:
-		result = &AlchemyEstimateGasCostResponse{}
-	default:
-		result = finalResult
-	}
+
 	_, err := ApiCall(url, key, ar, result)
 	if err != nil {
 		return nil, fmt.Errorf("API Call error: %w", err)
 	}
 
-	//Transcode
-	switch provider {
-	case AlchemyProvider, PimlicoProvider:
-		finalResult.CallGasLimit, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).CallGasLimit[2:], 16, 64)
-		finalResult.VerificationGasLimit, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).VerificationGasLimit[2:], 16, 64)
-		finalResult.PreVerificationGas, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).PreVerificationGas[2:], 16, 64)
-	default:
-		finalResult = result.(*EthEstimateUserOperationGasResult)
-	}
+	/*
+		switch provider {
+		case AlchemyProvider, PimlicoProvider:
+			finalResult.CallGasLimit, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).CallGasLimit[2:], 16, 64)
+			finalResult.VerificationGasLimit, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).VerificationGasLimit[2:], 16, 64)
+			finalResult.PreVerificationGas, _ = strconv.ParseUint(result.(*AlchemyEstimateGasCostResponse).PreVerificationGas[2:], 16, 64)
+		default:
+			finalResult = result.(*EthEstimateUserOperationGasResultV6)
+		}
+	*/
 
-	return finalResult, nil
+	return result, nil
 
 }
 
-type EthEstimateUserOperationGasResult struct {
+type EthEstimateUserOperationGasResultV6 struct {
 	CallGasLimit         uint64 `json:"callGasLimit"`
 	VerificationGasLimit uint64 `json:"verificationGasLimit"`
 	PreVerificationGas   uint64 `json:"preVerificationGas"`
@@ -92,6 +94,22 @@ type EthEstimateUserOperationGasResult struct {
 	ValidAfter           string `json:"validAfter"`
 	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
 	MaxFeePerGas         string `json:"maxFeePerGas"`
+}
+
+type EthEstimateUserOperationGasResultV7 struct {
+	PreVerificationGas            string `json:"preVerificationGas"`
+	VerificationGasLimit          string `json:"verificationGasLimit"`
+	CallGasLimit                  string `json:"callGasLimit"`
+	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit"`
+}
+
+type EthEstimateUserOperationGasResultV7Biconomy struct {
+	PreVerificationGas            uint64 `json:"preVerificationGas"`
+	VerificationGasLimit          uint64 `json:"verificationGasLimit"`
+	CallGasLimit                  uint64 `json:"callGasLimit"`
+	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
+	PaymasterPostOpGasLimit       uint64 `json:"paymasterPostOpGasLimit"`
 }
 
 type AlchemyEstimateGasCostResponse struct {

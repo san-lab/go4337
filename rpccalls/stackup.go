@@ -3,9 +3,12 @@ package rpccalls
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
 )
 
@@ -42,8 +45,16 @@ func IncorporateStackUpPMResToUserOp(usop *userop.UserOperation, res *StackUpPMP
 	usop.Paymaster = &pma
 	usop.PaymasterData, _ = hex.DecodeString(res.PaymasterAndData[42:])
 
-	usop.PreVerificationGas, _ = strconv.ParseUint(res.PreVerificationGas[2:], 16, 64)
-	usop.VerificationGasLimit, _ = strconv.ParseUint(res.VerificationGasLimit[2:], 16, 64)
-	usop.CallGasLimit, _ = strconv.ParseUint(res.CallGasLimit[2:], 16, 64)
+	usop.PreVerificationGas = ConvHexOrZero(res.PreVerificationGas)
+	usop.VerificationGasLimit = ConvHexOrZero(res.VerificationGasLimit)
+	usop.CallGasLimit = ConvHexOrZero(res.CallGasLimit)
 	return nil
+}
+
+func ConvHexOrZero(s string) uint64 {
+	i, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 64)
+	if err != nil && state.DEBUG {
+		log.Println(err)
+	}
+	return i
 }

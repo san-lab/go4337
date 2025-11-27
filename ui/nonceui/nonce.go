@@ -12,7 +12,7 @@ import (
 	"github.com/san-lab/go4337/ui/rpcui"
 )
 
-var NonceItem = &Item{Label: "Nonce", Details: "Set nonce", Value: uint64(0)}
+var NonceItem = &Item{Label: "Nonce\t", Details: "Set nonce", Value: uint64(0)}
 var CallForNonceItem = &Item{Label: "Call for Nonce", Details: "Call for the nonce of the selected address"}
 
 func CallForNonceUI(nit, ait *Item) {

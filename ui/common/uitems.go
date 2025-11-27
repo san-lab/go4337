@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"reflect"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -19,6 +20,10 @@ type Item struct {
 	DisplayValueString string //could be a function, but I am lazy
 }
 
+func (i *Item) LabColon() string {
+	return fmt.Sprintf("%s\t", i.Label)
+}
+
 func (i *Item) DisplayValue() string {
 	if i.DisplayValueString != "" {
 		return ShortString(i.DisplayValueString, 72)
@@ -32,7 +37,15 @@ func (i *Item) DisplayValue() string {
 	}
 
 	if v, ok := (i.Value).(uint256.Int); ok {
-		return v.String()
+		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
+	}
+
+	if v, ok := (i.Value).(uint64); ok {
+		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
+	}
+
+	if v, ok := (i.Value).(*big.Int); ok {
+		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
 	}
 
 	if usop, ok := (i.Value).(*userop.UserOperation); ok {
@@ -116,8 +129,8 @@ var Set = &Item{Label: "Set", Details: "Set the value"}
 
 var ItemTemplate = &promptui.SelectTemplates{
 	Label:    "{{ . | bold | cyan}}",
-	Inactive: `{{if eq .Label "BACK"}}{{.Label | yellow}}{{else if eq .Label "EXIT"}}{{.Label | red}}{{else if eq .Label "Set"}}{{.Label | green}}{{else}}{{ .Label }}{{with .DisplayValue}}: {{.}}{{end}}{{end}}`,
-	Active:   `{{if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if eq .Label "Set"}}{{.Label | green | bold | underline}}{{else}}{{ .Label | bold | underline }}{{with .DisplayValue}}: {{. | bold}}{{end}}{{end}}`,
+	Inactive: `{{if eq .Label "BACK"}}{{.Label | yellow}}{{else if eq .Label "EXIT"}}{{.Label | red}}{{else if eq .Label "Set"}}{{.Label | green}}{{else}}{{ .LabColon }}{{with .DisplayValue}} {{.}}{{end}}{{end}}`,
+	Active:   `{{if eq .Label "BACK"}}{{.Label | yellow | bold | underline}}{{else if eq .Label "EXIT"}}{{.Label | red | bold | underline}}{{else if eq .Label "Set"}}{{.Label | green | bold | underline}}{{else}}{{ .LabColon | bold | underline }}{{with .DisplayValue}} {{. | bold}}{{end}}{{end}}`,
 	Selected: "{{. | faint}}",
 	Details:  "{{ .Details | faint }}",
 }

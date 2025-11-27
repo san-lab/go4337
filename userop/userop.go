@@ -88,7 +88,7 @@ func NewUserOperationWithDefaults() *UserOperation {
 type UsOpJsonAdapter struct {
 	Sender                        string                      `json:"sender"`
 	Nonce                         uint64                      `json:"nonce"`
-	Factory                       string                      `json:"factory,omitempty"`
+	Factory                       any                         `json:"factory,omitempty"`
 	FactoryData                   string                      `json:"factoryData,omitempty"`
 	CallData                      string                      `json:"callData"`
 	CallGasLimit                  uint64                      `json:"callGasLimit"`
@@ -96,7 +96,7 @@ type UsOpJsonAdapter struct {
 	PreVerificationGas            uint64                      `json:"preVerificationGas"`
 	MaxFeePerGas                  uint64                      `json:"maxFeePerGas"`
 	MaxPriorityFeePerGas          uint64                      `json:"maxPriorityFeePerGas"`
-	Paymaster                     string                      `json:"paymaster,omitempty"`
+	Paymaster                     any                         `json:"paymaster,omitempty"`
 	PaymasterVerificationGasLimit uint64                      `json:"paymasterVerificationGasLimit"`
 	PaymasterPostOpGasLimit       uint64                      `json:"paymasterPostOpGasLimit"`
 	PaymasterData                 string                      `json:"paymasterData"`
@@ -113,7 +113,7 @@ func (u UserOperation) MarshalJSON() ([]byte, error) {
 		&UsOpJsonAdapter{
 			Sender:                        senderstring,
 			Nonce:                         u.Nonce,
-			Factory:                       JSAddressHex(u.Factory),
+			Factory:                       JSAddressHex(u.Factory, ""),
 			FactoryData:                   BytesToString(u.FactoryData),
 			CallData:                      BytesToString(u.CallData),
 			CallGasLimit:                  u.CallGasLimit,
@@ -121,7 +121,7 @@ func (u UserOperation) MarshalJSON() ([]byte, error) {
 			PreVerificationGas:            u.PreVerificationGas,
 			MaxFeePerGas:                  u.MaxFeePerGas,
 			MaxPriorityFeePerGas:          u.MaxPriorityFeePerGas,
-			Paymaster:                     JSAddressHex(u.Paymaster),
+			Paymaster:                     JSAddressHex(u.Paymaster, ""),
 			PaymasterVerificationGasLimit: u.PaymasterVerificationGasLimit,
 			PaymasterPostOpGasLimit:       u.PaymasterPostOpGasLimit,
 			PaymasterData:                 BytesToString(u.PaymasterData),
@@ -144,7 +144,7 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 	u.Nonce = adapter.Nonce
 	if adapter.Factory != "" {
 		u.Factory = new(common.Address)
-		*u.Factory = common.HexToAddress(adapter.Factory)
+		*u.Factory = common.HexToAddress(fmt.Sprintf("%s", adapter.Factory))
 	}
 	u.FactoryData = common.FromHex(adapter.FactoryData)
 	u.CallData = common.FromHex(adapter.CallData)
@@ -155,7 +155,7 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 	u.MaxPriorityFeePerGas = adapter.MaxPriorityFeePerGas
 	if adapter.Paymaster != "" {
 		u.Paymaster = new(common.Address)
-		*u.Paymaster = common.HexToAddress(adapter.Paymaster)
+		*u.Paymaster = common.HexToAddress(fmt.Sprintf("%s", adapter.Paymaster))
 	}
 	u.PaymasterVerificationGasLimit = adapter.PaymasterVerificationGasLimit
 	u.PaymasterPostOpGasLimit = adapter.PaymasterPostOpGasLimit
@@ -391,9 +391,15 @@ func JSBytesToString(bts []byte) string {
 	return fmt.Sprintf("'%s'", BytesToString(bts))
 }
 
-func JSAddressHex(addr *common.Address) string {
-	if addr == nil {
-		return "0x"
+func JSAddressHex(addr *common.Address, provider string) any {
+	var zeroval any
+	if provider == "pimlico" || provider == "alchemy" {
+		zeroval = nil
+	} else {
+		zeroval = "0x"
+	}
+	if addr == nil || (*addr).Hex() == (common.Address{}).Hex() {
+		return zeroval
 	}
 	return addr.Hex()
 }

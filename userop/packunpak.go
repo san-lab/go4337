@@ -168,7 +168,7 @@ type UserOpForApiV78 struct {
 	EIP7702Auth                   *types.SetCodeAuthorization `json:"eip7702Auth,omitempty"`
 }
 
-func (uop *UserOperation) ToUserOpForApiV78() *UserOpForApiV78 {
+func (uop *UserOperation) ToUserOpForApiV78(provider string) *UserOpForApiV78 {
 	if uop == nil {
 		fmt.Println("nil userop")
 		return nil
@@ -180,7 +180,7 @@ func (uop *UserOperation) ToUserOpForApiV78() *UserOpForApiV78 {
 	return &UserOpForApiV78{
 		Sender:                        sender.Hex(),
 		Nonce:                         fmt.Sprintf("0x%x", uop.Nonce),
-		Factory:                       AddressStringOrNull(*uop.Factory),
+		Factory:                       JSAddressHex(uop.Factory, provider),
 		FactoryData:                   fmt.Sprintf("0x%x", uop.FactoryData),
 		CallData:                      fmt.Sprintf("0x%x", uop.CallData),
 		CallGasLimit:                  fmt.Sprintf("0x%x", uop.CallGasLimit),
@@ -188,20 +188,13 @@ func (uop *UserOperation) ToUserOpForApiV78() *UserOpForApiV78 {
 		PreVerificationGas:            fmt.Sprintf("0x%x", uop.PreVerificationGas),
 		MaxFeePerGas:                  fmt.Sprintf("0x%x", uop.MaxFeePerGas),
 		MaxPriorityFeePerGas:          fmt.Sprintf("0x%x", uop.MaxPriorityFeePerGas),
-		Paymaster:                     AddressStringOrNull(*uop.Paymaster),
+		Paymaster:                     JSAddressHex(uop.Paymaster, provider),
 		PaymasterVerificationGasLimit: fmt.Sprintf("0x%x", uop.PaymasterVerificationGasLimit),
 		PaymasterPostOpGasLimit:       fmt.Sprintf("0x%x", uop.PaymasterPostOpGasLimit),
 		PaymasterData:                 fmt.Sprintf("0x%x", uop.PaymasterData),
 		Signature:                     fmt.Sprintf("0x%x", uop.Signature),
 		EIP7702Auth:                   uop.EIP7702Auth,
 	}
-}
-
-func AddressStringOrNull(addr common.Address) any {
-	if addr == (common.Address{}) {
-		return nil
-	}
-	return addr.Hex()
 }
 
 func (uop *UserOperation) ToUserOpForApiV6() *UserOpForApiV6 {

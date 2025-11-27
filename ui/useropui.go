@@ -288,18 +288,19 @@ func UserOpUI(usop *userop.UserOperation) {
 var SenderItem = &Item{Label: state.Sender, Details: "Set sender"}
 
 var CallDataItem = &Item{Label: "Call Data", Details: "Set Call Data"}
-var CallGasLimitItem = &Item{Label: "Call Gas Limit", Details: "Set Call Gas Limit"}
+var CallGasLimitItem = &Item{Label: "Call Gas Limit\t ", Details: "Set Call Gas Limit"}
 var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
-var PreVerificationGasItem = &Item{Label: "Pre Verification Gas", Details: "Set Pre Verification Gas"}
-var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas", Details: "Set Max Fee Per Gas"}
+var PreVerificationGasItem = &Item{Label: "Pre Verification Gas   ", Details: "Set Pre Verification Gas"}
+var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas\t ", Details: "Set Max Fee Per Gas"}
 var MaxPriorityFeePerGasItem = &Item{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
-var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
+
+// var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
 var FactoryItem = &Item{Label: "Factory", Details: "Set Factory"}
 var FactoryDataItem = &Item{Label: "Factory Data", Details: "Set Factory Data"}
 
 // PaymasterItem is defined in paymasterui.go
 var PaymasterDataItem = &Item{Label: "Paymaster Data", Details: "Set Paymaster Data"}
-var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verification Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
+var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
 var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 var EIP7702AuthItem = &Item{Label: "EIP7702Authorization"}

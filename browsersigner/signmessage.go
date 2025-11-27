@@ -32,7 +32,7 @@ func HashUserOp(userOp *userop.UserOperation, chainId *big.Int, entrypoint commo
 }
 
 // --- HTML Template for the browser signing page (Simplified for personal_sign) ---
-const signPageTemplate2 = `
+const signMessagePageTemplate = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,13 +59,15 @@ const signPageTemplate2 = `
         <button id="signBtn">Sign with MetaMask</button>
 
         <h3>Raw Hash (32 Bytes)</h3>
-        <pre id="hashDisplay">{{.Hash}}</pre>
-        <div style="font-size: 0.8rem; color: #ffeb3b; margin-top: 10px;">
-            ⚠️ MetaMask will automatically prepend a header before signing this hash.
-        </div>
+        <pre id="hashDisplay">{{.Payload}}</pre>
+        
     </div>
 
     <script>
+		const urlParams = new URLSearchParams(window.location.search);
+		const requestID = urlParams.get('id'); // Get the unique ID
+
+
         // Injected Go variable
         const hashToSign = document.getElementById('hashDisplay').textContent.trim();
 
@@ -100,7 +102,7 @@ const signPageTemplate2 = `
                 const response = await fetch('/submit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ signature: signature })
+                    body: JSON.stringify({ signature: signature, requestID: requestID })
                 });
 
                 if (response.ok) {
@@ -140,7 +142,7 @@ func SignHashWithPersonalSign(userOp *userop.UserOperation, chainId *big.Int, en
 
 	// Handler for the main signing page
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.New("sign").Parse(signPageTemplate2)
+		tmpl, err := template.New("signMessage").Parse(signMessagePageTemplate)
 		if err != nil {
 			http.Error(w, "Template Error", http.StatusInternalServerError)
 			return

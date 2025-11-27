@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"regexp"
@@ -95,6 +96,7 @@ func InputBigInt(item *Item) error {
 		return fmt.Errorf("error parsing big int: %w", err)
 	}
 	item.Value = res
+
 	return nil
 }
 
@@ -154,7 +156,7 @@ func InputUint(item *Item, size int) (uint64, error) {
 		return 0, fmt.Errorf("unsupported size: %d", size)
 
 	}
-	//item.DisplayValue = fmt.Sprint(u)
+
 	return u, nil
 }
 
@@ -337,4 +339,12 @@ func InputHexFileUI(label string) ([]byte, error) {
 	sbytes = strings.TrimPrefix(sbytes, "0x")
 	return hex.DecodeString(sbytes)
 
+}
+
+func ConvHexOrZero(s string) uint64 {
+	i, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 64)
+	if err != nil && state.DEBUG {
+		log.Println(err)
+	}
+	return i
 }
