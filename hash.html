@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ERC-4337 v0.7 UserOp Hash (Correct)</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <style>
+    body { font-family: monospace; max-width: 1100px; margin: 20px auto; }
+    textarea, input { width: 100%; margin-bottom: 10px; font-family: monospace; }
+    textarea { height: 320px; }
+    button { padding: 10px; font-size: 16px; }
+    .out { background: #f5f5f5; padding: 10px; word-break: break-all; }
+    .label { font-weight: bold; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>ERC-4337 v0.7 UserOperation Hash Generator (Correct)</h2>
+
+<label>UserOperation JSON</label>
+<textarea id="userop">
+{
+  "sender": "0x72174f7cDC903D525c3fA82F10a7898FbB6edfBA",
+  "nonce": 12,
+  "factory": "0x",
+  "factoryData": "0x",
+  "callData": "0xb61d27f600000000000000000000000095c2b3a7bdc545f68df148ad17034a1fe356600200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000406661abd00000000000000000000000000000000000000000000000000000000",
+  "callGasLimit": 17955,
+  "verificationGasLimit": 41810,
+  "preVerificationGas": 50561,
+  "maxFeePerGas": 1888271,
+  "maxPriorityFeePerGas": 110000,
+  "paymaster": "0x777777777777AeC03fd955926DbF81597e66834C",
+  "paymasterVerificationGasLimit": 35470,
+  "paymasterPostOpGasLimit": 1,
+  "paymasterData": "0x01000069298896000000000000461851e09143dc101ec4cfc8637f1879c57bde11672a3f1e5a7a9284005f609016c4d9f4b255a943c09aff3cdecac931128e3f6c99253f093a3aa0633458e5491c",
+  "signature": "0x943aa83d93d125336f5f862ccbe742797fa34c38065b634e6dbbc6b302f3d85429b1c1c2bab35d7df8d70209e445f98aa51467ef438ee39cb474a15b336858811c"
+}
+</textarea>
+
+<label>EntryPoint</label>
+<input id="entrypoint" value="0x0000000071727De22E5E9d8BAf0edAc6f37da032" />
+
+<label>Chain ID</label>
+<input id="chainid" value="84532" />
+
+<button onclick="compute()">Compute Hashes</button>
+
+<div class="out">
+  <div class="label">Raw UserOp Hash</div>
+  <div id="raw">—</div>
+  <div class="label">Final UserOp Hash</div>
+  <div id="final">—</div>
+</div>
+
+<script>
+function packUint128Pair(a, b) {
+  return ethers.zeroPadValue(
+    ethers.toBeHex(
+      (BigInt(a) << 128n) | BigInt(b)
+    ),
+    32
+  );
+}
+
+function compute() {
+  const abi = ethers.AbiCoder.defaultAbiCoder();
+  const op = JSON.parse(document.getElementById("userop").value);
+  const entryPoint = document.getElementById("entrypoint").value;
+  const chainId = BigInt(document.getElementById("chainid").value);
+
+  const norm = v => (v && v !== "0x") ? v : "0x";
+
+  /* -----------------------------
+     Raw byte construction
+  ------------------------------*/
+
+  const initCode = ethers.concat([
+    norm(op.factory),
+    norm(op.factoryData)
+  ]);
+
+  const paymasterAndData = ethers.concat([
+    op.paymaster, // EXACT 20 bytes
+    packUint128Pair(
+      op.paymasterVerificationGasLimit,
+      op.paymasterPostOpGasLimit
+    ),             // EXACT 32 bytes
+    norm(op.paymasterData)
+  ]);
+
+  /* -----------------------------
+     Packed uint256 gas fields
+  ------------------------------*/
+
+  const accountGasLimits =
+    (BigInt(op.verificationGasLimit) << 128n) |
+    BigInt(op.callGasLimit);
+
+  const gasFees =
+    (BigInt(op.maxPriorityFeePerGas) << 128n) |
+    BigInt(op.maxFeePerGas);
+
+  /* -----------------------------
+     PackedUserOperation (raw)
+  ------------------------------*/
+
+  const packedUserOp = {
+    sender: op.sender,
+    nonce: BigInt(op.nonce),
+    initCode,
+    callData: norm(op.callData),
+    accountGasLimits,
+    preVerificationGas: BigInt(op.preVerificationGas),
+    gasFees,
+    paymasterAndData
+  };
+
+  console.log("=== PackedUserOp (EntryPoint-level) ===");
+  console.log(packedUserOp);
+  console.log("initCode bytes:", initCode);
+  console.log("callData bytes:", packedUserOp.callData);
+  console.log("paymasterAndData bytes:", paymasterAndData);
+  console.log("accountGasLimits:", accountGasLimits.toString());
+  console.log("gasFees:", gasFees.toString());
+
+  /* -----------------------------
+     Hashing (EntryPoint logic)
+  ------------------------------*/
+
+  const encodedForHash = abi.encode(
+    [
+      "address",
+      "uint256",
+      "bytes32",
+      "bytes32",
+      "uint256",
+      "uint256",
+      "uint256",
+      "bytes32"
+    ],
+    [
+      packedUserOp.sender,
+      packedUserOp.nonce,
+      ethers.keccak256(packedUserOp.initCode),
+      ethers.keccak256(packedUserOp.callData),
+      packedUserOp.accountGasLimits,
+      packedUserOp.preVerificationGas,
+      packedUserOp.gasFees,
+      ethers.keccak256(packedUserOp.paymasterAndData)
+    ]
+  );
+
+  const rawHash = ethers.keccak256(encodedForHash);
+
+  const finalHash = ethers.keccak256(
+    abi.encode(
+      ["bytes32", "address", "uint256"],
+      [rawHash, entryPoint, chainId]
+    )
+  );
+
+  console.log("rawUserOpHash:", rawHash);
+  console.log("finalUserOpHash:", finalHash);
+
+  document.getElementById("raw").innerText = rawHash;
+  document.getElementById("final").innerText = finalHash;
+}
+</script>
+
+</body>
+</html>

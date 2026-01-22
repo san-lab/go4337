@@ -35,7 +35,7 @@ func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 	} else {
 		AuthChainIDItem.Value = auth.ChainID
 		AuthAddressItem.Value = auth.Address.String()
-		AuthNonceItem.Value = auth.Nonce
+		AuthNonceItem.Value = big.NewInt(int64(auth.Nonce))
 		AuthSignItem.DisplayValueString = RSVtoString(&auth.R, &auth.S, uint256.NewInt(uint64(auth.V)))
 		AuthSignerItem.Details = AuthorityString(auth)
 	}
@@ -87,9 +87,10 @@ func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 			signui.SignerUI(AuthSignerItem)
 
 		case AuthNonceItem.Label:
+
 			nonceui.InputNonceUI(AuthNonceItem, AuthSignerItem, true)
 			if AuthNonceItem.Value != nil {
-				auth.Nonce = AuthNonceItem.Value.(uint64)
+				auth.Nonce = AuthNonceItem.Value.(*big.Int).Uint64()
 			}
 		case AuthSignItem.Label:
 			SignAuthorizationUI(auth)

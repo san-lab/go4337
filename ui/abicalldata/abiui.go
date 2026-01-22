@@ -609,7 +609,8 @@ func SetParamUI(item *common.Item, input *abi.Argument) error {
 	case abi.UintTy:
 		switch input.Type.Size {
 		case 256, 160, 128:
-			return common.InputBigInt(item)
+			_, err := common.InputBigInt(item)
+			return err
 		case 64, 32, 16, 8:
 			it := &common.Item{Label: item.Label}
 			_, err := common.InputUint(it, input.Type.Size)

@@ -269,7 +269,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 		case Back.Label:
 			return
 		case ZkChainIDItem.Label:
-			err := InputBigInt(ZkChainIDItem)
+			_, err := InputBigInt(ZkChainIDItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -296,7 +296,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 				ZkToItem.Value = addr
 			}
 		case ZkValueItem.Label:
-			err = InputBigInt(ZkValueItem)
+			_, err = InputBigInt(ZkValueItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -311,7 +311,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 				ZkDataItem.Value = calldat
 			}
 		case ZkGasLimitItem.Label:
-			err := InputBigInt(ZkGasLimitItem)
+			_, err := InputBigInt(ZkGasLimitItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -319,7 +319,7 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 			}
 
 		case ZkGasTipCapItem.Label:
-			err := InputBigInt(ZkGasTipCapItem)
+			_, err := InputBigInt(ZkGasTipCapItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {
@@ -327,14 +327,14 @@ func ZkEIP712TxUI(zktx *zksyncera.ZkSyncTxRLP) {
 			}
 
 		case ZkGasFeeCapItem.Label:
-			err := InputBigInt(ZkGasFeeCapItem)
+			_, err := InputBigInt(ZkGasFeeCapItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {
 				zktx.MaxFeePerGas = ZkGasFeeCapItem.Value.(*big.Int)
 			}
 		case ZkGasPerPubdataItem.Label:
-			err := InputBigInt(ZkGasPerPubdataItem)
+			_, err := InputBigInt(ZkGasPerPubdataItem)
 			if err != nil {
 				fmt.Println(err)
 			} else {

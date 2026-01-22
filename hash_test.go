@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,13 +28,13 @@ func TestPackUserOp(t *testing.T) {
 	}
 	fmt.Printf("%x\n", h1)
 
-	bt2, err := userop.GetUserOpBytesToHashV6(uop, common.HexToAddress("0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"), 1)
+	bt2, err := userop.GetUserOpBytesToHashV6(uop, common.HexToAddress("0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"), big.NewInt(1))
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Printf("%x\n", bt2)
 
-	h2, err := userop.GetUserOpHashV6(uop, common.HexToAddress("0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"), 1)
+	h2, err := userop.GetUserOpHashV6(uop, common.HexToAddress("0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"), big.NewInt(1))
 	if err != nil {
 		t.Error(err)
 	}

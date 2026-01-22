@@ -2,6 +2,7 @@ package userop
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"encoding/json"
@@ -41,7 +42,7 @@ func init() {
 	factory := common.HexToAddress("0x123456789a")
 	TestUserOp = UserOperation{
 		Sender:                        &sender,
-		Nonce:                         0,
+		Nonce:                         (*U256)(big.NewInt(0)),
 		Factory:                       &factory,
 		FactoryData:                   []byte{0xff, 0xfe, 0xfd},
 		CallData:                      common.Hex2Bytes("b61d27f6000000000000000000000000754925c070c5368ae28d1d552dedae302280336d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000084cadcff3b0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000e6c8fe3ad93f726543689c94864ea0a45e3a7b680000000000000000000000000000000000000000000000000000000000000002613300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
@@ -111,7 +112,7 @@ func TestPaymasterHash(t *testing.T) {
 func TestUnmarshalWithAuth(t *testing.T) {
 	uopJson := `{
       "sender": "0x06E5CaFAdF44ef2085C6cd9AEbB547f8b6d04563",
-      "nonce": 1,
+      "nonce": 12,
       "factory": "0x0000000000000000000000000000000000000000",
       "factoryData": "0x",
       "callData": "0x",
@@ -140,5 +141,8 @@ func TestUnmarshalWithAuth(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println(usop)
+	fmt.Println(usop.Nonce)
+
+	b, _ := usop.Pack().MarshalJSON()
+	fmt.Println(string(b))
 }

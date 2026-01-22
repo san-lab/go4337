@@ -29,9 +29,53 @@ paymasterData	bytes	Data for paymaster (only if paymaster exists)
 signature	bytes	Data passed into the account to verify authorization
 */
 
+type U256 big.Int
+
+var One = big.NewInt(1)
+
+func (u *U256) To32Bytes() []byte {
+	return ((*big.Int)(u)).FillBytes(make([]byte, 32))
+}
+
+func (u *U256) Increment() *U256 {
+	i := (*big.Int)(u)
+	i.Add(i, One)
+	return (*U256)(i)
+}
+
+func (u *U256) PureNonce() uint64 {
+	return (*big.Int)(u).Uint64()
+}
+
+func (u *U256) Key() *big.Int {
+	bi := (*big.Int)(u)
+	out := new(big.Int).Rsh(bi, 64) // shift right by 64 bits
+	return out
+}
+
+func (u *U256) String() string {
+	return (*big.Int)(u).String()
+}
+
+func FullNonce(key *big.Int, seq uint64) *U256 {
+	// Make a copy so we don't mutate the caller's key
+	k := new(big.Int).Set(key)
+
+	// Shift key into the upper 192 bits
+	k.Lsh(k, 64)
+
+	// OR in the low 64-bit sequence number
+	k.Or(k, new(big.Int).SetUint64(seq))
+
+	// Reinterpret as *U256
+	return (*U256)(k)
+}
+
+var U0 = (*U256)(big.NewInt(0))
+
 type UserOperation struct {
 	Sender *common.Address `json:"sender"`
-	Nonce  uint64          `json:"nonce"` // internaly, for the ease of increment, etc
+	Nonce  *U256           `json:"nonce"` // activating the keys/lines
 	// Factory address, only for new accounts
 	Factory *common.Address `json:"factory,omitempty"`
 	// Data for account factory (only if account factory exists)
@@ -87,7 +131,7 @@ func NewUserOperationWithDefaults() *UserOperation {
 
 type UsOpJsonAdapter struct {
 	Sender                        string                      `json:"sender"`
-	Nonce                         uint64                      `json:"nonce"`
+	Nonce                         *big.Int                    `json:"nonce"`
 	Factory                       any                         `json:"factory,omitempty"`
 	FactoryData                   string                      `json:"factoryData,omitempty"`
 	CallData                      string                      `json:"callData"`
@@ -112,7 +156,7 @@ func (u UserOperation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		&UsOpJsonAdapter{
 			Sender:                        senderstring,
-			Nonce:                         u.Nonce,
+			Nonce:                         (*big.Int)(u.Nonce),
 			Factory:                       JSAddressHex(u.Factory, ""),
 			FactoryData:                   BytesToString(u.FactoryData),
 			CallData:                      BytesToString(u.CallData),
@@ -141,7 +185,7 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 		addr := common.HexToAddress(adapter.Sender)
 		u.Sender = &addr
 	}
-	u.Nonce = adapter.Nonce
+	u.Nonce = (*U256)(adapter.Nonce)
 	if adapter.Factory != "" {
 		u.Factory = new(common.Address)
 		*u.Factory = common.HexToAddress(fmt.Sprintf("%s", adapter.Factory))
@@ -188,7 +232,7 @@ func (u *UserOperation) PaymasterAndData() []byte {
 func (u *UserOperation) MarshalV6UserOp() entrypointv6.UserOperation {
 	uop6 := new(entrypointv6.UserOperation)
 	uop6.Sender = *u.Sender
-	uop6.Nonce = big.NewInt(int64(u.Nonce))
+	uop6.Nonce = (*big.Int)(u.Nonce)
 	//if u.Factory != nil && *(u.Factory) != (common.Address{}) {
 	//	uop6.InitCode = append(u.Factory.Bytes(), u.FactoryData...)
 	//}
@@ -357,7 +401,7 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	}
 	return &PackedUserOp{
 		Sender:             u.Sender,
-		Nonce:              big.NewInt(int64(u.Nonce)),
+		Nonce:              (*big.Int)(u.Nonce),
 		InitCode:           initCode,
 		CallData:           u.CallData,
 		AccountGasLimits:   PackUints(u.VerificationGasLimit, u.CallGasLimit),

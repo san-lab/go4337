@@ -47,7 +47,7 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 		case Back.Label:
 			return
 		case ChainIDItem.Label:
-			err = InputBigInt(ChainIDItem)
+			_, err = InputBigInt(ChainIDItem)
 			if err != nil {
 				return
 			}

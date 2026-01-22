@@ -150,7 +150,7 @@ func CloneUserOpUI(topIt *Item) {
 		return
 	}
 	nusop := clone.(*userop.UserOperation)
-	nusop.Nonce++
+	nusop.Nonce.Increment()
 	topIt.Value = clone
 	topIt.Label = newname
 	state.AddUserOp(newname, nusop)
@@ -436,7 +436,7 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	if SenderItem.Value != nil {
 		uop.Sender = SenderItem.Value.(*common.Address)
 	}
-	uop.Nonce = nonceui.NonceItem.Value.(uint64)
+	uop.Nonce = nonceui.NonceItem.Value.(*userop.U256)
 	if CallDataItem.Value != nil {
 		uop.CallData = CallDataItem.Value.([]byte)
 	}

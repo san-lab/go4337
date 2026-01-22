@@ -62,6 +62,7 @@ func Alchemy_requestGasAndPaymasterAndData(url, key, policyID, entrypoint, dummy
 
 func Alchemy_requestGasAndPaymasterAndDataV7(url, key, policyID, entrypoint, dummysignature string,
 	usop userop.UserOperation, overrides *AlchemyOverrides) (*AlchemyGasAndPaymasterDataResultV7, error) {
+	//fmt.Println("Av7")
 	ar := &APIRequest{
 		ID:      4338,
 		Jsonrpc: "2.0",
@@ -71,6 +72,7 @@ func Alchemy_requestGasAndPaymasterAndDataV7(url, key, policyID, entrypoint, dum
 	state.Log("Alchemy Overrides:", overrides)
 	agapad := &AlchemyGasAndPaymasterDataResultV7{}
 	_, err := ApiCall(url, key, ar, agapad)
+	//fmt.Println(agapad)
 	return agapad, err
 }
 

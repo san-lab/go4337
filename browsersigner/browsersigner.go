@@ -140,7 +140,7 @@ func (bs *BrowserSigner) String() string {
 }
 
 func (bs *BrowserSigner) Marshal() ([]byte, error) {
-	return nil, fmt.Errorf("not implemented/needed")
+	return []byte{}, nil // fmt.Errorf("not implemented/needed")
 }
 
 var nameCounter = 0

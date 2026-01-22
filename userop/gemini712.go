@@ -82,8 +82,9 @@ func buildStructHash(op *UserOperation) common.Hash {
 	encoded = append(encoded, common.LeftPadBytes(op.Sender.Bytes(), 32)...)
 
 	// 3. Nonce (padded to 32 bytes)
-	nonceBytes := make([]byte, 32)
-	binary.BigEndian.PutUint64(nonceBytes[24:], op.Nonce) // Assuming nonce fits in uint64, otherwise use big.Int
+	//nonceBytes := make([]byte, 32)
+	//binary.BigEndian.PutUint64(nonceBytes[24:], op.Nonce) // Assuming nonce fits in uint64, otherwise use big.Int
+	nonceBytes := op.Nonce.To32Bytes()
 	encoded = append(encoded, nonceBytes...)
 
 	// 4. Keccak(initCode)

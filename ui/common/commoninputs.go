@@ -82,26 +82,26 @@ func InputBytes(item *Item, bytecount int) error {
 	return nil
 }
 
-func InputBigInt(item *Item) error {
+func InputBigInt(item *Item) (*big.Int, error) {
 
 	prompt := promptui.Prompt{
 		Label: item.Label,
 	}
 	a, err := prompt.Run()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	res, err := ParseBigInt(a)
 	if err != nil {
-		return fmt.Errorf("error parsing big int: %w", err)
+		return nil, fmt.Errorf("error parsing big int: %w", err)
 	}
 	item.Value = res
 
-	return nil
+	return res, nil
 }
 
 func InputUint256(item *Item) (*uint256.Int, error) {
-	err := InputBigInt(item)
+	_, err := InputBigInt(item)
 	if err != nil {
 		return nil, err
 	}

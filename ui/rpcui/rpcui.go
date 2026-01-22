@@ -92,7 +92,7 @@ func AddRPCEnpointUI() {
 	tItem.Label = "Chain ID"
 	tItem.Details = "Enter the Chain ID for the RPC Endpoint"
 	tItem.Value = nil
-	err = common.InputBigInt(tItem)
+	_, err = common.InputBigInt(tItem)
 	if err != nil {
 		fmt.Println(err)
 		return

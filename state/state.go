@@ -232,7 +232,10 @@ func (st *StateStruct) Save() error {
 			fmt.Println(err)
 			continue
 		}
-		st.SignersRaw = append(st.SignersRaw, string(bt))
+		if len(bt) > 0 {
+			st.SignersRaw = append(st.SignersRaw, string(bt))
+		}
+
 	}
 	//Also save the undecoded ones
 	for k, v := range UnmarshalledSignersBuffer {

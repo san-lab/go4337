@@ -1,12 +1,10 @@
 package ui
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"regexp"
-	"strings"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
@@ -225,7 +223,8 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				IncorporateGasParametersUI(usop, res, entrypointversion, provider)
+				//IncorporateGasParametersUI(usop, res, entrypointversion, provider)
+				IncorporateRecommendedValuesUI(usop, res)
 			}
 		case eth_getUserOperationByHashItem.Label:
 			_, _, hash, ok := StringFromDictionaryUI("User Operation Hash")
@@ -267,9 +266,12 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				if YesNoPromptUI("Incorporate Paymaster and Data") {
-					IncorporatePMandData(usop, pmad)
-				}
+				/*
+					if YesNoPromptUI("Incorporate Paymaster and Data") {
+						IncorporatePMandData(usop, pmad)
+					}
+				*/
+				IncorporateRecommendedValuesUI(usop, pmad)
 			}
 		case pm_getPaymasterStubDataItem.Label:
 			context, chainId, ok := GetPMContext(provider)
@@ -290,9 +292,12 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				if YesNoPromptUI("Incorporate Paymaster and Data") {
-					IncorporatePMandData(usop, pmad)
-				}
+				/*
+					if YesNoPromptUI("Incorporate Paymaster and Data") {
+						IncorporatePMandData(usop, pmad)
+					}
+				*/
+				IncorporateRecommendedValuesUI(usop, pmad)
 			}
 
 		case alchemy_requestGasAndPaymasterAndDataItem.Label:
@@ -311,7 +316,8 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 				if err != nil {
 					fmt.Println("Error making API call:", err)
 				} else {
-					IncorporateAlchemyGapadUI(usop, gapad)
+					//IncorporateAlchemyGapadUI(usop, gapad)
+					IncorporateRecommendedValuesUI(usop, gapad)
 				}
 			} else {
 				gapad, err := rpccalls.Alchemy_requestGasAndPaymasterAndDataV7(
@@ -320,7 +326,8 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 				if err != nil {
 					fmt.Println("Error making API call:", err)
 				} else {
-					IncorporateAlchemyGapadUIV7(usop, gapad)
+					//IncorporateAlchemyGapadUIV7(usop, gapad)
+					IncorporateRecommendedValuesUI(usop, gapad)
 				}
 			}
 
@@ -361,6 +368,8 @@ func GetPMContext(provider string) (context, chainId interface{}, ok bool) {
 		return &rpccalls.AlchemyPMContext{PolicyId: policyid}, fmt.Sprintf("0x%x", chi), true
 	case rpccalls.PimlicoProvider:
 		return struct{}{}, chi, true
+	case rpccalls.BiconomyProvider:
+		return rpccalls.GetBiconomyContext(), chi, true
 	default:
 		fmt.Println("Not implemented yet:", provider)
 		return nil, nil, false
@@ -372,6 +381,7 @@ func CustomAPIUI(usop *userop.UserOperation) {
 	fmt.Println("Custom API UI not implemented yet")
 }
 
+/*
 func IncorporateGasParametersUI(usop *userop.UserOperation, res any, endpointVersion int, provider string) {
 	switch endpointVersion {
 	case 6:
@@ -401,7 +411,8 @@ func IncorporateGasParametersUI(usop *userop.UserOperation, res any, endpointVer
 
 	}
 }
-
+*/
+/*
 func IncorporateGasParametersV7UI(usop *userop.UserOperation, res *rpccalls.EthEstimateUserOperationGasResultV7) {
 	IncorporateAllItem := &Item{Label: "Incorporate All"}
 	all := false
@@ -612,7 +623,9 @@ func IncorporateAlchemyGapadUIV7(usop *userop.UserOperation, gapad *rpccalls.Alc
 		}
 	}
 }
+*/
 
+/*
 func IncorporatePMandData(usop *userop.UserOperation, pmad *rpccalls.PMandDataResult) {
 	state.Log("IncorporatePMandData", pmad)
 	if len(pmad.PaymasterAndData) > 0 {
@@ -632,6 +645,7 @@ func IncorporatePMandData(usop *userop.UserOperation, pmad *rpccalls.PMandDataRe
 	}
 
 }
+*/
 
 func AlchemyOverridesUI(overrides *rpccalls.AlchemyOverrides) *rpccalls.AlchemyOverrides {
 	if overrides == nil {

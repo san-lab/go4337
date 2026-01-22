@@ -149,3 +149,42 @@ func RepackageUSOPReceiptResult(ausopr *UserOperationReceipt_Biconomy) (*UserOpe
 	return res, nil
 
 }
+
+type BiconomyContext struct {
+	Mode               string `json:"mode"`
+	CalculateGasLimits bool   `json:"calculateGasLimits"`
+	ExpiryDuration     int    `json:"expiryDuration"`
+	SponsorshipInfo    struct {
+		WebhookData struct {
+		} `json:"webhookData"`
+		SmartAccountInfo struct {
+			Name    string `json:"name"`
+			Version string `json:"version"`
+		} `json:"smartAccountInfo"`
+	} `json:"sponsorshipInfo"`
+}
+
+func GetBiconomyContext() BiconomyContext {
+	return BiconomyContext{
+		Mode:               "SPONSORED",
+		CalculateGasLimits: true,
+		ExpiryDuration:     300,
+		SponsorshipInfo: struct {
+			WebhookData struct {
+			} `json:"webhookData"`
+			SmartAccountInfo struct {
+				Name    string `json:"name"`
+				Version string `json:"version"`
+			} `json:"smartAccountInfo"`
+		}{
+			WebhookData: struct{}{},
+			SmartAccountInfo: struct {
+				Name    string `json:"name"`
+				Version string `json:"version"`
+			}{
+				Name:    "BICONOMY",
+				Version: "2.0.0",
+			},
+		},
+	}
+}

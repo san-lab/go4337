@@ -19,7 +19,7 @@ import (
 
 var SetCodeChainIDItem = &Item{Label: "Chain ID"}
 
-var SetCodeNonceItem = nonceui.NonceItem
+var SetCodeNonceItem = &Item{Label: "Nonce\t", Details: "Set auth nonce", Value: uint64(0)}
 var SetCodeGasTipCapItem = &Item{Label: "GasTipCap/MaxPriorityFee"}
 var SetCodeGasFeeCapItem = &Item{Label: "GasFeeCap/MaxFeePerGas"}
 var SetCodeGasItem = &Item{Label: "Gas"}

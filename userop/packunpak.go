@@ -179,7 +179,7 @@ func (uop *UserOperation) ToUserOpForApiV78(provider string) *UserOpForApiV78 {
 	}
 	return &UserOpForApiV78{
 		Sender:                        sender.Hex(),
-		Nonce:                         fmt.Sprintf("0x%x", uop.Nonce),
+		Nonce:                         fmt.Sprintf("0x%x", (*big.Int)(uop.Nonce)),
 		Factory:                       JSAddressHex(uop.Factory, provider),
 		FactoryData:                   fmt.Sprintf("0x%x", uop.FactoryData),
 		CallData:                      fmt.Sprintf("0x%x", uop.CallData),
@@ -208,7 +208,7 @@ func (uop *UserOperation) ToUserOpForApiV6() *UserOpForApiV6 {
 	}
 	return &UserOpForApiV6{
 		Sender:               sender.Hex(),
-		Nonce:                fmt.Sprintf("0x%x", uop.Nonce),
+		Nonce:                fmt.Sprintf("0x%x", (*big.Int)(uop.Nonce)),
 		InitCode:             fmt.Sprintf("0x%x", uop.InitData()),
 		CallData:             fmt.Sprintf("0x%x", uop.CallData),
 		CallGasLimit:         fmt.Sprintf("0x%x", uop.CallGasLimit),

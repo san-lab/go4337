@@ -35,3 +35,10 @@ func TestPersistBytecode(t *testing.T) {
 	}
 	fmt.Println(a3.ExecuteBytecode)
 }
+
+func TestAppendNil(t *testing.T) {
+	ss := []string{"a"}
+	ss = append(ss, string([]byte{}))
+	ss = append(ss, "b")
+	fmt.Println(ss, len(ss))
+}

@@ -25,50 +25,58 @@ func (i *Item) LabColon() string {
 }
 
 func (i *Item) DisplayValue() string {
+	if i == nil {
+		return ""
+	}
 	if i.DisplayValueString != "" {
 		return ShortString(i.DisplayValueString, 72)
 	}
-	if i.Value == nil {
+	return ToDisplayString(i.Value)
+}
+
+func ToDisplayString(v any) string {
+
+	if v == nil {
 		return ""
 	}
 
-	if v, ok := (i.Value).(bool); ok {
+	if v, ok := (v).(bool); ok {
 		return fmt.Sprint(v)
 	}
 
-	if v, ok := (i.Value).(uint256.Int); ok {
+	if v, ok := (v).(uint256.Int); ok {
 		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
 	}
 
-	if v, ok := (i.Value).(uint64); ok {
+	if v, ok := (v).(uint64); ok {
 		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
 	}
 
-	if v, ok := (i.Value).(*big.Int); ok {
+	if v, ok := (v).(*big.Int); ok {
 		return fmt.Sprintf("%v \t\t(0x%x)", v, v)
 	}
 
-	if usop, ok := (i.Value).(*userop.UserOperation); ok {
-		return fmt.Sprintf("Sender: %s, Nonce: %d", usop.Sender.String(), usop.Nonce)
+	if usop, ok := (v).(*userop.UserOperation); ok {
+		return fmt.Sprintf("Sender: %s, Nonce: %s", usop.Sender.String(), usop.Nonce)
 	}
 
-	if addr, ok := (i.Value).(*common.Address); ok {
+	if addr, ok := (v).(*common.Address); ok {
 		if addr == nil {
 			return ""
 		}
 		return addr.String()
 	}
 
-	if str, ok := (i.Value).(fmt.Stringer); ok {
+	if str, ok := (v).(fmt.Stringer); ok {
 		return ShortString(str.String(), 50)
 	}
 
-	if str, ok := (i.Value).(*fmt.Stringer); ok {
+	if str, ok := (v).(*fmt.Stringer); ok {
 		return ShortString((*str).String(), 50)
 	}
 
-	if reflect.ValueOf(i.Value).IsZero() {
-		if reflect.TypeOf(i.Value).ConvertibleTo(reflect.TypeOf(0)) {
+	if reflect.ValueOf(v).IsZero() {
+		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(0)) {
 			return "0"
 		}
 		return ""
@@ -76,10 +84,10 @@ func (i *Item) DisplayValue() string {
 	var derefv interface{}
 	//Dereference, if it is a pointer
 
-	if reflect.TypeOf(i.Value).Kind() == reflect.Ptr {
-		derefv = reflect.ValueOf(i.Value).Elem().Interface()
+	if reflect.TypeOf(v).Kind() == reflect.Ptr {
+		derefv = reflect.ValueOf(v).Elem().Interface()
 	} else {
-		derefv = i.Value
+		derefv = v
 	}
 
 	switch derefv.(type) {

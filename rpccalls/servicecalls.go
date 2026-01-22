@@ -8,22 +8,24 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/san-lab/go4337/entrypoint/entrypointv6"
 	"github.com/san-lab/go4337/entrypoint/entrypointv6/baseaccv6"
 	"github.com/san-lab/go4337/state"
+	"github.com/san-lab/go4337/userop"
 )
 
-func GetWalletNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error) {
+func GetWalletNonce(rpc *state.RPCEndpoint, addr common.Address, key *big.Int) (*userop.U256, error) {
 	client, err := ethclient.Dial(rpc.URL)
 	if err != nil {
-		return 0, fmt.Errorf("could not connect to rpc: %v", err)
+		return nil, fmt.Errorf("could not connect to rpc: %v", err)
 	}
 	bac, err := baseaccv6.NewBaseaccv6Caller(addr, client)
 	if err != nil {
-		return 0, fmt.Errorf("could not create baseacc contract caller: %v", err)
+		return nil, fmt.Errorf("could not create baseacc contract caller: %v", err)
 	}
 	blockNo, err := client.BlockNumber(context.Background())
 	if err != nil {
-		return 0, fmt.Errorf("could not get block number: %v", err)
+		return nil, fmt.Errorf("could not get block number: %v", err)
 	}
 	state.Log("Block number:", blockNo)
 
@@ -31,11 +33,21 @@ func GetWalletNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error)
 		Context: context.Background(),
 		//BlockNumber: big.NewInt(int64(blockNo)),
 	}
-	nonce, err := bac.GetNonce(callOpts)
+
+	epointAddr, err := bac.EntryPoint(callOpts)
 	if err != nil {
-		return 0, fmt.Errorf("could not get nonce: %v", err)
+		return nil, fmt.Errorf("could not get the Entrypoint address from the wallet: %w", err)
 	}
-	return nonce.Uint64(), nil
+
+	ept, err := entrypointv6.NewEntrypointv6Caller(epointAddr, client)
+	if err != nil {
+		return nil, fmt.Errorf("coult not bind to the Entrypoint: %w", err)
+	}
+	nonce, err := ept.GetNonce(callOpts, addr, key)
+	if err != nil {
+		return nil, fmt.Errorf("could not get nonce: %w", err)
+	}
+	return (*userop.U256)(nonce), nil
 
 }
 
@@ -51,16 +63,16 @@ func GetPendingNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error
 	return nonce, nil
 }
 
-func GetNonce(rpc *state.RPCEndpoint, addr common.Address) (uint64, error) {
+func GetNonce(rpc *state.RPCEndpoint, addr common.Address) (*big.Int, error) {
 	client, err := ethclient.Dial(rpc.URL)
 	if err != nil {
-		return 0, fmt.Errorf("could not connect to rpc: %v", err)
+		return nil, fmt.Errorf("could not connect to rpc: %v", err)
 	}
 	nonce, err := client.NonceAt(context.Background(), addr, nil)
 	if err != nil {
-		return 0, fmt.Errorf("could not get nonce: %v", err)
+		return nil, fmt.Errorf("could not get nonce: %v", err)
 	}
-	return nonce, nil
+	return big.NewInt(int64(nonce)), nil
 }
 
 func GetBalance(rpc *state.RPCEndpoint, addr common.Address) (*big.Int, error) {

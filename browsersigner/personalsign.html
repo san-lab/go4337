@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask personal_sign Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800 text-center">ERC-4337 Hash Signer (personal_sign)</h1>
+
+        <div id="status-message" class="mb-4 p-3 rounded-lg text-sm font-medium hidden"></div>
+
+        <div id="connect-section" class="flex flex-col space-y-4">
+            <button id="connect-button" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-md">
+                Connect MetaMask
+            </button>
+        </div>
+
+        <div id="signer-section" class="hidden">
+            <p class="text-gray-600 mb-4 text-center">
+                Connected Address: <code id="connected-address" class="font-mono text-sm text-purple-600"></code>
+            </p>
+
+            <h2 class="text-xl font-semibold mt-6 mb-3 text-gray-700">User Operation Hash (Editable)</h2>
+            
+            <!-- Removed 'readonly' attribute to make the hash input editable -->
+            <textarea id="hash-input" rows="2"
+                class="w-full p-2 border border-gray-300 rounded-lg bg-white text-sm font-mono break-all focus:outline-none focus:ring-2 focus:ring-blue-500">
+0x1d5420365022e37905f9350280144d4734893116315516087d1587841e248b11</textarea>
+            
+            <button id="sign-button" disabled
+                    class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-md disabled:opacity-50">
+                Sign Hash with personal_sign
+            </button>
+
+            <h2 class="text-xl font-semibold mt-8 mb-3 text-gray-700">Resulting Signature</h2>
+            <textarea id="signature-output" rows="3" readonly placeholder="The 65-byte R, S, V signature will appear here."
+                class="w-full p-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono break-all text-gray-700 focus:outline-none"></textarea>
+
+            <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg text-sm text-yellow-800">
+                ⚠️ **Note:** MetaMask automatically prepends the "\x19Ethereum Signed Message" prefix to this hash before signing.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL VARIABLES ---
+        let selectedAccount = null;
+
+        // --- DOM ELEMENTS ---
+        const connectButton = document.getElementById('connect-button');
+        const signButton = document.getElementById('sign-button');
+        const connectedAddressElement = document.getElementById('connected-address');
+        const hashInput = document.getElementById('hash-input');
+        const signatureOutput = document.getElementById('signature-output');
+        const connectSection = document.getElementById('connect-section');
+        const signerSection = document.getElementById('signer-section');
+        const statusMessage = document.getElementById('status-message');
+
+        // --- UTILITY FUNCTIONS ---
+        function displayStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = 'mb-4 p-3 rounded-lg text-sm font-medium';
+            
+            if (type === 'success') {
+                statusMessage.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'error') {
+                statusMessage.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                statusMessage.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            statusMessage.classList.remove('hidden');
+        }
+
+        function updateUI(account) {
+            if (account) {
+                selectedAccount = account;
+                connectedAddressElement.textContent = account;
+                signButton.disabled = false;
+                connectSection.classList.add('hidden');
+                signerSection.classList.remove('hidden');
+                displayStatus(`Connected to MetaMask as ${account.substring(0, 6)}...`, 'success');
+            } else {
+                selectedAccount = null;
+                signButton.disabled = true;
+                connectSection.classList.remove('hidden');
+                signerSection.classList.add('hidden');
+                displayStatus('Please connect your MetaMask wallet.', 'info');
+            }
+        }
+        
+        // --- ACCOUNT CHANGE HANDLER ---
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                // MetaMask is locked or the user disconnected all accounts
+                updateUI(null);
+                displayStatus('Wallet disconnected or account locked.', 'error');
+            } else if (accounts[0] !== selectedAccount) {
+                // Account switched
+                updateUI(accounts[0]);
+                displayStatus(`Switched account to ${accounts[0].substring(0, 6)}...`, 'info');
+            }
+        }
+
+
+        // --- MAIN LOGIC ---
+
+        async function connectWallet() {
+            // Use window.ethereum directly
+            if (!window.ethereum) {
+                displayStatus('MetaMask is not installed. Please install it to use this demo.', 'error');
+                return;
+            }
+
+            try {
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (accounts.length > 0) {
+                    updateUI(accounts[0]);
+                }
+            } catch (error) {
+                if (error.code === 4001) {
+                    displayStatus('Wallet connection rejected by the user.', 'error');
+                } else {
+                    displayStatus(`Error connecting wallet: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function signMessage() {
+            if (!selectedAccount) {
+                displayStatus('Wallet not connected.', 'error');
+                return;
+            }
+
+            // Trim any leading/trailing whitespace and newlines from the editable hash
+            const hashToSign = hashInput.value.trim(); 
+            
+            if (!hashToSign || hashToSign.length !== 66 || !hashToSign.startsWith('0x')) {
+                displayStatus('Invalid 32-byte hash (must be 66 characters including 0x).', 'error');
+                return;
+            }
+
+            try {
+                displayStatus('Awaiting signature from MetaMask...', 'info');
+                signatureOutput.value = '';
+
+                // Call personal_sign using window.ethereum
+                const signature = await window.ethereum.request({
+                    method: 'personal_sign',
+                    params: [hashToSign, selectedAccount],
+                });
+
+                signatureOutput.value = signature;
+                displayStatus('Successfully signed hash!', 'success');
+
+            } catch (error) {
+                if (error.code === 4001) {
+                    displayStatus('Signature request rejected by the user.', 'error');
+                } else {
+                    displayStatus(`Error signing message: ${error.message}`, 'error');
+                }
+                signatureOutput.value = `Error: ${error.message}`;
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        connectButton.addEventListener('click', connectWallet);
+        signButton.addEventListener('click', signMessage);
+
+        // Initial check for MetaMask provider and setting up listeners
+        window.addEventListener('load', () => {
+            // Use window.ethereum directly
+            if (typeof window.ethereum !== 'undefined') {
+                
+                // Add listener for account changes (switching accounts in wallet)
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                
+                // Check if already connected on page load
+                window.ethereum.request({ method: 'eth_accounts' })
+                    .then(accounts => {
+                        if (accounts.length > 0) {
+                            updateUI(accounts[0]);
+                        } else {
+                            updateUI(null);
+                        }
+                    })
+                    .catch(() => updateUI(null));
+            } else {
+                updateUI(null);
+                displayStatus('MetaMask provider not found.', 'error');
+                connectButton.disabled = true;
+            }
+        });
+
+    </script>
+</body>
+</html>
