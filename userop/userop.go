@@ -44,10 +44,16 @@ func (u *U256) Increment() *U256 {
 }
 
 func (u *U256) PureNonce() uint64 {
+	if u == nil {
+		return 0
+	}
 	return (*big.Int)(u).Uint64()
 }
 
 func (u *U256) Key() *big.Int {
+	if u == nil {
+		return big.NewInt(0)
+	}
 	bi := (*big.Int)(u)
 	out := new(big.Int).Rsh(bi, 64) // shift right by 64 bits
 	return out
