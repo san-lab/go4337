@@ -71,10 +71,6 @@ func ToDisplayString(v any) string {
 		return ShortString(str.String(), 50)
 	}
 
-	if str, ok := (v).(*fmt.Stringer); ok {
-		return ShortString((*str).String(), 50)
-	}
-
 	if reflect.ValueOf(v).IsZero() {
 		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(0)) {
 			return "0"

@@ -206,9 +206,11 @@ func InputNonceUI(nit, ait *Item, simple bool) {
 				PureNonceItem.Value = nit.Value.(*big.Int).Uint64()
 			} else {
 				CallForNonceUI(nit, NonceKeyItem, ait)
-				fullnonce := nit.Value.(*userop.U256)
-				PureNonceItem.Value = fullnonce.PureNonce()
-				NonceKeyItem.Value = fullnonce.Key()
+				fullnonce = nit.Value.(*userop.U256)
+				pureNonce = fullnonce.PureNonce()
+				key = fullnonce.Key()
+				PureNonceItem.Value = pureNonce
+				NonceKeyItem.Value = key
 			}
 
 		default:

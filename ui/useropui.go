@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -300,8 +301,8 @@ var FactoryDataItem = &Item{Label: "Factory Data", Details: "Set Factory Data"}
 
 // PaymasterItem is defined in paymasterui.go
 var PaymasterDataItem = &Item{Label: "Paymaster Data", Details: "Set Paymaster Data"}
-var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
-var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
+var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: new(big.Int).Set(userop.DefaultPaymasterVerificationGasLimit)}
+var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: new(big.Int).Set(userop.DefaultPaymasterPostOpGasLimit)}
 var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
 var EIP7702AuthItem = &Item{Label: "EIP7702Authorization"}
 
@@ -358,7 +359,7 @@ func UserOpContentUI(topIt *Item) {
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
 			it, _ := GetItem(sel, items)
-			InputUint(it, 64)
+			InputBigInt(it)
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
 			it, _ := GetItem(sel, items)
@@ -446,19 +447,19 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 	if FactoryDataItem.Value != nil {
 		uop.FactoryData = FactoryDataItem.Value.([]byte)
 	}
-	uop.CallGasLimit = CallGasLimitItem.Value.(uint64)
-	uop.VerificationGasLimit = VerificationGasLimitItem.Value.(uint64)
-	uop.PreVerificationGas = PreVerificationGasItem.Value.(uint64)
-	uop.MaxFeePerGas = MaxFeePerGasItem.Value.(uint64)
-	uop.MaxPriorityFeePerGas = MaxPriorityFeePerGasItem.Value.(uint64)
+	uop.CallGasLimit = CallGasLimitItem.Value.(*big.Int)
+	uop.VerificationGasLimit = VerificationGasLimitItem.Value.(*big.Int)
+	uop.PreVerificationGas = PreVerificationGasItem.Value.(*big.Int)
+	uop.MaxFeePerGas = MaxFeePerGasItem.Value.(*big.Int)
+	uop.MaxPriorityFeePerGas = MaxPriorityFeePerGasItem.Value.(*big.Int)
 	if PaymasterItem.Value != nil {
 		uop.Paymaster = PaymasterItem.Value.(*common.Address)
 	}
 	if PaymasterDataItem.Value != nil {
 		uop.PaymasterData = PaymasterDataItem.Value.([]byte)
 	}
-	uop.PaymasterVerificationGasLimit = PaymasterVerificationGasLimitItem.Value.(uint64)
-	uop.PaymasterPostOpGasLimit = PaymasterPostOpGasLimitItem.Value.(uint64)
+	uop.PaymasterVerificationGasLimit = PaymasterVerificationGasLimitItem.Value.(*big.Int)
+	uop.PaymasterPostOpGasLimit = PaymasterPostOpGasLimitItem.Value.(*big.Int)
 	if SignatureItem.Value != nil {
 		uop.Signature = SignatureItem.Value.([]byte)
 	}
@@ -467,7 +468,7 @@ func copyValuesToUserOp(uop *userop.UserOperation) {
 		if ok {
 			uop.EIP7702Auth = v
 		} else {
-			fmt.Println("missed casting: ", EIP7702Item.Value)
+			fmt.Println("missed casting: ", EIP7702AuthItem.Value)
 		}
 
 	}

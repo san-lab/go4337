@@ -35,10 +35,6 @@ func (s *stderr) Close() error {
 	return os.Stderr.Close()
 }
 
-func init() {
-	readline.Stdout = &stderr{}
-}
-
 var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage Paymaster settings"}
 var UserOpItem = &Item{Label: "User Operations", Details: "Manage User Operations"}
 var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}

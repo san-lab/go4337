@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"reflect"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
@@ -26,10 +27,8 @@ type FieldInfo struct {
 func IncorporateRecommendedValuesUI(usop *userop.UserOperation, rawNewValues any) {
 	newValues := MapResultToGasAndPaymasterValues(rawNewValues)
 	b, _ := json.MarshalIndent(newValues, " ", " ")
-	fmt.Println("new values:", string(b))
-	if state.DEBUG {
-		fmt.Println(newValues.Paymaster)
-	}
+	state.Log("new values:", string(b))
+	state.Log("paymaster:", newValues.Paymaster)
 	// 1. Build the list of actionable items using reflection
 	fields := getApplicableFields(usop, newValues)
 	if len(fields) == 0 {
@@ -188,10 +187,33 @@ func applyValueToUserOp(usop *userop.UserOperation, fi *FieldInfo) {
 		newValue := reflect.ValueOf(fi.NewValue)
 
 		switch field.Kind() {
-		case reflect.Uint64:
-			if newValue.Kind() == reflect.Uint64 {
-				field.SetUint(newValue.Uint())
+		case reflect.Ptr:
+			if field.Type() == reflect.TypeOf((*big.Int)(nil)) {
+				if bi, ok := fi.NewValue.(big.Int); ok {
+					field.Set(reflect.ValueOf(new(big.Int).Set(&bi)))
+					return
+				}
+				if bip, ok := fi.NewValue.(*big.Int); ok {
+					field.Set(reflect.ValueOf(bip))
+					return
+				}
 			}
+			if field.Type().String() == "*common.Address" {
+				if s, ok := fi.NewValue.(string); ok {
+					addr := ecommon.HexToAddress(s)
+					field.Set(reflect.ValueOf(&addr))
+					return
+				} else if as, ok := fi.NewValue.(ecommon.Address); ok {
+					field.Set(reflect.ValueOf(&as))
+				} else {
+					fmt.Println("not a string:", fi.NewValue)
+					fmt.Printf("NewValue dynamic type: %T\n", fi.NewValue)
+				}
+			}
+			if field.Type().ConvertibleTo(newValue.Type()) {
+				field.Set(newValue)
+			}
+			return
 		case reflect.Slice:
 			if newValue.Kind() == reflect.Slice && field.Type().Elem().Kind() == reflect.Uint8 {
 				field.SetBytes(newValue.Bytes())
@@ -206,23 +228,6 @@ func applyValueToUserOp(usop *userop.UserOperation, fi *FieldInfo) {
 				fmt.Println("!!! Unknown Struct:", field.Type(), "!!!")
 			}
 
-		case reflect.Ptr:
-			if field.Type().String() == "*common.Address" {
-				if s, ok := fi.NewValue.(string); ok {
-					addr := ecommon.HexToAddress(s)
-					field.Set(reflect.ValueOf(&addr))
-					return
-				} else if as, ok := fi.NewValue.(ecommon.Address); ok {
-					field.Set(reflect.ValueOf(&as))
-				} else {
-					fmt.Println("not a string:", fi.NewValue)
-					fmt.Printf("NewValue dynamic type: %T\n", fi.NewValue)
-				}
-			}
-
-			if field.Type().ConvertibleTo(newValue.Type()) {
-				field.Set(newValue)
-			}
 		default:
 			if newValue.Type().ConvertibleTo(field.Type()) {
 				field.Set(newValue.Convert(field.Type()))
@@ -235,15 +240,15 @@ func applyValueToUserOp(usop *userop.UserOperation, fi *FieldInfo) {
 
 type GasAndPaymasterValues struct {
 	// Gas Limits
-	CallGasLimit                  *uint64 `json:"callGasLimit,omitempty"`
-	VerificationGasLimit          *uint64 `json:"verificationGasLimit,omitempty"`
-	PreVerificationGas            *uint64 `json:"preVerificationGas,omitempty"`
-	PaymasterVerificationGasLimit *uint64 `json:"paymasterVerificationGasLimit,omitempty"`
-	PaymasterPostOpGasLimit       *uint64 `json:"paymasterPostOpGasLimit,omitempty"`
+	CallGasLimit                  *big.Int `json:"callGasLimit,omitempty"`
+	VerificationGasLimit          *big.Int `json:"verificationGasLimit,omitempty"`
+	PreVerificationGas            *big.Int `json:"preVerificationGas,omitempty"`
+	PaymasterVerificationGasLimit *big.Int `json:"paymasterVerificationGasLimit,omitempty"`
+	PaymasterPostOpGasLimit       *big.Int `json:"paymasterPostOpGasLimit,omitempty"`
 
 	// Fees
-	MaxFeePerGas         *uint64 `json:"maxFeePerGas,omitempty"`
-	MaxPriorityFeePerGas *uint64 `json:"maxPriorityFeePerGas,omitempty"`
+	MaxFeePerGas         *big.Int `json:"maxFeePerGas,omitempty"`
+	MaxPriorityFeePerGas *big.Int `json:"maxPriorityFeePerGas,omitempty"`
 
 	// Paymaster Data
 	Paymaster     *ecommon.Address `json:"paymaster,omitempty"`
@@ -326,31 +331,29 @@ func MapResultToGasAndPaymasterValues(result any) *GasAndPaymasterValues {
 			continue
 		}
 
-		// 3. Handle uint64 fields (Gas Limits & Fees)
-		// This is the original logic for numerical values
-		var valueToSet uint64
+		// 3. Handle *big.Int fields (Gas Limits & Fees)
+		var valueToSet *big.Int
 
 		switch fieldResult.Kind() {
 		case reflect.Uint64:
-			valueToSet = fieldResult.Uint()
+			valueToSet = new(big.Int).SetUint64(fieldResult.Uint())
 
 		case reflect.String:
 			strVal := fieldResult.String()
-			if strVal == "" || strVal == "0x0" {
-				valueToSet = 0
+			if strVal == "" {
+				continue
 			}
-			valueToSet = common.ConvHexOrZero(strVal)
+			var err error
+			valueToSet, err = common.ParseBigInt(strVal)
+			if err != nil || valueToSet == nil {
+				continue
+			}
 
 		default:
-			// Ignore all other types for numerical fields
 			continue
 		}
 
-		// Set the *uint64 field
-
-		ptrValue := new(uint64)
-		*ptrValue = valueToSet
-		fieldGasValues.Set(reflect.ValueOf(ptrValue))
+		fieldGasValues.Set(reflect.ValueOf(valueToSet))
 
 	}
 

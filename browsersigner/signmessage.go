@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -190,7 +189,7 @@ func SignHashWithPersonalSign(userOp *userop.UserOperation, chainId *big.Int, en
 	// Start Server in Goroutine
 	go func() {
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error: %v", err)
+			fmt.Printf("Server error: %v\n", err)
 		}
 	}()
 

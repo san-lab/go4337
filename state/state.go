@@ -58,6 +58,12 @@ func Log(a ...interface{}) {
 	}
 }
 
+func Logf(format string, a ...interface{}) {
+	if DEBUG {
+		fmt.Printf(format, a...)
+	}
+}
+
 const EntrypointV6 = "EntrypointV6"
 const EntrypointV7 = "EntrypointV7"
 const EntrypointV8 = "EntrypointV8"
