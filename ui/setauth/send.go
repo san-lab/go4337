@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/rpccalls"
-	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/ui/rpcui"
 )
@@ -19,15 +18,14 @@ func SendSetAuthTxUI(satx *types.SetCodeTx) {
 	}
 
 	rpcOk := false
-	var rpc *state.RPCEndpoint
-	sendItem := &common.Item{Label: "Send SetAuthTx", Details: "Send SetAuthTx"}
+	sendItem := &common.Item[struct{}]{Label: "Send SetAuthTx", Details: "Send SetAuthTx"}
 
 	pr := promptui.Select{Label: "Sending SetAuthTx", Templates: common.ItemTemplate, Size: 10}
-	//fmt.Println("Before the loop")
 	for {
-		rpc, rpcOk = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
+		rpc := rpcui.SendEndpointItem.Value
+		rpcOk = rpc != nil
 		fmt.Println("RPC:", rpcOk, rpc)
-		items := []*common.Item{}
+		items := []common.MenuItem{}
 		items = append(items, rpcui.SendEndpointItem)
 		if rpcOk {
 			sendItem.Label = fmt.Sprintf("Send SetAuthTx to %s", rpc)
@@ -49,8 +47,6 @@ func SendSetAuthTxUI(satx *types.SetCodeTx) {
 			envelope := types.NewTx(satx)
 			bt, _ := json.MarshalIndent(envelope, " ", " ")
 			fmt.Println(string(bt))
-			//sbytes, _ = json.MarshalIndent(envelope, "", "  ")
-			//fmt.Println("Sending SetAuthTx to", string(sbytes))
 
 			h, err := rpccalls.SendTransaction(rpc, envelope)
 			if err != nil {
