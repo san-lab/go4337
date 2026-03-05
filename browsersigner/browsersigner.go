@@ -64,7 +64,6 @@ func (bs *BrowserSigner) SignMessage(message []byte) ([]byte, error) {
 		// Wait for the signal
 		<-sig
 		fmt.Println("\n[Interrupt] Ctrl+C detected. Cancelling signature request...")
-		// Cancel the context, which will unblock the select in SignHashWithPersonalSign
 		cancel()
 	}()
 
@@ -91,7 +90,6 @@ func (bs *BrowserSigner) SignEIP712(uop *userop.UserOperation, chainId *big.Int,
 		// Wait for the signal
 		<-sig
 		fmt.Println("\n[Interrupt] Ctrl+C detected. Cancelling signature request...")
-		// Cancel the context, which will unblock the select in SignHashWithPersonalSign
 		cancel()
 	}()
 

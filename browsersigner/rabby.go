@@ -1,21 +1,14 @@
 package browsersigner
 
 import (
-	"context"
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"io"
 	"math/big"
-	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -117,112 +110,6 @@ const signPageTemplate = `
 </body>
 </html>
 `
-
-// ServerConfig holds data for the template
-type ServerConfig struct {
-	Payload string
-}
-
-func SignEIP712Way(userOp *userop.UserOperation, chainId *big.Int, entrypoint common.Address, eip7702Delegate *common.Address) ([]byte, error) {
-
-	fmt.Println("Generating EIP-712 Payload...")
-	payloadJSON, err := PrepareEIP712Payload(userOp, entrypoint, chainId, eip7702Delegate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to pack UserOp: %v", err)
-	}
-
-	// ---------------------------------------------------------
-	// FIX 1: Use a new, local ServeMux instead of the global http.HandleFunc
-	// This prevents "multiple registrations" panics on subsequent calls.
-	// ---------------------------------------------------------
-	mux := http.NewServeMux()
-	sigChan := make(chan string)
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Assuming signPageTemplate and ServerConfig are defined globally or passed in
-		tmpl, err := template.New("sign").Parse(signPageTemplate)
-		if err != nil {
-			http.Error(w, "Template Error", http.StatusInternalServerError)
-			return
-		}
-		tmpl.Execute(w, ServerConfig{Payload: payloadJSON})
-	})
-
-	mux.HandleFunc("/submit", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		body, _ := io.ReadAll(r.Body)
-		var result map[string]string
-		if err := json.Unmarshal(body, &result); err != nil {
-			http.Error(w, "Bad Request", http.StatusBadRequest)
-			return
-		}
-
-		// Non-blocking send (optional safety, though blocking is usually fine here)
-		select {
-		case sigChan <- result["signature"]:
-		default:
-		}
-
-		w.WriteHeader(http.StatusOK)
-	})
-
-	// ---------------------------------------------------------
-	// FIX 2: Bind to port 0. The OS will assign a free random port.
-	// This prevents "address already in use" errors.
-	// ---------------------------------------------------------
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return nil, fmt.Errorf("failed to listen on local port: %v", err)
-	}
-
-	// Get the actual port assigned by the OS
-	port := listener.Addr().(*net.TCPAddr).Port
-	url := fmt.Sprintf("http://localhost:%d", port)
-
-	server := &http.Server{
-		Handler: mux,
-	}
-
-	// Start Server in Goroutine using the existing listener
-	go func() {
-		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("Server error: %v\n", err)
-		}
-	}()
-
-	// Ensure cleanup happens when function exits
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		server.Shutdown(ctx)
-	}()
-
-	fmt.Printf("Listening on %s\n", url)
-	fmt.Println("Opening browser...")
-
-	if err := openBrowser(url); err != nil {
-		fmt.Printf("Failed to open browser automatically: %v\n", err)
-		fmt.Printf("Please open %s manually\n", url)
-	}
-
-	fmt.Println("Waiting for signature from Browser...")
-
-	// Wait for signature
-	select {
-	case signatureHex := <-sigChan:
-		// Strip "0x" prefix if present
-		if len(signatureHex) >= 2 && signatureHex[:2] == "0x" {
-			signatureHex = signatureHex[2:]
-		}
-		return hex.DecodeString(signatureHex)
-	case <-time.After(2 * time.Minute): // Optional timeout
-		return nil, fmt.Errorf("timed out waiting for signature")
-	}
-}
 
 // Helper to open browser cross-platform
 func openBrowser(url string) error {
