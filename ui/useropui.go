@@ -275,19 +275,19 @@ func UserOpUI(usop *userop.UserOperation) {
 var SenderItem = &Item[*common.Address]{Label: state.Sender, Details: "Set sender"}
 
 var CallDataItem = &Item[[]byte]{Label: "Call Data", Details: "Set Call Data"}
-var CallGasLimitItem = &Item[uint64]{Label: "Call Gas Limit\t ", Details: "Set Call Gas Limit"}
-var VerificationGasLimitItem = &Item[uint64]{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
-var PreVerificationGasItem = &Item[uint64]{Label: "Pre Verification Gas   ", Details: "Set Pre Verification Gas"}
-var MaxFeePerGasItem = &Item[uint64]{Label: "Max Fee Per Gas\t ", Details: "Set Max Fee Per Gas"}
-var MaxPriorityFeePerGasItem = &Item[uint64]{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
+var CallGasLimitItem = &Item[*big.Int]{Label: "Call Gas Limit\t ", Details: "Set Call Gas Limit"}
+var VerificationGasLimitItem = &Item[*big.Int]{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
+var PreVerificationGasItem = &Item[*big.Int]{Label: "Pre Verification Gas   ", Details: "Set Pre Verification Gas"}
+var MaxFeePerGasItem = &Item[*big.Int]{Label: "Max Fee Per Gas\t ", Details: "Set Max Fee Per Gas"}
+var MaxPriorityFeePerGasItem = &Item[*big.Int]{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
 
 var FactoryItem = &Item[*common.Address]{Label: "Factory", Details: "Set Factory"}
 var FactoryDataItem = &Item[[]byte]{Label: "Factory Data", Details: "Set Factory Data"}
 
 // PaymasterItem is defined in paymasterui.go
 var PaymasterDataItem = &Item[[]byte]{Label: "Paymaster Data", Details: "Set Paymaster Data"}
-var PaymasterVerificationGasLimitItem = &Item[uint64]{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
-var PaymasterPostOpGasLimitItem = &Item[uint64]{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
+var PaymasterVerificationGasLimitItem = &Item[*big.Int]{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
+var PaymasterPostOpGasLimitItem = &Item[*big.Int]{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
 var SignatureItem = &Item[[]byte]{Label: "Signature", Details: "Set Signature"}
 var EIP7702AuthItem = &Item[*types.SetCodeAuthorization]{Label: "EIP7702Authorization", Display: func(v *types.SetCodeAuthorization) string {
 	return setauth.AuthorityString(v)
@@ -344,9 +344,9 @@ func UserOpContentUI(topIt *Item[*userop.UserOperation]) {
 		case CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
-			typedIt, ok := GetTypedItem[uint64](sel, items)
+			typedIt, ok := GetTypedItem[*big.Int](sel, items)
 			if ok {
-				InputUint(typedIt, 64)
+				InputBigInt(typedIt)
 			}
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
