@@ -15,25 +15,25 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-var ApiCallsItem = &Item{Label: "API Calls", Details: "Call APIs"}
-var ApiKeyItem = &Item{Label: "API Key", Details: "To be appended or replace the {{.}} in URL"}
-var ApiURLItem = &Item{Label: "API URL", Details: "If len(api key) > 0, the key will be appended after / or put in place of {{.}}"}
-var StackUpPMApiItem = &Item{Label: "StackUp Paymaster API"}
-var StackUpBNApiItem = &Item{Label: "StackUp Bundler API"}
-var ApiMethodItem = &Item{Label: "API Method (free-hand)"}
-var StdApiItem = &Item{Label: "Standard (eth_/pm_) API methods"}
+var ApiCallsItem = &Item[struct{}]{Label: "API Calls", Details: "Call APIs"}
+var ApiKeyItem = &Item[string]{Label: "API Key", Details: "To be appended or replace the {{.}} in URL"}
+var ApiURLItem = &Item[string]{Label: "API URL", Details: "If len(api key) > 0, the key will be appended after / or put in place of {{.}}"}
+var StackUpPMApiItem = &Item[struct{}]{Label: "StackUp Paymaster API"}
+var StackUpBNApiItem = &Item[struct{}]{Label: "StackUp Bundler API"}
+var ApiMethodItem = &Item[struct{}]{Label: "API Method (free-hand)"}
+var StdApiItem = &Item[struct{}]{Label: "Standard (eth_/pm_) API methods"}
 
-var ApiUserOpItem = &Item{Label: "User Operation"}
-var ApiCallItem = &Item{Label: "Call API"}
-var ZkSyncEraItem = &Item{Label: "ZkSync Era"}
+var ApiUserOpItem = &Item[*userop.UserOperation]{Label: "User Operation"}
+var ApiCallItem = &Item[struct{}]{Label: "Call API"}
+var ZkSyncEraItem = &Item[struct{}]{Label: "ZkSync Era"}
 
 func ApiCallsUI(usop *userop.UserOperation) {
-	var AlchemyUIItem = &Item{Label: "Alchemy API"}
-	var StackUpUIItem = &Item{Label: "StackUp API"}
-	var BiconomyUIItem = &Item{Label: "Biconomy API"}
-	var PimlicoUIItem = &Item{Label: "Pimlico API"}
-	var CustomUIItem = &Item{Label: "Custom API"}
-	var items = []*Item{AlchemyUIItem, StackUpUIItem, BiconomyUIItem, PimlicoUIItem, CustomUIItem, ZkSyncEraItem, Back}
+	var AlchemyUIItem = &Item[struct{}]{Label: "Alchemy API"}
+	var StackUpUIItem = &Item[struct{}]{Label: "StackUp API"}
+	var BiconomyUIItem = &Item[struct{}]{Label: "Biconomy API"}
+	var PimlicoUIItem = &Item[struct{}]{Label: "Pimlico API"}
+	var CustomUIItem = &Item[struct{}]{Label: "Custom API"}
+	var items = []MenuItem{AlchemyUIItem, StackUpUIItem, BiconomyUIItem, PimlicoUIItem, CustomUIItem, ZkSyncEraItem, Back}
 	for {
 		spr := promptui.Select{Label: "APIs", Items: items, Templates: ItemTemplate, Size: 10}
 		_, sel, err := spr.Run()
@@ -63,60 +63,44 @@ func ApiCallsUI(usop *userop.UserOperation) {
 
 }
 
-/*
+var eth_sendUserOperationItem = &Item[struct{}]{Label: "eth_sendUserOperation"}
+var eth_estimateUserOperationGasItem = &Item[struct{}]{Label: "eth_estimateUserOperationGas"}
+var eth_getUserOperationByHashItem = &Item[struct{}]{Label: "eth_getUserOperationByHash"}
+var eth_getUserOperationReceiptItem = &Item[struct{}]{Label: "eth_getUserOperationReceipt"}
+var eth_supportedEntryPointsItem = &Item[struct{}]{Label: "eth_supportedEntryPoints"}
 
-eth_sendUserOperation
-Submits a user operation to a Bundler. If the request is successful, the endpoint will return a user operation hash that the caller can use to look up the status of the user operation. If it fails, or another error occurs, an error code and description will be returned.
-eth_estimateUserOperationGas
-Estimates the gas values for a user operation. It returns the preVerificationGas, verificationGasLimit, and callGasLimit values associated with the provided user operation.
-eth_getUserOperationByHash
-Returns a user operation based on the given user operation hash. It returns the user operation along with extra information including what block/transaction it was included in. If the operation has not yet been included, it will return null.
-eth_getUserOperationReceipt
-Returns a user operation receipt ( metadata associated with the given user operation ) based on the given user operation hash. It returns null if the user operation has not yet been included.
-rundler_maxPriorityFeePerGas
-Returns a fee per gas that is an estimate of how much users should set as a priority fee in UOs for Rundler endpoints.
-eth_supportedEntryPoints
-Returns a list of Entrypoint contr
-*/
-
-var eth_sendUserOperationItem = &Item{Label: "eth_sendUserOperation"}
-var eth_estimateUserOperationGasItem = &Item{Label: "eth_estimateUserOperationGas"}
-var eth_getUserOperationByHashItem = &Item{Label: "eth_getUserOperationByHash"}
-var eth_getUserOperationReceiptItem = &Item{Label: "eth_getUserOperationReceipt"}
-var eth_supportedEntryPointsItem = &Item{Label: "eth_supportedEntryPoints"}
-
-func addETHMethods(items []*Item) []*Item {
+func addETHMethods(items []MenuItem) []MenuItem {
 	items = append(items, eth_sendUserOperationItem, eth_estimateUserOperationGasItem, eth_getUserOperationByHashItem, eth_getUserOperationReceiptItem, eth_supportedEntryPointsItem)
 	return items
 }
 
-var rundler_maxPriorityFeePerGasItem = &Item{Label: "rundler_maxPriorityFeePerGas"}                   //Alchemy specific
-var alchemy_requestPaymasterAndDataItem = &Item{Label: "alchemy_requestPaymentAndData"}               //Alchemy specific
-var alchemy_requestGasAndPaymasterAndDataItem = &Item{Label: "alchemy_requestGasAndPaymasterAndData"} //Alchemy specific
+var rundler_maxPriorityFeePerGasItem = &Item[struct{}]{Label: "rundler_maxPriorityFeePerGas"}                   //Alchemy specific
+var alchemy_requestPaymasterAndDataItem = &Item[struct{}]{Label: "alchemy_requestPaymentAndData"}               //Alchemy specific
+var alchemy_requestGasAndPaymasterAndDataItem = &Item[struct{}]{Label: "alchemy_requestGasAndPaymasterAndData"} //Alchemy specific
 
-var pm_getPaymasterDataItem = &Item{Label: "pm_getPaymasterData"}
-var pm_getPaymasterStubDataItem = &Item{Label: "pm_getPaymasterStubData"}
-var pm_sponsorUserOperationItem = &Item{Label: "pm_SponsorUserOperation"} //StackUp specific
-var pm_accountsItem = &Item{Label: "pm_accounts"}                         //StackUp specific
-var pm_getFeeQuoteOrDataItem = &Item{Label: "pm_getFeeQuoteOrData"}       //Biconomy
+var pm_getPaymasterDataItem = &Item[struct{}]{Label: "pm_getPaymasterData"}
+var pm_getPaymasterStubDataItem = &Item[struct{}]{Label: "pm_getPaymasterStubData"}
+var pm_sponsorUserOperationItem = &Item[struct{}]{Label: "pm_SponsorUserOperation"} //StackUp specific
+var pm_accountsItem = &Item[struct{}]{Label: "pm_accounts"}                         //StackUp specific
+var pm_getFeeQuoteOrDataItem = &Item[struct{}]{Label: "pm_getFeeQuoteOrData"}       //Biconomy
 
-func addPMMethods(items []*Item) []*Item {
+func addPMMethods(items []MenuItem) []MenuItem {
 	items = append(items, pm_getPaymasterDataItem, pm_getPaymasterStubDataItem)
 	return items
 }
 
-var pimlico_getTokenQuotesItem = &Item{Label: "pimlico_GetTokenQuotes"} //Pimlico specific
+var pimlico_getTokenQuotesItem = &Item[struct{}]{Label: "pimlico_GetTokenQuotes"} //Pimlico specific
 
-var APIKeyItemMap = map[string]*Item{} //&Item{Label: "API Key"}
-var APIURLItemMap = map[string]*Item{} //&Item{Label: "API URL"}
+var APIKeyItemMap = map[string]*Item[string]{}
+var APIURLItemMap = map[string]*Item[string]{}
 
-var Alchemy_requestGasAndPaymasterAndDataItem = &Item{Label: "Alchemy_requestGasAndPaymasterAndData"}
-var Alchemy_requestPaymasterAndDataItem = &Item{Label: "Alchemy_requestPaymasterAndData"}
+var Alchemy_requestGasAndPaymasterAndDataItem = &Item[struct{}]{Label: "Alchemy_requestGasAndPaymasterAndData"}
+var Alchemy_requestPaymasterAndDataItem = &Item[struct{}]{Label: "Alchemy_requestPaymasterAndData"}
 
 func ProvAPIUI(provider string, usop *userop.UserOperation) {
 	state.Log("ProvAPIUI", provider)
 	var key, url string
-	var ok, allOk bool
+	var allOk bool
 	var overrides *rpccalls.AlchemyOverrides
 
 	if usop != nil {
@@ -125,16 +109,16 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 	for {
 		APIKeyItem, ok3 := APIKeyItemMap[provider]
 		if !ok3 { //lazy initialization
-			APIKeyItem = &Item{Label: provider + "API Key"}
+			APIKeyItem = &Item[string]{Label: provider + "API Key"}
 			APIKeyItemMap[provider] = APIKeyItem
 		}
 		APIURLItem, ok4 := APIURLItemMap[provider]
 		if !ok4 { //lazy initialization
-			APIURLItem = &Item{Label: provider + "API URL", Details: "If len(api key) > 0, the key will be appended after / or put in place of {{.}}"}
+			APIURLItem = &Item[string]{Label: provider + "API URL", Details: "If len(api key) > 0, the key will be appended after / or put in place of {{.}}"}
 			APIURLItemMap[provider] = APIURLItem
 
 		}
-		var entrypointaddress = EntryPointItem.Value.(ecommon.Address).String()
+		var entrypointaddress = EntryPointItem.Value.String()
 		var entrypointversion = 0
 		if entrypointaddress == entrypoint.E6Address.String() {
 			entrypointversion = 6
@@ -144,22 +128,16 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			entrypointversion = 8
 		}
 
-		if APIKeyItem.Value != nil {
-			key, ok = APIKeyItem.Value.(string)
-			allOk = ok
-		}
-		if APIURLItem.Value != nil {
-			url, ok = APIURLItem.Value.(string)
-			allOk = allOk && ok
-		}
-		if ApiUserOpItem.Value != nil {
-			usop, ok = ApiUserOpItem.Value.(*userop.UserOperation)
-			allOk = allOk && ok
-		} else {
-			usop = nil
+		key = APIKeyItem.Value
+		url = APIURLItem.Value
+		allOk = key != "" && url != ""
+
+		usop = ApiUserOpItem.Value
+		if usop == nil {
 			allOk = false
 		}
-		items := []*Item{EntryPointItem, APIKeyItem, APIURLItem, ApiUserOpItem}
+
+		items := []MenuItem{EntryPointItem, APIKeyItem, APIURLItem, ApiUserOpItem}
 		if allOk {
 			items = addETHMethods(items)
 			items = addPMMethods(items)
@@ -187,15 +165,15 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 		case ApiUserOpItem.Label:
 			SelectUserOpUI(ApiUserOpItem)
 		case APIKeyItem.Label:
-			_, name, key, good := StringFromDictionaryUI(provider + state.ApiKeysLabel)
+			_, name, keyVal, good := StringFromDictionaryUI(provider + state.ApiKeysLabel)
 			if good {
-				APIKeyItem.Value = key
+				APIKeyItem.Value = keyVal
 				APIKeyItem.Details = name
 			}
 		case APIURLItem.Label:
-			_, name, url, good := StringFromDictionaryUI(provider + state.ApiEndpointsLabel)
+			_, name, urlVal, good := StringFromDictionaryUI(provider + state.ApiEndpointsLabel)
 			if good {
-				APIURLItem.Value = url
+				APIURLItem.Value = urlVal
 				APIURLItem.Details = name
 			}
 		case eth_sendUserOperationItem.Label:
@@ -223,7 +201,6 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				//IncorporateGasParametersUI(usop, res, entrypointversion, provider)
 				IncorporateRecommendedValuesUI(usop, res)
 			}
 		case eth_getUserOperationByHashItem.Label:
@@ -266,11 +243,6 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				/*
-					if YesNoPromptUI("Incorporate Paymaster and Data") {
-						IncorporatePMandData(usop, pmad)
-					}
-				*/
 				IncorporateRecommendedValuesUI(usop, pmad)
 			}
 		case pm_getPaymasterStubDataItem.Label:
@@ -292,11 +264,6 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 			if err != nil {
 				fmt.Println("Error making API call:", err)
 			} else {
-				/*
-					if YesNoPromptUI("Incorporate Paymaster and Data") {
-						IncorporatePMandData(usop, pmad)
-					}
-				*/
 				IncorporateRecommendedValuesUI(usop, pmad)
 			}
 
@@ -316,7 +283,6 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 				if err != nil {
 					fmt.Println("Error making API call:", err)
 				} else {
-					//IncorporateAlchemyGapadUI(usop, gapad)
 					IncorporateRecommendedValuesUI(usop, gapad)
 				}
 			} else {
@@ -326,7 +292,6 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 				if err != nil {
 					fmt.Println("Error making API call:", err)
 				} else {
-					//IncorporateAlchemyGapadUIV7(usop, gapad)
 					IncorporateRecommendedValuesUI(usop, gapad)
 				}
 			}
@@ -352,8 +317,8 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 }
 
 func GetPMContext(provider string) (context, chainId interface{}, ok bool) {
-	chi, ok2 := ChainIDItem.Value.(*big.Int)
-	if !ok2 {
+	chi := ChainIDItem.Value
+	if chi == nil {
 		fmt.Println("Chain ID not set")
 		return nil, nil, false
 	}
@@ -381,282 +346,16 @@ func CustomAPIUI(usop *userop.UserOperation) {
 	fmt.Println("Custom API UI not implemented yet")
 }
 
-/*
-func IncorporateGasParametersUI(usop *userop.UserOperation, res any, endpointVersion int, provider string) {
-	switch endpointVersion {
-	case 6:
-		if res6, ok := res.(*rpccalls.EthEstimateUserOperationGasResultV6); ok {
-			IncorporateGasParametersV6UI(usop, res6)
-		} else {
-			fmt.Println("error casting result. entrypoint version:", endpointVersion)
-			return
-		}
-	case 7, 8:
-		if res7, ok := res.(*rpccalls.EthEstimateUserOperationGasResultV7); ok {
-			IncorporateGasParametersV7UI(usop, res7)
-		} else if res7b, ok := res.(*rpccalls.EthEstimateUserOperationGasResultV7Biconomy); ok {
-			IncorporateGasParametersV7UI(usop,
-				&rpccalls.EthEstimateUserOperationGasResultV7{
-					PreVerificationGas:            fmt.Sprint(res7b.PreVerificationGas),
-					VerificationGasLimit:          fmt.Sprint(res7b.VerificationGasLimit),
-					PaymasterVerificationGasLimit: fmt.Sprint(res7b.PaymasterVerificationGasLimit),
-					PaymasterPostOpGasLimit:       fmt.Sprint(res7b.PaymasterPostOpGasLimit),
-					CallGasLimit:                  fmt.Sprint(res7b.CallGasLimit),
-				},
-			)
-		} else {
-			fmt.Println("error casting result. entrypoint version:", endpointVersion)
-			return
-		}
-
-	}
-}
-*/
-/*
-func IncorporateGasParametersV7UI(usop *userop.UserOperation, res *rpccalls.EthEstimateUserOperationGasResultV7) {
-	IncorporateAllItem := &Item{Label: "Incorporate All"}
-	all := false
-	CallGasLimitItem := &Item{Label: fmt.Sprintf("Call Gas Limit(%v) %v", usop.CallGasLimit, res.CallGasLimit), Value: false}
-	PreVerificationGasItem := &Item{Label: fmt.Sprintf("Pre Verification Gas(%v) %v", usop.PreVerificationGas, res.PreVerificationGas), Value: false}
-	VerificationGasLimitItem := &Item{Label: fmt.Sprintf("Verification Gas Limit(%v) %v", usop.VerificationGasLimit, res.VerificationGasLimit), Value: false}
-	PaymasterVerificationGasLimitItem := &Item{Label: fmt.Sprintf("Paymaster Verification Gas Limit(%v) %v", usop.PaymasterVerificationGasLimit, res.PaymasterVerificationGasLimit), Value: false}
-	PaymasterPostOpGasLimitItem := &Item{Label: fmt.Sprintf("Paymaster PostOp Gas Limit(%v) %v", usop.PaymasterPostOpGasLimit, res.PaymasterPostOpGasLimit), Value: false}
-	items := []*Item{IncorporateAllItem, CallGasLimitItem, PreVerificationGasItem, VerificationGasLimitItem, PaymasterVerificationGasLimitItem, PaymasterPostOpGasLimitItem, Set, Back}
-	for {
-		spr := promptui.Select{Label: "Gas Parameters", Items: items, Templates: ItemTemplate, Size: 10}
-		_, sel, err := spr.Run()
-		if err != nil {
-			fmt.Println("could not run prompt:", err)
-			return
-		}
-		switch sel {
-		case Back.Label:
-			return
-		case Set.Label, IncorporateAllItem.Label:
-			all = (sel == IncorporateAllItem.Label)
-			if CallGasLimitItem.Value.(bool) || all {
-				usop.CallGasLimit = ConvHexOrZero(res.CallGasLimit)
-			}
-			if PreVerificationGasItem.Value.(bool) || all {
-				usop.PreVerificationGas = ConvHexOrZero(res.PreVerificationGas)
-			}
-			if VerificationGasLimitItem.Value.(bool) || all {
-				usop.VerificationGasLimit = ConvHexOrZero(res.VerificationGasLimit)
-			}
-			if PaymasterPostOpGasLimitItem.Value.(bool) || all {
-				usop.PaymasterPostOpGasLimit = ConvHexOrZero(res.PaymasterPostOpGasLimit)
-			}
-			if PaymasterVerificationGasLimitItem.Value.(bool) || all {
-				usop.PaymasterVerificationGasLimit = ConvHexOrZero(res.PaymasterVerificationGasLimit)
-			}
-			state.Save()
-			return
-
-		default:
-			it, _ := GetItem(sel, items)
-			it.Value = !it.Value.(bool)
-
-		}
-	}
-
-}
-
-func IncorporateGasParametersV6UI(usop *userop.UserOperation, res *rpccalls.EthEstimateUserOperationGasResultV6) {
-	IncorporateAllItem := &Item{Label: "Incorporate All"}
-	all := false
-	CallGasLimitItem := &Item{Label: fmt.Sprintf("Call Gas Limit(%v) %v", usop.CallGasLimit, res.CallGasLimit), Value: false}
-	PreVerificationGasItem := &Item{Label: fmt.Sprintf("Pre Verification Gas(%v) %v", usop.PreVerificationGas, res.PreVerificationGas), Value: false}
-	VerificationGasLimitItem := &Item{Label: fmt.Sprintf("Verification Gas Limit(%v) %v", usop.VerificationGasLimit, res.VerificationGasLimit), Value: false}
-	ValidUntilItem := &Item{Label: fmt.Sprintf("Valid Until %v", res.ValidUntil), Value: false}
-	ValidAfterItem := &Item{Label: fmt.Sprintf("Valid After %v", res.ValidAfter), Value: false}
-	MaxPriorityFeePerGasItem := &Item{Label: fmt.Sprintf("Max Priority Fee Per Gas(%v) %v", usop.MaxPriorityFeePerGas, res.MaxPriorityFeePerGas), Value: false}
-	MaxFeePerGasItem := &Item{Label: fmt.Sprintf("Max Fee Per Gas(%v) %v", usop.MaxFeePerGas, res.MaxFeePerGas), Value: false}
-	items := []*Item{IncorporateAllItem, CallGasLimitItem, PreVerificationGasItem, VerificationGasLimitItem, ValidUntilItem, ValidAfterItem, MaxPriorityFeePerGasItem, MaxFeePerGasItem, Set, Back}
-	for {
-		spr := promptui.Select{Label: "Gas Parameters", Items: items, Templates: ItemTemplate, Size: 10}
-		_, sel, err := spr.Run()
-		if err != nil {
-			fmt.Println("could not run prompt:", err)
-			return
-		}
-		switch sel {
-		case Back.Label:
-			return
-		case Set.Label, IncorporateAllItem.Label:
-			all = (sel == IncorporateAllItem.Label)
-			if CallGasLimitItem.Value.(bool) || all {
-				usop.CallGasLimit = res.CallGasLimit
-			}
-			if PreVerificationGasItem.Value.(bool) || all {
-				usop.PreVerificationGas = res.PreVerificationGas
-			}
-			if VerificationGasLimitItem.Value.(bool) || all {
-				usop.VerificationGasLimit = res.VerificationGasLimit
-			}
-			if MaxPriorityFeePerGasItem.Value.(bool) || all {
-				usop.MaxPriorityFeePerGas = ConvHexOrZero(res.MaxPriorityFeePerGas)
-			}
-			if MaxFeePerGasItem.Value.(bool) || all {
-				usop.MaxFeePerGas = ConvHexOrZero(res.MaxFeePerGas)
-			}
-			state.Save()
-			return
-
-		default:
-			it, _ := GetItem(sel, items)
-			it.Value = !it.Value.(bool)
-
-		}
-	}
-
-}
-
-func IncorporateAlchemyGapadUI(usop *userop.UserOperation, gapad *rpccalls.AlchemyGasAndPaymasterDataResultV6) {
-	IncorporateAllItem := &Item{Label: "Incorporate All"}
-	PaymasterDataItem := &Item{Label: "Paymaster and PM Data", Value: false}
-	CallGasLimitItem := &Item{Label: fmt.Sprintf("Call Gas Limit(%v/0x%x) %s", usop.CallGasLimit, usop.CallGasLimit, gapad.CallGasLimit), Value: false}
-	VerificationGasLimitItem := &Item{Label: fmt.Sprintf("Verification Gas Limit(%v/0x%x) %s", usop.VerificationGasLimit, usop.VerificationGasLimit, gapad.VerificationGasLimit), Value: false}
-	MaxPriorityFeePerGasItem := &Item{Label: fmt.Sprintf("Max Priority Fee Per Gas(%v/0x%x) %s", usop.MaxPriorityFeePerGas, usop.MaxPriorityFeePerGas, gapad.MaxPriorityFeePerGas), Value: false}
-	MaxFeePerGasItem := &Item{Label: fmt.Sprintf("Max Fee Per Gas(%v/0x%x) %s", usop.MaxFeePerGas, usop.MaxFeePerGas, gapad.MaxFeePerGas), Value: false}
-	PreVerificationGasItem := &Item{Label: fmt.Sprintf("Pre Verification Gas(%v/0x%x) %s", usop.PreVerificationGas, usop.PreVerificationGas, gapad.PreVerificationGas), Value: false}
-
-	items := []*Item{IncorporateAllItem, PaymasterDataItem, CallGasLimitItem, VerificationGasLimitItem, MaxPriorityFeePerGasItem,
-		MaxFeePerGasItem, PreVerificationGasItem, Set, Back}
-	for {
-		spr := promptui.Select{Label: "Select parameters to incorporate", Items: items, Templates: ItemTemplate, Size: 10}
-		_, sel, err := spr.Run()
-		if err != nil {
-			fmt.Println("could not run prompt:", err)
-			return
-		}
-		switch sel {
-		case Back.Label:
-			return
-		case Set.Label, IncorporateAllItem.Label:
-			all := (sel == IncorporateAllItem.Label)
-			if PaymasterDataItem.Value.(bool) || all {
-				IncorporatePMandData(usop, &rpccalls.PMandDataResult{PaymasterAndData: gapad.PaymasterAndData})
-
-			}
-			if CallGasLimitItem.Value.(bool) || all {
-				usop.CallGasLimit = ConvHexOrZero(gapad.CallGasLimit)
-			}
-			if VerificationGasLimitItem.Value.(bool) || all {
-				usop.VerificationGasLimit = ConvHexOrZero(gapad.VerificationGasLimit)
-			}
-			if MaxPriorityFeePerGasItem.Value.(bool) || all {
-				usop.MaxPriorityFeePerGas = ConvHexOrZero(gapad.MaxPriorityFeePerGas)
-			}
-			if MaxFeePerGasItem.Value.(bool) || all {
-				usop.MaxFeePerGas = ConvHexOrZero(gapad.MaxFeePerGas)
-			}
-			if PreVerificationGasItem.Value.(bool) || all {
-				usop.PreVerificationGas = ConvHexOrZero(gapad.PreVerificationGas)
-			}
-			state.Save()
-			return
-
-		default:
-			it, _ := GetItem(sel, items)
-			it.Value = !it.Value.(bool)
-
-		}
-	}
-}
-
-func IncorporateAlchemyGapadUIV7(usop *userop.UserOperation, gapad *rpccalls.AlchemyGasAndPaymasterDataResultV7) {
-	IncorporateAllItem := &Item{Label: "Incorporate All"}
-	PaymasterItem := &Item{Label: "Paymaster", Value: false}
-	PaymasterDataItem := &Item{Label: "Paymaster Data", Value: false}
-	CallGasLimitItem := &Item{Label: fmt.Sprintf("Call Gas Limit(%v/0x%x) %s", usop.CallGasLimit, usop.CallGasLimit, gapad.CallGasLimit), Value: false}
-	VerificationGasLimitItem := &Item{Label: fmt.Sprintf("Verification Gas Limit(%v/0x%x) %s", usop.VerificationGasLimit, usop.VerificationGasLimit, gapad.VerificationGasLimit), Value: false}
-	MaxPriorityFeePerGasItem := &Item{Label: fmt.Sprintf("Max Priority Fee Per Gas(%v/0x%x) %s", usop.MaxPriorityFeePerGas, usop.MaxPriorityFeePerGas, gapad.MaxPriorityFeePerGas), Value: false}
-	MaxFeePerGasItem := &Item{Label: fmt.Sprintf("Max Fee Per Gas(%v/0x%x) %s", usop.MaxFeePerGas, usop.MaxFeePerGas, gapad.MaxFeePerGas), Value: false}
-	PreVerificationGasItem := &Item{Label: fmt.Sprintf("Pre Verification Gas(%v/0x%x) %s", usop.PreVerificationGas, usop.PreVerificationGas, gapad.PreVerificationGas), Value: false}
-	PaymasterVerificationGasLimitItem := &Item{Label: fmt.Sprintf("Paymaster Verification Gas Limit(%v/0x%x) %s", usop.PaymasterVerificationGasLimit, usop.PaymasterVerificationGasLimit, gapad.PaymasterVerificationGasLimit), Value: false}
-
-	items := []*Item{IncorporateAllItem, PaymasterVerificationGasLimitItem, PaymasterItem, PaymasterDataItem, CallGasLimitItem, VerificationGasLimitItem, MaxPriorityFeePerGasItem,
-		MaxFeePerGasItem, PreVerificationGasItem, Set, Back}
-	for {
-		spr := promptui.Select{Label: "Select parameters to incorporate", Items: items, Templates: ItemTemplate, Size: 10}
-		_, sel, err := spr.Run()
-		if err != nil {
-			fmt.Println("could not run prompt:", err)
-			return
-		}
-		switch sel {
-		case Back.Label:
-			return
-		case Set.Label, IncorporateAllItem.Label:
-			all := (sel == IncorporateAllItem.Label)
-			if PaymasterDataItem.Value.(bool) || all {
-				fmt.Println("incorporating all:", all)
-				p := ecommon.HexToAddress(gapad.Paymaster)
-				usop.Paymaster = &p
-				usop.PaymasterData, _ = hex.DecodeString(strings.TrimPrefix(gapad.PaymasterData, "0x"))
-			}
-			if CallGasLimitItem.Value.(bool) || all {
-				usop.CallGasLimit = ConvHexOrZero(gapad.CallGasLimit)
-			}
-			if VerificationGasLimitItem.Value.(bool) || all {
-				usop.VerificationGasLimit = ConvHexOrZero(gapad.VerificationGasLimit)
-			}
-			if MaxPriorityFeePerGasItem.Value.(bool) || all {
-				usop.MaxPriorityFeePerGas = ConvHexOrZero(gapad.MaxPriorityFeePerGas)
-			}
-			if MaxFeePerGasItem.Value.(bool) || all {
-				usop.MaxFeePerGas = ConvHexOrZero(gapad.MaxFeePerGas)
-			}
-			if PreVerificationGasItem.Value.(bool) || all {
-				usop.PreVerificationGas = ConvHexOrZero(gapad.PreVerificationGas)
-			}
-
-			usop.PaymasterVerificationGasLimit = ConvHexOrZero(gapad.PaymasterVerificationGasLimit)
-			usop.PaymasterPostOpGasLimit = ConvHexOrZero(gapad.PaymasterPostOpGasLimit)
-			state.Save()
-			return
-
-		default:
-			it, _ := GetItem(sel, items)
-			it.Value = !it.Value.(bool)
-
-		}
-	}
-}
-*/
-
-/*
-func IncorporatePMandData(usop *userop.UserOperation, pmad *rpccalls.PMandDataResult) {
-	state.Log("IncorporatePMandData", pmad)
-	if len(pmad.PaymasterAndData) > 0 {
-		pmadHex := pmad.PaymasterAndData
-		if len(pmadHex) < 42 {
-			fmt.Println("Paymaster and Data too short")
-			return
-		}
-		pmadbt, _ := hex.DecodeString(pmadHex[42:])
-		paddr := ecommon.HexToAddress(pmadHex[:42])
-		usop.Paymaster = &paddr
-		usop.PaymasterData = pmadbt
-	} else {
-		pa := ecommon.HexToAddress(pmad.Paymaster)
-		usop.Paymaster = &pa
-		usop.PaymasterData, _ = hex.DecodeString(strings.TrimPrefix(pmad.PaymasterData, "0x"))
-	}
-
-}
-*/
-
 func AlchemyOverridesUI(overrides *rpccalls.AlchemyOverrides) *rpccalls.AlchemyOverrides {
 	if overrides == nil {
 		overrides = &rpccalls.AlchemyOverrides{}
 	}
-	MaxFeePerGasItem := &Item{Label: "Max Fee Per Gas", Value: overrides.MaxFeePerGas}
-	MaxPriorityFeePerGasItem := &Item{Label: "Max Priority Fee Per Gas", Value: overrides.MaxPriorityFeePerGas}
-	CallGasLimitItem := &Item{Label: "Call Gas Limit", Value: overrides.CallGasLimit}
-	VerificationGasLimitItem := &Item{Label: "Verification Gas Limit", Value: overrides.VerificationGasLimit}
-	PreVerificationGasItem := &Item{Label: "Pre Verification Gas", Value: overrides.PreVerificationGas}
-	items := []*Item{MaxFeePerGasItem, MaxPriorityFeePerGasItem, CallGasLimitItem, VerificationGasLimitItem, PreVerificationGasItem, Set, Back}
+	MaxFeePerGasItem := &Item[any]{Label: "Max Fee Per Gas", Value: overrides.MaxFeePerGas}
+	MaxPriorityFeePerGasItem := &Item[any]{Label: "Max Priority Fee Per Gas", Value: overrides.MaxPriorityFeePerGas}
+	CallGasLimitItem := &Item[any]{Label: "Call Gas Limit", Value: overrides.CallGasLimit}
+	VerificationGasLimitItem := &Item[any]{Label: "Verification Gas Limit", Value: overrides.VerificationGasLimit}
+	PreVerificationGasItem := &Item[any]{Label: "Pre Verification Gas", Value: overrides.PreVerificationGas}
+	items := []MenuItem{MaxFeePerGasItem, MaxPriorityFeePerGasItem, CallGasLimitItem, VerificationGasLimitItem, PreVerificationGasItem, Set, Back}
 	for {
 		spr := promptui.Select{Label: "Select parameters to override", Items: items, Templates: ItemTemplate, Size: 10}
 		_, sel, err := spr.Run()
@@ -697,8 +396,10 @@ func AlchemyOverridesUI(overrides *rpccalls.AlchemyOverrides) *rpccalls.AlchemyO
 			return overrides
 
 		default:
-			it, _ := GetItem(sel, items)
-			SetOverrideValue(sel, it)
+			it, ok := GetItem(sel, items)
+			if ok {
+				SetOverrideValue(sel, it.(*Item[any]))
+			}
 
 		}
 	}
@@ -706,10 +407,10 @@ func AlchemyOverridesUI(overrides *rpccalls.AlchemyOverrides) *rpccalls.AlchemyO
 
 var isHex = regexp.MustCompile("^0x[0-9a-fA-F]*$")
 
-func SetOverrideValue(sel string, it *Item) {
-	HexItem := &Item{Label: "As Absolute Value"}
-	MultiplierItem := &Item{Label: "As Multiplier"}
-	items := []*Item{HexItem, MultiplierItem, Back}
+func SetOverrideValue(sel string, it *Item[any]) {
+	HexItem := &Item[struct{}]{Label: "As Absolute Value"}
+	MultiplierItem := &Item[struct{}]{Label: "As Multiplier"}
+	items := []MenuItem{HexItem, MultiplierItem, Back}
 	selector := promptui.Select{Label: "Select Value Type for " + sel, Items: items, Templates: ItemTemplate, Size: 10}
 	_, sel2, err := selector.Run()
 	if err != nil {
@@ -720,24 +421,24 @@ func SetOverrideValue(sel string, it *Item) {
 	case Back.Label:
 		return
 	case HexItem.Label:
-		v, err := InputUint(it, 64)
+		u64Item := &Item[uint64]{Label: it.Label}
+		v, err := InputUint(u64Item, 64)
 		if err != nil {
 			fmt.Println("Error getting value:", err)
 			return
 		}
 		it.Value = fmt.Sprintf("0x%x", v)
 	case MultiplierItem.Label:
-		nit := &Item{Label: "Multiplier Value", Value: 1}
+		nit := &Item[float64]{Label: "Multiplier Value", Value: 1}
 		err := InputFloatUI(nit)
 		if err != nil {
 			fmt.Println("Error getting multiplier:", err)
 			return
 		}
-		f, ok := nit.Value.(float64)
-		if !ok {
-			fmt.Println("Not a valid multiplier")
-			return
-		}
-		it.Value = &rpccalls.AlchemyOverrideMultiplier{Multiplier: f}
+		it.Value = &rpccalls.AlchemyOverrideMultiplier{Multiplier: nit.Value}
 	}
 }
+
+// Needed for type compatibility
+var _ = (*big.Int)(nil)
+var _ = ecommon.Address{}

@@ -9,10 +9,10 @@ import (
 	"github.com/san-lab/go4337/state"
 )
 
-var AddAddressItem = &Item{Label: "Add a new Address"}
-var RemoveAddressItem = &Item{Label: "Remove an Address"}
-var RenameAddressItem = &Item{Label: "Rename an Address"}
-var FromAnotherBookItem = &Item{Label: "From another Address Book"}
+var AddAddressItem = &Item[struct{}]{Label: "Add a new Address"}
+var RemoveAddressItem = &Item[struct{}]{Label: "Remove an Address"}
+var RenameAddressItem = &Item[struct{}]{Label: "Rename an Address"}
+var FromAnotherBookItem = &Item[struct{}]{Label: "From another Address Book"}
 
 // Returns selcted name, address and a bool indicating if the selection was successful
 func AddressFromBookUI(label string) (string, *common.Address, bool) {
@@ -24,9 +24,9 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 	renameLabel := "Select a " + label + " to rename"
 	currentLabel := normalLabel
 	for {
-		items := []*Item{}
+		items := []MenuItem{}
 		for _, key := range abook.Keys() {
-			items = append(items, &Item{Label: fmt.Sprintf("%-25s", key), Details: "Select this " + label, Value: (*abook)[key]})
+			items = append(items, &Item[*common.Address]{Label: fmt.Sprintf("%-25s", key), Details: "Select this " + label, Value: (*abook)[key]})
 
 		}
 		if !selectToRemove && !selectToRename {
@@ -89,13 +89,13 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 				currentLabel = normalLabel
 
 			} else if selectToRename {
-				RenameItem := &Item{Label: fmt.Sprintf("New name for >>%s<<", name)}
+				RenameItem := &Item[string]{Label: fmt.Sprintf("New name for >>%s<<", name)}
 				err := InputNewStringUI(RenameItem)
 				if err != nil {
 					fmt.Println(err)
 					continue
 				}
-				nname := RenameItem.Value.(string)
+				nname := RenameItem.Value
 				abook.Rename(name, nname)
 				selectToRename = false
 				currentLabel = normalLabel
@@ -109,9 +109,9 @@ func AddressFromBookUI(label string) (string, *common.Address, bool) {
 
 // Returns the selected addressbook name, selected name and address, and a bool indicating if the selection was successful
 func AddressFromAllBooksUI() (string, string, *common.Address, bool) {
-	items := []*Item{}
+	items := []MenuItem{}
 	for _, name := range state.GetAddressBooks() {
-		items = append(items, &Item{Label: name, Details: "Select an Address from " + name})
+		items = append(items, &Item[struct{}]{Label: name, Details: "Select an Address from " + name})
 	}
 	items = append(items, Back)
 	prompt := promptui.Select{

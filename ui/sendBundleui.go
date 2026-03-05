@@ -11,35 +11,32 @@ import (
 	"github.com/san-lab/go4337/entrypoint/entrypointv6"
 	"github.com/san-lab/go4337/rpccalls"
 	"github.com/san-lab/go4337/state"
-	"github.com/san-lab/go4337/ui/common"
 	. "github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/ui/rpcui"
 	"github.com/san-lab/go4337/userop"
 )
 
-var BundleSignerItem = &Item{Label: "Signer for the bundle"}
-var SendBundleItem = &Item{Label: "Send as bundle"}
-var BeneficiaryItem = &Item{Label: "Beneficiary"}
+var BundleSignerItem = &Item[rpccalls.KeyContainer]{Label: "Signer for the bundle"}
+var SendBundleItem = &Item[struct{}]{Label: "Send as bundle"}
+var BeneficiaryItem = &Item[ecommon.Address]{Label: "Beneficiary"}
 
 func SendAsBundleUI(usop *userop.UserOperation) (*ecommon.Hash, error) {
 	var endpoint *state.RPCEndpoint
-	var signer rpccalls.KeyContainer
+	var sgnr rpccalls.KeyContainer
 	var beneficiary ecommon.Address
 	var ok1, ok2, ok3 bool
 	for {
 
-		items := []*Item{EntryPointItem, rpcui.SendEndpointItem, BundleSignerItem, BeneficiaryItem}
-		if BeneficiaryItem.Value != nil {
-			beneficiary, ok3 = BeneficiaryItem.Value.(ecommon.Address)
-		}
+		items := []MenuItem{EntryPointItem, rpcui.SendEndpointItem, BundleSignerItem, BeneficiaryItem}
+		ok3 = BeneficiaryItem.Value != (ecommon.Address{})
+		beneficiary = BeneficiaryItem.Value
 
-		if rpcui.SendEndpointItem.Value != nil && BundleSignerItem.Value != nil {
-
-			endpoint, ok1 = rpcui.SendEndpointItem.Value.(*state.RPCEndpoint)
-			signer, ok2 = BundleSignerItem.Value.(rpccalls.KeyContainer)
-			if ok1 && ok2 && ok3 {
-				items = append(items, SendBundleItem)
-			}
+		endpoint = rpcui.SendEndpointItem.Value
+		ok1 = endpoint != nil
+		sgnr = BundleSignerItem.Value
+		ok2 = sgnr != nil
+		if ok1 && ok2 && ok3 {
+			items = append(items, SendBundleItem)
 		}
 		items = append(items, Back)
 		spr := promptui.Select{Label: "Send UserOp as a Bundle", Items: items, Templates: ItemTemplate, Size: 10}
@@ -61,9 +58,9 @@ func SendAsBundleUI(usop *userop.UserOperation) (*ecommon.Hash, error) {
 				BeneficiaryItem.Value = *paddr
 			}
 		case SendBundleItem.Label:
-			key := signer.GetECDSAKey()
+			key := sgnr.GetECDSAKey()
 			from := ecrypto.PubkeyToAddress(key.PublicKey)
-			to := EntryPointItem.Value.(ecommon.Address)
+			to := EntryPointItem.Value
 			fmt.Println("from:", from.Hex())
 			fmt.Println("to:", to.Hex())
 			fmt.Println("endpoint:", endpoint.Name)
@@ -80,8 +77,6 @@ func SendAsBundleUI(usop *userop.UserOperation) (*ecommon.Hash, error) {
 					fmt.Println("could not pack data:", err)
 					return nil, err
 				}
-				//fmt.Println("calldata:", hex.EncodeToString(bt))
-
 			}
 			if EntryPointItem.Value == entrypoint.E6Address {
 				fmt.Println("entrypoint v6")
@@ -95,30 +90,26 @@ func SendAsBundleUI(usop *userop.UserOperation) (*ecommon.Hash, error) {
 					fmt.Println("could not pack data:", err)
 					return nil, err
 				}
-				//fmt.Println("calldata:", hex.EncodeToString(bt))
 			}
 			gasLimit := usop.TotalGasLimit() + state.GetGasLimitOffset()
-			//fmt.Println("gasLimit:", gasLimit, len(calldata))
-			//return nil, fmt.Errorf("not implemented")
-			return rpccalls.CreateAndSendTransaction(endpoint, &from, &to, big.NewInt(0), calldata, gasLimit, signer)
+			return rpccalls.CreateAndSendTransaction(endpoint, &from, &to, big.NewInt(0), calldata, gasLimit, sgnr)
 
 		}
 
 	}
 }
 
-func GetEOASignerUI(it *Item) {
-	items := []*Item{}
+func GetEOASignerUI(it *Item[rpccalls.KeyContainer]) {
+	items := []MenuItem{}
 	for _, signername := range state.GetSigners() {
-		signer := state.GetSigner(signername)
-		_, ok := signer.(rpccalls.KeyContainer)
+		s := state.GetSigner(signername)
+		kc, ok := s.(rpccalls.KeyContainer)
 		if ok {
-			items = append(items, &Item{Label: signer.Name(), Value: signer})
+			items = append(items, &Item[rpccalls.KeyContainer]{Label: s.Name(), Value: kc})
 		}
-
 	}
 	items = append(items, Back)
-	prompt := promptui.Select{Label: "Select a Signer", Items: items, Templates: common.ItemTemplate, Size: 10}
+	prompt := promptui.Select{Label: "Select a Signer", Items: items, Templates: ItemTemplate, Size: 10}
 	sel, _, err := prompt.Run()
 	if err != nil {
 		fmt.Println(err)
@@ -126,6 +117,6 @@ func GetEOASignerUI(it *Item) {
 	}
 	//Careful. This assumes there is only BACK item attached to the KeyContainers list
 	if sel < len(items)-1 {
-		it.Value = items[sel].Value
+		it.Value = items[sel].(*Item[rpccalls.KeyContainer]).Value
 	}
 }

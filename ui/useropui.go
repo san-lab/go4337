@@ -18,35 +18,30 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-var SelectUserOpItem = &Item{Label: "Select User Operation", Details: "Select a user operation"}
-var CreateUserOpItem = &Item{Label: "Create User Operation", Details: "Create a new user operation"}
-var CloneUserOpItem = &Item{Label: "Clone User Operation", Details: "Clone a user operation"}
-var DeleteUserOpItem = &Item{Label: "Delete User Operation", Details: "Delete a user operation"}
+var SelectUserOpItem = &Item[struct{}]{Label: "Select User Operation", Details: "Select a user operation"}
+var CreateUserOpItem = &Item[struct{}]{Label: "Create User Operation", Details: "Create a new user operation"}
+var CloneUserOpItem = &Item[struct{}]{Label: "Clone User Operation", Details: "Clone a user operation"}
+var DeleteUserOpItem = &Item[struct{}]{Label: "Delete User Operation", Details: "Delete a user operation"}
 
-func TopUserOpUI(usOpItem *Item) {
+func TopUserOpUI(usOpItem *Item[*userop.UserOperation]) {
 	if usOpItem == nil {
-		usOpItem = &Item{}
+		usOpItem = &Item[*userop.UserOperation]{}
 	}
-	workItem := &Item{}
+	workItem := &Item[struct{}]{}
 
 	for {
-		items := []*Item{}
+		items := []MenuItem{}
 		if usOpItem.Value != nil {
-			if usop, ok := usOpItem.Value.(*userop.UserOperation); ok {
-
-				workItem = &Item{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
-				items = append(items, workItem)
-
-			}
+			usop := usOpItem.Value
+			workItem = &Item[struct{}]{Label: "Work on User Operation: " + usOpItem.Label, Details: fmt.Sprintf("%s/%v", usop.Sender, usop.Nonce)}
+			items = append(items, workItem)
 		}
-		items = append(items, []*Item{
+		items = append(items,
 			SelectUserOpItem,
 			CreateUserOpItem,
 			CloneUserOpItem,
 			DeleteUserOpItem,
-		}...)
-		//Select a userOp, create a new one, or go back
-
+		)
 		items = append(items, Back)
 
 		// Create a new select prompt
@@ -64,14 +59,13 @@ func TopUserOpUI(usOpItem *Item) {
 		case Back.Label:
 			return
 		case SelectUserOpItem.Label:
-
 			SelectUserOpUI(usOpItem)
 		case CreateUserOpItem.Label:
 			CreateUserOpUI(usOpItem)
 		case CloneUserOpItem.Label:
 			CloneUserOpUI(usOpItem)
 		case workItem.Label:
-			usop := usOpItem.Value.(*userop.UserOperation) //Has been checked when generating ui, and there should be no concurrency, so it is safe
+			usop := usOpItem.Value
 			UserOpUI(usop)
 		case DeleteUserOpItem.Label:
 			DeleteUserOpUI(usOpItem)
@@ -82,17 +76,13 @@ func TopUserOpUI(usOpItem *Item) {
 
 }
 
-func DeleteUserOpUI(topIt *Item) {
-	it := &Item{}
+func DeleteUserOpUI(topIt *Item[*userop.UserOperation]) {
+	it := &Item[*userop.UserOperation]{}
 	SelectUserOpUI(it)
 	if it.Value == nil {
 		return
 	}
-	usop, ok := it.Value.(*userop.UserOperation)
-	if !ok {
-		fmt.Println("Invalid UserOp selected. This should be impossible...")
-		return
-	}
+	usop := it.Value
 	for k, v := range state.GetUserOps() {
 		if v == usop {
 			if YesNoPromptUI(fmt.Sprintf("Delete UserOp %s?", k)) {
@@ -112,17 +102,13 @@ func DeleteUserOpUI(topIt *Item) {
 
 }
 
-func CloneUserOpUI(topIt *Item) {
-	it := &Item{}
+func CloneUserOpUI(topIt *Item[*userop.UserOperation]) {
+	it := &Item[*userop.UserOperation]{}
 	SelectUserOpUI(it)
 	if it.Value == nil {
 		return
 	}
-	usop, ok := it.Value.(*userop.UserOperation)
-	if !ok {
-		fmt.Println("Invalid UserOp selected. This should be impossible...")
-		return
-	}
+	usop := it.Value
 	//Prompt for a new name
 	newname := ""
 	for {
@@ -151,14 +137,14 @@ func CloneUserOpUI(topIt *Item) {
 	}
 	nusop := clone.(*userop.UserOperation)
 	nusop.Nonce.Increment()
-	topIt.Value = clone
+	topIt.Value = nusop
 	topIt.Label = newname
 	state.AddUserOp(newname, nusop)
 
 }
 
-func SelectUserOpUI(topit *Item) {
-	items := []*Item{}
+func SelectUserOpUI(topit *Item[*userop.UserOperation]) {
+	items := []MenuItem{}
 	keys := make([]string, 0, len(state.GetUserOps()))
 	for k := range state.GetUserOps() {
 		keys = append(keys, k)
@@ -170,7 +156,7 @@ func SelectUserOpUI(topit *Item) {
 	sort.Strings(keys)
 	for _, name := range keys {
 		uop, _ := state.GetUserOp(name)
-		items = append(items, &Item{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %d", uop.Sender, uop.Nonce)})
+		items = append(items, &Item[string]{Label: name, Details: fmt.Sprintf("Sender: %s, Nonce: %s", uop.Sender, uop.Nonce)})
 	}
 	items = append(items, Back)
 	// Create a new select prompt
@@ -193,7 +179,7 @@ func SelectUserOpUI(topit *Item) {
 
 }
 
-func CreateUserOpUI(topIt *Item) {
+func CreateUserOpUI(topIt *Item[*userop.UserOperation]) {
 	//prompt for name
 	prompt := promptui.Prompt{
 		Label: "Enter UserOp Name",
@@ -219,10 +205,10 @@ func CreateUserOpUI(topIt *Item) {
 
 }
 
-var UserOpContentItem = &Item{Label: "User Operation Content", Details: "Manage user operation content"}
-var ExportUserOpItem = &Item{Label: "Export User Operation", Details: "Select the export format"}
-var GetHashItem = &Item{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
-var SendAsBundleItem = &Item{Label: "Send as Bundle", Details: "Send the user operation as a bundle"}
+var UserOpContentItem = &Item[struct{}]{Label: "User Operation Content", Details: "Manage user operation content"}
+var ExportUserOpItem = &Item[struct{}]{Label: "Export User Operation", Details: "Select the export format"}
+var GetHashItem = &Item[struct{}]{Label: "Hashes and signatures", Details: "Get the hash of the user operation with entrypoint and chainid"}
+var SendAsBundleItem = &Item[struct{}]{Label: "Send as Bundle", Details: "Send the user operation as a bundle"}
 
 func UserOpUI(usop *userop.UserOperation) {
 	var uopname string
@@ -237,7 +223,7 @@ func UserOpUI(usop *userop.UserOperation) {
 		return
 	}
 
-	items := []*Item{
+	items := []MenuItem{
 		UserOpContentItem,
 		ExportUserOpItem,
 		GetHashItem,
@@ -262,7 +248,7 @@ func UserOpUI(usop *userop.UserOperation) {
 		case Back.Label:
 			return
 		case UserOpContentItem.Label:
-			it := &Item{Value: usop}
+			it := &Item[*userop.UserOperation]{Value: usop}
 			UserOpContentUI(it)
 		case ExportUserOpItem.Label:
 			ExportUserOpUI(usop)
@@ -285,37 +271,37 @@ func UserOpUI(usop *userop.UserOperation) {
 	}
 }
 
-var SenderItem = &Item{Label: state.Sender, Details: "Set sender"}
+var SenderItem = &Item[*common.Address]{Label: state.Sender, Details: "Set sender"}
 
-var CallDataItem = &Item{Label: "Call Data", Details: "Set Call Data"}
-var CallGasLimitItem = &Item{Label: "Call Gas Limit\t ", Details: "Set Call Gas Limit"}
-var VerificationGasLimitItem = &Item{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
-var PreVerificationGasItem = &Item{Label: "Pre Verification Gas   ", Details: "Set Pre Verification Gas"}
-var MaxFeePerGasItem = &Item{Label: "Max Fee Per Gas\t ", Details: "Set Max Fee Per Gas"}
-var MaxPriorityFeePerGasItem = &Item{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
+var CallDataItem = &Item[[]byte]{Label: "Call Data", Details: "Set Call Data"}
+var CallGasLimitItem = &Item[uint64]{Label: "Call Gas Limit\t ", Details: "Set Call Gas Limit"}
+var VerificationGasLimitItem = &Item[uint64]{Label: "Verification Gas Limit", Details: "Set Verification Gas Limit"}
+var PreVerificationGasItem = &Item[uint64]{Label: "Pre Verification Gas   ", Details: "Set Pre Verification Gas"}
+var MaxFeePerGasItem = &Item[uint64]{Label: "Max Fee Per Gas\t ", Details: "Set Max Fee Per Gas"}
+var MaxPriorityFeePerGasItem = &Item[uint64]{Label: "Max Priority Fee Per Gas", Details: "Set Max Priority Fee Per Gas"}
 
-// var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
-var FactoryItem = &Item{Label: "Factory", Details: "Set Factory"}
-var FactoryDataItem = &Item{Label: "Factory Data", Details: "Set Factory Data"}
+var FactoryItem = &Item[*common.Address]{Label: "Factory", Details: "Set Factory"}
+var FactoryDataItem = &Item[[]byte]{Label: "Factory Data", Details: "Set Factory Data"}
 
 // PaymasterItem is defined in paymasterui.go
-var PaymasterDataItem = &Item{Label: "Paymaster Data", Details: "Set Paymaster Data"}
-var PaymasterVerificationGasLimitItem = &Item{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
-var PaymasterPostOpGasLimitItem = &Item{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
-var SignatureItem = &Item{Label: "Signature", Details: "Set Signature"}
-var EIP7702AuthItem = &Item{Label: "EIP7702Authorization"}
+var PaymasterDataItem = &Item[[]byte]{Label: "Paymaster Data", Details: "Set Paymaster Data"}
+var PaymasterVerificationGasLimitItem = &Item[uint64]{Label: "Paymaster Verif. Gas Limit", Details: "Set Paymaster Verification Gas Limit", Value: userop.DefaultPaymasterVerificationGasLimit}
+var PaymasterPostOpGasLimitItem = &Item[uint64]{Label: "Paymaster Post Op Gas Limit", Details: "Set Paymaster Post Op Gas Limit", Value: userop.DefaultPaymasterPostOpGasLimit}
+var SignatureItem = &Item[[]byte]{Label: "Signature", Details: "Set Signature"}
+var EIP7702AuthItem = &Item[*types.SetCodeAuthorization]{Label: "EIP7702Authorization", Display: func(v *types.SetCodeAuthorization) string {
+	return setauth.AuthorityString(v)
+}}
 
-func UserOpContentUI(topIt *Item) {
+func UserOpContentUI(topIt *Item[*userop.UserOperation]) {
 	var usop *userop.UserOperation
 
-	ok := false
-	usop, ok = topIt.Value.(*userop.UserOperation)
-	if !ok || usop == nil {
+	usop = topIt.Value
+	if usop == nil {
 		fmt.Println("Invalid UserOp passed to UserOpContentUI")
 		return
 	}
 
-	items := []*Item{
+	items := []MenuItem{
 		SenderItem,
 		nonceui.NonceItem,
 		FactoryItem,
@@ -357,52 +343,54 @@ func UserOpContentUI(topIt *Item) {
 		case CallGasLimitItem.Label, VerificationGasLimitItem.Label,
 			PreVerificationGasItem.Label, MaxFeePerGasItem.Label, MaxPriorityFeePerGasItem.Label,
 			PaymasterVerificationGasLimitItem.Label, PaymasterPostOpGasLimitItem.Label:
-			it, _ := GetItem(sel, items)
-			InputUint(it, 64)
+			typedIt, ok := GetTypedItem[uint64](sel, items)
+			if ok {
+				InputUint(typedIt, 64)
+			}
 			copyValuesToUserOp(usop)
 		case CallDataItem.Label, FactoryDataItem.Label:
-			it, _ := GetItem(sel, items)
+			typedIt, ok := GetTypedItem[[]byte](sel, items)
 			caldat, err := abicalldata.PotentiallyRecursiveCallDataUI()
 			if err != nil {
 				fmt.Println(err)
-			} else {
-				it.Value = caldat
+			} else if ok {
+				typedIt.Value = caldat
 				usop.CallData = caldat
 
 			}
-		//InputBytes(it)
 		case PaymasterDataItem.Label:
-			it, _ := GetItem(sel, items)
-			SetPaymasterDataUI(it, usop)
-			if it.Value != nil {
-				usop.PaymasterData = it.Value.([]byte)
+			SetPaymasterDataUI(PaymasterDataItem, usop)
+			if PaymasterDataItem.Value != nil {
+				usop.PaymasterData = PaymasterDataItem.Value
 			}
-
-			//copyValuesToUserOp(usop)
 		case SignatureItem.Label:
 			copyValuesToUserOp(usop)
 			ret, err := SetSignatureUI(usop)
 			if err == nil {
 				SignatureItem.Value = ret
-				//SignItem.DisplayValue = ShortHex(ret, 7)
 				SignatureItem.Details = hex.EncodeToString(ret)
 			} else {
 				fmt.Println(err)
 			}
 
 		case SenderItem.Label, PaymasterItem.Label, FactoryItem.Label:
-			it, _ := GetItem(sel, items)
 			_, addr, ok := AddressFromBookUI(sel)
 			if ok {
-
-				it.Value = addr
-				usop.Sender = SenderItem.Value.(*common.Address)
-
+				switch sel {
+				case SenderItem.Label:
+					SenderItem.Value = addr
+					usop.Sender = addr
+				case PaymasterItem.Label:
+					PaymasterItem.Value = addr
+					usop.Paymaster = addr
+				case FactoryItem.Label:
+					FactoryItem.Value = addr
+					usop.Factory = addr
+				}
 			}
 		case EIP7702AuthItem.Label:
 			usop.EIP7702Auth = setauth.AuthUI(usop.EIP7702Auth)
 			EIP7702AuthItem.Value = usop.EIP7702Auth
-			EIP7702AuthItem.DisplayValueString = setauth.AuthorityString(usop.EIP7702Auth)
 
 		default:
 			fmt.Println("Not implemented yet:", sel)
@@ -428,59 +416,52 @@ func copyFromUseropToItems(uop *userop.UserOperation) {
 	PaymasterPostOpGasLimitItem.Value = uop.PaymasterPostOpGasLimit
 	SignatureItem.Value = uop.Signature
 	EIP7702AuthItem.Value = uop.EIP7702Auth
-	EIP7702AuthItem.DisplayValueString = setauth.AuthorityString(uop.EIP7702Auth)
 }
 
 func copyValuesToUserOp(uop *userop.UserOperation) {
 	defer state.Save()
 	if SenderItem.Value != nil {
-		uop.Sender = SenderItem.Value.(*common.Address)
+		uop.Sender = SenderItem.Value
 	}
-	uop.Nonce = nonceui.NonceItem.Value.(*userop.U256)
+	uop.Nonce = nonceui.NonceItem.Value
 	if CallDataItem.Value != nil {
-		uop.CallData = CallDataItem.Value.([]byte)
+		uop.CallData = CallDataItem.Value
 	}
 	if FactoryItem.Value != nil {
-		uop.Factory = FactoryItem.Value.(*common.Address)
+		uop.Factory = FactoryItem.Value
 	}
 	if FactoryDataItem.Value != nil {
-		uop.FactoryData = FactoryDataItem.Value.([]byte)
+		uop.FactoryData = FactoryDataItem.Value
 	}
-	uop.CallGasLimit = CallGasLimitItem.Value.(uint64)
-	uop.VerificationGasLimit = VerificationGasLimitItem.Value.(uint64)
-	uop.PreVerificationGas = PreVerificationGasItem.Value.(uint64)
-	uop.MaxFeePerGas = MaxFeePerGasItem.Value.(uint64)
-	uop.MaxPriorityFeePerGas = MaxPriorityFeePerGasItem.Value.(uint64)
+	uop.CallGasLimit = CallGasLimitItem.Value
+	uop.VerificationGasLimit = VerificationGasLimitItem.Value
+	uop.PreVerificationGas = PreVerificationGasItem.Value
+	uop.MaxFeePerGas = MaxFeePerGasItem.Value
+	uop.MaxPriorityFeePerGas = MaxPriorityFeePerGasItem.Value
 	if PaymasterItem.Value != nil {
-		uop.Paymaster = PaymasterItem.Value.(*common.Address)
+		uop.Paymaster = PaymasterItem.Value
 	}
 	if PaymasterDataItem.Value != nil {
-		uop.PaymasterData = PaymasterDataItem.Value.([]byte)
+		uop.PaymasterData = PaymasterDataItem.Value
 	}
-	uop.PaymasterVerificationGasLimit = PaymasterVerificationGasLimitItem.Value.(uint64)
-	uop.PaymasterPostOpGasLimit = PaymasterPostOpGasLimitItem.Value.(uint64)
+	uop.PaymasterVerificationGasLimit = PaymasterVerificationGasLimitItem.Value
+	uop.PaymasterPostOpGasLimit = PaymasterPostOpGasLimitItem.Value
 	if SignatureItem.Value != nil {
-		uop.Signature = SignatureItem.Value.([]byte)
+		uop.Signature = SignatureItem.Value
 	}
 	if EIP7702AuthItem.Value != nil {
-		v, ok := EIP7702AuthItem.Value.(*types.SetCodeAuthorization)
-		if ok {
-			uop.EIP7702Auth = v
-		} else {
-			fmt.Println("missed casting: ", EIP7702Item.Value)
-		}
-
+		uop.EIP7702Auth = EIP7702AuthItem.Value
 	}
 }
 
-var ExportAsUOPJSONItem = &Item{Label: "Export as JSON", Details: "Export as JSON"}
-var ExportAsRemixTupleV7Item = &Item{Label: "Export as Remix Tuple (V7)", Details: "Export as Remix Tuple"}
-var ExportAsRemixTupleV6Item = &Item{Label: "Export as Remix Tuple (V6)", Details: "Export as Remix Tuple"}
-var ExportAsCurlToAlchemyItem = &Item{Label: "Export as Curl to Alchemy's Bundler", Details: "Export as Curl to Alchemy's Bundler"}
-var ExportAsCurlToEntryItem = &Item{Label: "Export as Curl to Entrypoint", Details: "Export as Curl to Entrypoint"}
+var ExportAsUOPJSONItem = &Item[struct{}]{Label: "Export as JSON", Details: "Export as JSON"}
+var ExportAsRemixTupleV7Item = &Item[struct{}]{Label: "Export as Remix Tuple (V7)", Details: "Export as Remix Tuple"}
+var ExportAsRemixTupleV6Item = &Item[struct{}]{Label: "Export as Remix Tuple (V6)", Details: "Export as Remix Tuple"}
+var ExportAsCurlToAlchemyItem = &Item[struct{}]{Label: "Export as Curl to Alchemy's Bundler", Details: "Export as Curl to Alchemy's Bundler"}
+var ExportAsCurlToEntryItem = &Item[struct{}]{Label: "Export as Curl to Entrypoint", Details: "Export as Curl to Entrypoint"}
 
 func ExportUserOpUI(uop *userop.UserOperation) {
-	items := []*Item{ExportAsUOPJSONItem, ExportAsRemixTupleV6Item, ExportAsRemixTupleV7Item, ExportAsCurlToAlchemyItem, ExportAsCurlToEntryItem, Back}
+	items := []MenuItem{ExportAsUOPJSONItem, ExportAsRemixTupleV6Item, ExportAsRemixTupleV7Item, ExportAsCurlToAlchemyItem, ExportAsCurlToEntryItem, Back}
 	// Create a new select prompt
 	prompt := promptui.Select{
 		Label:     "Select an option",
@@ -525,14 +506,6 @@ func ExportAsJSON(uop *userop.UserOperation) {
 	fmt.Println(string(bt))
 }
 
-//Sample
-/*
-["0xCf6290218F6F970657c475E5BFb98Edf45085495",0,"0x","0x42",
-"0x0000000000000000000000000000000000000000000000000000000000008233",33332,
-"0x0000000000000000000000000000000000000000000000000000000000008235","0x",
-"0xfc78e0bcb3b9e4a294d0bfaccebe57111b053679f19dfc31b18486f94a52709129bd1a4f0b446384d851da2ae8076a7aaf56ac3fafae65810602efc3c30efd321B"]
-*/
-
 func ExportAsCurl(uop *userop.UserOperation) {
 	u6 := uop.MarshalV6UserOp()
 	bt, _ := json.MarshalIndent(u6, "", "  ")
@@ -540,7 +513,7 @@ func ExportAsCurl(uop *userop.UserOperation) {
 }
 
 func ExportAsAlchemy(uop *userop.UserOperation) {
-	apiKey := fmt.Sprintf("%s", ApiKeyItem.Value)
+	apiKey := ApiKeyItem.Value
 	head := `curl --request POST --url https://eth-sepolia.g.alchemy.com/v2/` + apiKey + ` --header 'accept: application/json' --data ' { "id": 1, "jsonrpc": "2.0", "method": "eth_sendUserOperation", "params":`
 	fmt.Printf("%s [ %s, \"%s\" ] }'\n", head, uop.MarshalAlchemy(), EntryPointItem.Value) // newline or the string gets cut
 }

@@ -6,14 +6,13 @@ import (
 	. "github.com/san-lab/go4337/ui/common"
 )
 
-var AddPaymasterItem = &Item{Label: "Add Paymaster", Details: "Add a new paymaster address"}
+var AddPaymasterItem = &Item[struct{}]{Label: "Add Paymaster", Details: "Add a new paymaster address"}
 
 func PaymasterUI() (*common.Address, bool) {
 
 	_, addr, ok := AddressFromBookUI(state.Paymaster)
 	if ok {
 		PaymasterItem.Value = addr
-		//PaymasterItem.DisplayValue = addr.String()
 	}
 	return addr, ok
 }

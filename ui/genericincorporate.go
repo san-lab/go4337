@@ -37,24 +37,26 @@ func IncorporateRecommendedValuesUI(usop *userop.UserOperation, rawNewValues any
 		return
 	}
 
-	var items []*common.Item
+	items := []common.MenuItem{}
 	// Map keyed by the *full unique label* string to look up the FieldInfo
 	fieldMap := make(map[string]*FieldInfo)
 
-	IncorporateAllItem := &common.Item{Label: "Incorporate All"}
+	IncorporateAllItem := &common.Item[struct{}]{Label: "Incorporate All"}
 	items = append(items, IncorporateAllItem)
+
+	// We use *Item[bool] for toggleable field items
+	var fieldItems []*common.Item[bool]
 
 	for _, fi := range fields {
 		// Create the full unique label for the promptui item
 		label := fmt.Sprintf("%s (Current: %s | New: %s)", fi.FieldName, common.ToDisplayString(fi.CurrentValue), common.ToDisplayString(fi.NewValue))
 
-		item := &common.Item{
+		item := &common.Item[bool]{
 			Label: label,
 			Value: false, // UI toggle state
-			// We MUST NOT set UserData as it doesn't exist on common.Item
 		}
 		items = append(items, item)
-		//fmt.Printf("Added item %s for the field %s\n", item.Label, fi.FieldName)
+		fieldItems = append(fieldItems, item)
 		// Map the unique label back to the FieldInfo
 		fieldMap[label] = &fi
 	}
@@ -79,27 +81,22 @@ func IncorporateRecommendedValuesUI(usop *userop.UserOperation, rawNewValues any
 			all := (sel == IncorporateAllItem.Label)
 
 			// Apply selected or all parameters
-			for _, item := range items[1 : len(items)-2] { // Iterate over dynamic field items (skip All, Set, Back)
-				//fmt.Println("xyz", item.Label, fieldMap[item.Label])
+			for _, item := range fieldItems {
 				// Only process if selected OR if 'Incorporate All' was chosen
-				if item.Value.(bool) || all {
-					// Use the item's label (which is unique) to look up the field info
+				if item.Value || all {
 					fieldInfo := fieldMap[item.Label]
-
 					if fieldInfo != nil {
 						applyValueToUserOp(usop, fieldInfo)
 					}
 				}
 			}
-
-			// state.Save() // Assuming this is still necessary after applying values
 			return
 
 		default:
 			// Toggle selection for a field
-			it, _ := common.GetItem(sel, items)
-			if it.Label != IncorporateAllItem.Label && it.Label != common.Set.Label && it.Label != common.Back.Label {
-				it.Value = !it.Value.(bool)
+			it, ok := common.GetTypedItem[bool](sel, items)
+			if ok && it.Label != IncorporateAllItem.Label && it.Label != common.Set.Label && it.Label != common.Back.Label {
+				it.Value = !it.Value
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/entrypoint"
@@ -35,34 +36,23 @@ func (s *stderr) Close() error {
 	return os.Stderr.Close()
 }
 
-func init() {
-	readline.Stdout = &stderr{}
-}
+var PaymasterItem = &Item[*ecommon.Address]{Label: "Paymaster", Details: "Manage Paymaster settings"}
+var UserOpItem = &Item[struct{}]{Label: "User Operations", Details: "Manage User Operations"}
+var AbisItem = &Item[struct{}]{Label: "ABIs", Details: "Manage ABIs"}
+var EntryPointItem = &Item[ecommon.Address]{Label: "Entrypoint", Details: "Set Entrypoint"}
+var ApiKeysItem = &Item[struct{}]{Label: "API's and API Keys", Details: "Manage API Access"}
+var SettingsItem = &Item[struct{}]{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
+var ChainCallItem = &Item[struct{}]{Label: "Chain Calls", Details: "Call a function on-chain"}
+var DEBUGItem = &Item[bool]{Label: "DEBUG", Details: "Toggle DEBUG", Value: state.DEBUG, Display: func(v bool) string { return fmt.Sprint(v) }}
+var AddressBooksItem = &Item[struct{}]{Label: "Address Books", Details: "Manage Address Books"}
 
-var PaymasterItem = &Item{Label: "Paymaster", Details: "Manage Paymaster settings"}
-var UserOpItem = &Item{Label: "User Operations", Details: "Manage User Operations"}
-var AbisItem = &Item{Label: "ABIs", Details: "Manage ABIs"}
-var SignerItem = &Item{Label: "Signer", Details: "Manage Signer settings"}
-var EntryPointItem = &Item{Label: "Entrypoint", Details: "Set Entrypoint"}
-var ApiKeysItem = &Item{Label: "API's and API Keys", Details: "Manage API Access"}
-var SettingsItem = &Item{Label: "Settings", Details: "Paymasters, Signers, ChainID, ..."}
-var ChainCallItem = &Item{Label: "Chain Calls", Details: "Call a function on-chain"}
-var DEBUGItem = &Item{Label: "DEBUG", Details: "Toggle DEBUG", DisplayValueString: fmt.Sprint(state.DEBUG)}
-var AddressBooksItem = &Item{Label: "Address Books", Details: "Manage Address Books"}
-
-var EIP7702Item = &Item{Label: "EIP7702 Stuff", Details: "Engage EIP-7702"}
-
-//var RPCEndpointsItem = &Item{Label: "RPC Endpoints", Details: "Manage RPC Endpoints"}
+var EIP7702Item = &Item[struct{}]{Label: "EIP7702 Stuff", Details: "Engage EIP-7702"}
 
 func RootUI() {
-	items := []*Item{
-		//PaymasterItem,
+	items := []MenuItem{
 		SettingsItem,
 		UserOpItem,
-		//SignerItem,
 		AbisItem,
-		//ChainIDItem,
-		//EntryPointItem,
 		ChainCallItem,
 		ApiCallsItem,
 		EIP7702Item,
@@ -103,10 +93,10 @@ func RootUI() {
 	}
 }
 
-var GasLimitOffsetItem = &Item{Label: "Gas Limit Offset", Details: "Set Gas Limit Offset to top the bundle gas limit", Value: state.GetGasLimitOffset()}
+var GasLimitOffsetItem = &Item[uint64]{Label: "Gas Limit Offset", Details: "Set Gas Limit Offset to top the bundle gas limit", Value: state.GetGasLimitOffset()}
 
 func SettingsUI() {
-	items := []*Item{
+	items := []MenuItem{
 		PaymasterItem,
 		SignerItem,
 		ChainIDItem,
@@ -144,11 +134,11 @@ func SettingsUI() {
 		case rpcui.SendEndpointItem.Label:
 			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
 		case GasLimitOffsetItem.Label:
-			InputUint(GasLimitOffsetItem, 64)
-			state.SetGasLimitOffset(GasLimitOffsetItem.Value.(uint64))
+			InputUint64(GasLimitOffsetItem)
+			state.SetGasLimitOffset(GasLimitOffsetItem.Value)
 		case DEBUGItem.Label:
 			state.DEBUG = !state.DEBUG
-			DEBUGItem.DisplayValueString = fmt.Sprint(state.DEBUG)
+			DEBUGItem.Value = state.DEBUG
 		case Back.Label:
 			return
 		case AddressBooksItem.Label:
@@ -160,9 +150,9 @@ func SettingsUI() {
 }
 
 func AddressBooksUI() {
-	items := []*Item{}
+	items := []MenuItem{}
 	for _, ab := range state.GetAddressBooks() {
-		items = append(items, &Item{Label: ab})
+		items = append(items, &Item[struct{}]{Label: ab})
 	}
 	items = append(items, Back)
 	prompt := promptui.Select{

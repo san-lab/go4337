@@ -5,22 +5,23 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/ui/common"
 )
 
-var AddSignerItem = &common.Item{Label: "Add Signer", Details: "Add a new signer"}
-var RemoveSignerItem = &common.Item{Label: "Remove Signer", Details: "Remove a signer"}
+var AddSignerItem = &common.Item[struct{}]{Label: "Add Signer", Details: "Add a new signer"}
+var RemoveSignerItem = &common.Item[struct{}]{Label: "Remove Signer", Details: "Remove a signer"}
 
-func SignerUI(signerItem *common.Item) {
+func SignerUI(signerItem *common.Item[signer.Signer]) {
 	selectToRemove := false
 
 	for {
 		l := len(state.GetSigners())
-		items := []*common.Item{}
+		items := []common.MenuItem{}
 		for _, sn := range state.GetSigners() {
 			s := state.GetSigner(sn)
-			items = append(items, &common.Item{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type()})
+			items = append(items, &common.Item[signer.Signer]{Label: fmt.Sprintf("%-20s%s", s.Name()+":", s.String()), Details: "Signer of type " + s.Type(), Value: s})
 		}
 		if !selectToRemove {
 			items = append(items, AddSignerItem)
@@ -59,7 +60,6 @@ func SignerUI(signerItem *common.Item) {
 				}
 
 				signerItem.Value = state.GetSigner(name)
-				//SignerItem.DisplayValue = state.State.Signers[i].String()
 				return
 			}
 			fmt.Println("Unreachable reached:", sel)
@@ -69,9 +69,9 @@ func SignerUI(signerItem *common.Item) {
 }
 
 func AddSignerUI() {
-	items := []*common.Item{}
-	for k, _ := range state.SignerTypes {
-		items = append(items, &common.Item{Label: k, Details: "Add a new signer of type " + k})
+	items := []common.MenuItem{}
+	for k := range state.SignerTypes {
+		items = append(items, &common.Item[struct{}]{Label: k, Details: "Add a new signer of type " + k})
 	}
 	items = append(items, common.Back)
 	for {

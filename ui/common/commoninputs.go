@@ -18,7 +18,7 @@ import (
 	"github.com/san-lab/go4337/state"
 )
 
-func InputBytes(item *Item, bytecount int) error {
+func InputBytes(item *Item[[]byte], bytecount int) error {
 	bytelab := fmt.Sprint(bytecount)
 	if bytecount < 0 {
 		bytelab = ""
@@ -26,10 +26,7 @@ func InputBytes(item *Item, bytecount int) error {
 	label := fmt.Sprintf("%s (bytes%s)", item.Label, bytelab)
 	defval := ""
 	if item.Value != nil {
-		defbytes, ok := item.Value.([]byte)
-		if ok {
-			defval = hex.EncodeToString(defbytes)
-		}
+		defval = hex.EncodeToString(item.Value)
 	}
 
 	prompt := promptui.Prompt{
@@ -40,49 +37,15 @@ func InputBytes(item *Item, bytecount int) error {
 	if err != nil {
 		return err
 	}
-	thebytes := common.FromHex(s)
-	if bytecount > 0 && len(thebytes) > bytecount {
-		return fmt.Errorf("expected %d bytes, got %d", bytecount, len(thebytes))
-	}
 	ibt := common.FromHex(s)
-	if bytecount < 0 {
-
-		item.Value = ibt
-		//item.DisplayValue = "0x" + hex.EncodeToString(ibt)
-		return nil
-	}
-	if len(ibt) > bytecount {
+	if bytecount > 0 && len(ibt) > bytecount {
 		return fmt.Errorf("expected %d bytes, got %d", bytecount, len(ibt))
 	}
-	switch bytecount {
-	case 4:
-		fbt := [4]byte{}
-		copy(fbt[4-len(ibt):], ibt)
-		item.Value = fbt
-		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
-	case 8:
-		fbt := [8]byte{}
-		copy(fbt[8-len(ibt):], ibt)
-		item.Value = fbt
-		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
-	case 16:
-		fbt := [16]byte{}
-		copy(fbt[16-len(ibt):], ibt)
-		item.Value = fbt
-		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
-	case 32:
-		fbt := [32]byte{}
-		copy(fbt[32-len(ibt):], ibt)
-		item.Value = fbt
-		//item.DisplayValue = "0x" + hex.EncodeToString(fbt[:])
-	default:
-		return fmt.Errorf("unsupported byte count: %d", bytecount)
-	}
-
+	item.Value = ibt
 	return nil
 }
 
-func InputBigInt(item *Item) (*big.Int, error) {
+func InputBigInt(item *Item[*big.Int]) (*big.Int, error) {
 
 	prompt := promptui.Prompt{
 		Label: item.Label,
@@ -100,25 +63,26 @@ func InputBigInt(item *Item) (*big.Int, error) {
 	return res, nil
 }
 
-func InputUint256(item *Item) (*uint256.Int, error) {
-	_, err := InputBigInt(item)
+func InputUint256(item *Item[*uint256.Int]) (*uint256.Int, error) {
+	bigItem := &Item[*big.Int]{Label: item.Label}
+	_, err := InputBigInt(bigItem)
 	if err != nil {
 		return nil, err
 	}
-	if item.Value == nil {
+	if bigItem.Value == nil {
 		return nil, fmt.Errorf("error parsing nil big int")
 	}
-	bigint, ok := item.Value.(*big.Int)
-	if !ok {
-		return nil, fmt.Errorf("error casting big int")
-	}
-	uint256int, _ := uint256.FromBig(bigint)
+	uint256int, _ := uint256.FromBig(bigItem.Value)
 	item.Value = uint256int
 	return uint256int, nil
-
 }
 
-func InputUint(item *Item, size int) (uint64, error) {
+// InputUint64 is the primary helper for uint64 items.
+func InputUint64(item *Item[uint64]) (uint64, error) {
+	return InputUint(item, 64)
+}
+
+func InputUint(item *Item[uint64], size int) (uint64, error) {
 	prompt := promptui.Prompt{
 		Label:   item.Label,
 		Default: fmt.Sprint(item.Value),
@@ -127,40 +91,16 @@ func InputUint(item *Item, size int) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	/*
-		base := 10
-		if strings.HasPrefix(s, "0x") {
-			s = s[2:]
-			base = 16
-		}
-		u, err := strconv.ParseUint(s, base, size)
-		if err != nil {
-			return 0, err
-		}
-	*/
 	big, err := ParseBigInt(s)
 	if err != nil {
 		return 0, err
 	}
 	u := big.Uint64()
-	switch size {
-	case 8:
-		item.Value = uint8(u)
-	case 16:
-		item.Value = uint16(u)
-	case 32:
-		item.Value = uint32(u)
-	case 48, 64:
-		item.Value = u
-	default:
-		return 0, fmt.Errorf("unsupported size: %d", size)
-
-	}
-
+	item.Value = u
 	return u, nil
 }
 
-func InputNewStringUI(item *Item) error {
+func InputNewStringUI(item *Item[string]) error {
 	prompt := promptui.Prompt{
 		Label: item.Label,
 	}
@@ -169,7 +109,6 @@ func InputNewStringUI(item *Item) error {
 		return err
 	}
 	item.Value = s
-	//item.DisplayValue = s
 	return nil
 }
 
@@ -230,7 +169,7 @@ func InputNewAddressUI(label string) (string, *common.Address, error) {
 	return name, &addr, nil
 }
 
-func InputBool(item *Item) error {
+func InputBool(item *Item[bool]) error {
 	prompt := promptui.Select{
 		Label: item.Label,
 		Items: []string{"true", "false"},
@@ -240,7 +179,6 @@ func InputBool(item *Item) error {
 		return err
 	}
 	item.Value = sel == "true"
-	//item.DisplayValue() = sel
 	return nil
 }
 
@@ -308,7 +246,7 @@ func ParseBigInt(input string) (*big.Int, error) {
 	return res, nil
 }
 
-func InputFloatUI(it *Item) error {
+func InputFloatUI(it *Item[float64]) error {
 	prompt := promptui.Prompt{
 		Label: it.Label,
 	}

@@ -10,18 +10,18 @@ import (
 	"github.com/san-lab/go4337/ui/common"
 )
 
-var SendEndpointItem = &common.Item{Label: "Blockchain RPC Endpoint"}
+var SendEndpointItem = &common.Item[*state.RPCEndpoint]{Label: "Blockchain RPC Endpoint"}
 
 // Maintain a map ChainID -> RPC Endpoint
-func RPCEndpointsUI(it *common.Item) {
+func RPCEndpointsUI(it *common.Item[*state.RPCEndpoint]) {
 	deleting := false
-	AddRPCEnpointItem := &common.Item{Label: "Add RPC Endpoint", Details: "Add a new RPC Endpoint"}
-	RemoveRPCEnpointItem := &common.Item{Label: "Remove RPC Endpoint", Details: "Select an RPC Endpoint to remove"}
+	AddRPCEnpointItem := &common.Item[struct{}]{Label: "Add RPC Endpoint", Details: "Add a new RPC Endpoint"}
+	RemoveRPCEnpointItem := &common.Item[struct{}]{Label: "Remove RPC Endpoint", Details: "Select an RPC Endpoint to remove"}
 
 	for {
-		items := []*common.Item{}
+		items := []common.MenuItem{}
 		for _, rpc := range state.GetRPCEndpoints() {
-			items = append(items, &common.Item{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId), Value: rpc.URL})
+			items = append(items, &common.Item[string]{Label: fmt.Sprintf("%s/%v", rpc.Name, rpc.ChainId), Value: rpc.URL})
 		}
 		if !deleting {
 			items = append(items, AddRPCEnpointItem, RemoveRPCEnpointItem)
@@ -65,39 +65,35 @@ func RPCEndpointsUI(it *common.Item) {
 }
 
 func AddRPCEnpointUI() {
-	tItem := &common.Item{Label: "RPC Endpoint Name", Details: "Enter a name for the RPC Endpoint"}
-	err := common.InputNewStringUI(tItem)
+	nameItem := &common.Item[string]{Label: "RPC Endpoint Name", Details: "Enter a name for the RPC Endpoint"}
+	err := common.InputNewStringUI(nameItem)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	name, ok := tItem.Value.(string)
-	if !ok {
+	name := nameItem.Value
+	if name == "" {
 		fmt.Println("Invalid value")
 		return
 	}
-	tItem.Label = "RPC Endpoint URL"
-	tItem.Details = "Enter the URL for the RPC Endpoint"
-	tItem.Value = ""
-	err = common.InputNewStringUI(tItem)
+	urlItem := &common.Item[string]{Label: "RPC Endpoint URL", Details: "Enter the URL for the RPC Endpoint"}
+	err = common.InputNewStringUI(urlItem)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	url, ok := tItem.Value.(string)
-	if !ok {
+	url := urlItem.Value
+	if url == "" {
 		fmt.Println("Invalid value")
 		return
 	}
-	tItem.Label = "Chain ID"
-	tItem.Details = "Enter the Chain ID for the RPC Endpoint"
-	tItem.Value = nil
-	_, err = common.InputBigInt(tItem)
+	chainIdItem := &common.Item[*big.Int]{Label: "Chain ID", Details: "Enter the Chain ID for the RPC Endpoint"}
+	_, err = common.InputBigInt(chainIdItem)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	chainId, ok := tItem.Value.(*big.Int)
+	chainId := chainIdItem.Value
 
 	state.AddRPCEndpoint(name, url, chainId)
 

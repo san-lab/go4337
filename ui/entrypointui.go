@@ -10,14 +10,14 @@ import (
 )
 
 func EntryPointUI() {
-	var EntryPointV6Item = &Item{Label: "V6 at " + entrypoint.EntryPointAddressV6,
+	var EntryPointV6Item = &Item[struct{}]{Label: "V6 at " + entrypoint.EntryPointAddressV6,
 		Details: fmt.Sprintf("Use the standard V6 entrypoint at: %s", entrypoint.E6Address)}
-	var EntryPointV7Item = &Item{Label: "V7 at " + entrypoint.EntryPointAddressV7,
+	var EntryPointV7Item = &Item[struct{}]{Label: "V7 at " + entrypoint.EntryPointAddressV7,
 		Details: fmt.Sprintf("Use the standard V7 entrypoint at: %s", entrypoint.E7Address)}
-	var EntryPointV8Item = &Item{Label: "V8 at " + entrypoint.EntryPointAddressV8,
+	var EntryPointV8Item = &Item[struct{}]{Label: "V8 at " + entrypoint.EntryPointAddressV8,
 		Details: fmt.Sprintf("Use the standard V8 entrypoint at: %s", entrypoint.E8Address)}
-	var CustomEntryPointItem = &Item{Label: "Custom", Details: "Use a custom entrypoint"}
-	items := []*Item{
+	var CustomEntryPointItem = &Item[struct{}]{Label: "Custom", Details: "Use a custom entrypoint"}
+	items := []MenuItem{
 		EntryPointV6Item,
 		EntryPointV7Item,
 		EntryPointV8Item,
@@ -66,9 +66,9 @@ func CustomEntryPointUI() {
 	}
 
 	//Select v6 or v7
-	CustomV6Item := &Item{Label: "V6", Details: "Use the V6 spec"}
-	CustomV7Item := &Item{Label: "V7", Details: "Use the V7 spec"}
-	items := []*Item{
+	CustomV6Item := &Item[struct{}]{Label: "V6", Details: "Use the V6 spec"}
+	CustomV7Item := &Item[struct{}]{Label: "V7", Details: "Use the V7 spec"}
+	items := []MenuItem{
 		CustomV6Item, CustomV7Item, Back,
 	}
 	// Create a new select prompt

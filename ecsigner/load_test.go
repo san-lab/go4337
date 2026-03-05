@@ -29,7 +29,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDisplayValue(t *testing.T) {
-	it := &common.Item{Label: "Input new ECDSA private key in HEX"}
+	it := &common.Item[any]{Label: "Input new ECDSA private key in HEX"}
 
 	it.Value = ECSigner{SignerAddress: ecommon.Address{0x01}, SignerKey: &ecdsa.PrivateKey{}}
 	fmt.Println(it.DisplayValue())

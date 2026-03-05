@@ -15,20 +15,26 @@ import (
 	. "github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/ui/nonceui"
 	"github.com/san-lab/go4337/ui/signui"
+	"github.com/san-lab/go4337/userop"
 )
 
-var SetCodeChainIDItem = &Item{Label: "Chain ID"}
+var SetCodeChainIDItem = &Item[*big.Int]{Label: "Chain ID"}
 
-var SetCodeNonceItem = &Item{Label: "Nonce\t", Details: "Set auth nonce", Value: uint64(0)}
-var SetCodeGasTipCapItem = &Item{Label: "GasTipCap/MaxPriorityFee"}
-var SetCodeGasFeeCapItem = &Item{Label: "GasFeeCap/MaxFeePerGas"}
-var SetCodeGasItem = &Item{Label: "Gas"}
-var SetCodeToItem = &Item{Label: "To"}
-var SetCodeValueItem = &Item{Label: "Value"}
-var SetCodeDataItem = &Item{Label: "Data"}
-var SetCodeAccessListItem = &Item{Label: "Access List"}
-var SetCodeAuthListItem = &Item{Label: "Authorization List"}
-var SetCodeSignItem = &Item{Label: "Sign"}
+var SetCodeNonceItem = &Item[*userop.U256]{Label: "Nonce\t", Details: "Set auth nonce", Value: (*userop.U256)(new(big.Int))}
+var SetCodeGasTipCapItem = &Item[*big.Int]{Label: "GasTipCap/MaxPriorityFee"}
+var SetCodeGasFeeCapItem = &Item[*uint256.Int]{Label: "GasFeeCap/MaxFeePerGas"}
+var SetCodeGasItem = &Item[uint64]{Label: "Gas"}
+var SetCodeToItem = &Item[string]{Label: "To"}
+var SetCodeValueItem = &Item[*big.Int]{Label: "Value"}
+var SetCodeDataItem = &Item[[]byte]{Label: "Data"}
+var SetCodeAccessListItem = &Item[any]{Label: "Access List"}
+var SetCodeAuthListItem = &Item[any]{Label: "Authorization List", Display: func(v any) string {
+	if al, ok := v.([]types.SetCodeAuthorization); ok {
+		return fmt.Sprintf("[%d] Authorizations", len(al))
+	}
+	return "[]"
+}}
+var SetCodeSignItem = &Item[struct{}]{Label: "Sign"}
 
 func SetAuthTxUI(satx *types.SetCodeTx) {
 	if satx == nil {
@@ -38,7 +44,7 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 		authToItems(satx)
 	}
 
-	items := []*Item{
+	items := []MenuItem{
 		SetCodeChainIDItem,
 		SetCodeSignerItem,
 		SetCodeNonceItem,
@@ -57,8 +63,6 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 	prompt.Templates = ItemTemplate
 	prompt.Size = 14
 	for {
-		SetCodeAuthListItem.DisplayValueString = fmt.Sprintf("[%d] Authorizations", len(satx.AuthList))
-
 		_, sel, err := prompt.Run()
 		if err != nil {
 			return
@@ -69,26 +73,21 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 		case SetCodeChainIDItem.Label:
 			InputBigInt(SetCodeChainIDItem)
 			if SetCodeChainIDItem.Value != nil {
-				chid, _ := uint256.FromBig(SetCodeChainIDItem.Value.(*big.Int))
+				chid, _ := uint256.FromBig(SetCodeChainIDItem.Value)
 				satx.ChainID = chid
 
 			}
 		case SetCodeSignerItem.Label:
 			signui.SignerUI(SetCodeSignerItem)
 		case SetCodeNonceItem.Label:
-			/*
-				InputUint(SetCodeNonceItem, 64)
-				if SetCodeNonceItem.Value != nil {
-					satx.Nonce = SetCodeNonceItem.Value.(uint64)
-				}
-			*/
-
 			nonceui.InputNonceUI(SetCodeNonceItem, SetCodeSignerItem, true)
-			satx.Nonce = SetCodeNonceItem.Value.(uint64)
+			if SetCodeNonceItem.Value != nil {
+				satx.Nonce = (*big.Int)(SetCodeNonceItem.Value).Uint64()
+			}
 		case SetCodeGasTipCapItem.Label:
 			InputBigInt(SetCodeGasTipCapItem)
 			if SetCodeGasTipCapItem.Value != nil {
-				gtc, _ := uint256.FromBig(SetCodeGasTipCapItem.Value.(*big.Int))
+				gtc, _ := uint256.FromBig(SetCodeGasTipCapItem.Value)
 
 				satx.GasTipCap = gtc
 
@@ -96,14 +95,12 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 		case SetCodeGasFeeCapItem.Label:
 			InputUint256(SetCodeGasFeeCapItem)
 			if SetCodeGasFeeCapItem.Value != nil {
-				satx.GasFeeCap = SetCodeGasFeeCapItem.Value.(*uint256.Int)
+				satx.GasFeeCap = SetCodeGasFeeCapItem.Value
 
 			}
 		case SetCodeGasItem.Label:
 			InputUint(SetCodeGasItem, 64)
-			if SetCodeGasItem.Value != nil {
-				satx.Gas = SetCodeGasItem.Value.(uint64)
-			}
+			satx.Gas = SetCodeGasItem.Value
 		case SetCodeToItem.Label:
 			_, addr, ok := AddressFromBookUI("To Address")
 			if ok {
@@ -113,7 +110,7 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 		case SetCodeValueItem.Label:
 			InputBigInt(SetCodeValueItem)
 			if SetCodeValueItem.Value != nil {
-				val, _ := uint256.FromBig(SetCodeValueItem.Value.(*big.Int))
+				val, _ := uint256.FromBig(SetCodeValueItem.Value)
 
 				satx.Value = val
 
@@ -138,35 +135,50 @@ func SetAuthTxUI(satx *types.SetCodeTx) {
 }
 
 func authToItems(satx *types.SetCodeTx) {
-	SetCodeChainIDItem.Value = satx.ChainID
-	SetCodeNonceItem.Value = satx.Nonce
-	SetCodeGasTipCapItem.Value = satx.GasTipCap
+	SetCodeChainIDItem.Value = satx.ChainID.ToBig()
+	SetCodeNonceItem.Value = (*userop.U256)(big.NewInt(int64(satx.Nonce)))
+	SetCodeGasTipCapItem.Value = satx.GasTipCap.ToBig()
 	SetCodeGasFeeCapItem.Value = satx.GasFeeCap
 	SetCodeGasItem.Value = satx.Gas
-	SetCodeToItem.Value = satx.To
-	SetCodeValueItem.Value = satx.Value
+	SetCodeToItem.Value = satx.To.String()
+	SetCodeValueItem.Value = satx.Value.ToBig()
 	SetCodeDataItem.Value = satx.Data
 	SetCodeAccessListItem.Value = satx.AccessList
 	SetCodeAuthListItem.Value = satx.AuthList
-	SetCodeSignItem.DisplayValueString = RSVtoString(satx.R, satx.S, satx.V)
+	SetCodeSignItem.Display = func(_ struct{}) string { return RSVtoString(satx.R, satx.S, satx.V) }
 }
 
 func itemsToAuth(satx *types.SetCodeTx) {
-	satx.ChainID = SetCodeChainIDItem.Value.(*uint256.Int)
-	satx.Nonce = SetCodeNonceItem.Value.(uint64)
-	satx.GasTipCap = SetCodeGasTipCapItem.Value.(*uint256.Int)
-	satx.GasFeeCap = SetCodeGasFeeCapItem.Value.(*uint256.Int)
-	satx.Gas = SetCodeGasItem.Value.(uint64)
-	satx.To = SetCodeToItem.Value.(common.Address)
-	satx.Value = SetCodeValueItem.Value.(*uint256.Int)
-	satx.Data = SetCodeDataItem.Value.([]byte)
-	satx.AccessList = SetCodeAccessListItem.Value.(types.AccessList)
-	satx.AuthList = SetCodeAuthListItem.Value.([]types.SetCodeAuthorization)
+	if SetCodeChainIDItem.Value != nil {
+		chid, _ := uint256.FromBig(SetCodeChainIDItem.Value)
+		satx.ChainID = chid
+	}
+	if SetCodeNonceItem.Value != nil {
+		satx.Nonce = (*big.Int)(SetCodeNonceItem.Value).Uint64()
+	}
+	if SetCodeGasTipCapItem.Value != nil {
+		gtc, _ := uint256.FromBig(SetCodeGasTipCapItem.Value)
+		satx.GasTipCap = gtc
+	}
+	satx.GasFeeCap = SetCodeGasFeeCapItem.Value
+	satx.Gas = SetCodeGasItem.Value
+	satx.To = common.HexToAddress(SetCodeToItem.Value)
+	if SetCodeValueItem.Value != nil {
+		val, _ := uint256.FromBig(SetCodeValueItem.Value)
+		satx.Value = val
+	}
+	satx.Data = SetCodeDataItem.Value
+	if al, ok := SetCodeAccessListItem.Value.(types.AccessList); ok {
+		satx.AccessList = al
+	}
+	if al, ok := SetCodeAuthListItem.Value.([]types.SetCodeAuthorization); ok {
+		satx.AuthList = al
+	}
 }
 
-var AddAuthItem = &Item{Label: "Add Authorization"}
-var RemoveAuthItem = &Item{Label: "Remove Authorization"}
-var AuthImportItem = &Item{Label: "Import Authorization", Details: "Import the authorization from hex/rlp"}
+var AddAuthItem = &Item[struct{}]{Label: "Add Authorization"}
+var RemoveAuthItem = &Item[struct{}]{Label: "Remove Authorization"}
+var AuthImportItem = &Item[struct{}]{Label: "Import Authorization", Details: "Import the authorization from hex/rlp"}
 
 func AuthListUI(satx *types.SetCodeTx) {
 	if satx == nil {
@@ -179,12 +191,13 @@ func AuthListUI(satx *types.SetCodeTx) {
 	spr.Templates = ItemTemplate
 
 	for {
-		authitems := []*Item{}
+		authitems := []MenuItem{}
 		for _, a := range satx.AuthList {
-			authitems = append(authitems, &Item{
-				Label:              fmt.Sprintf("%s_%d_%d", a.Address.Hex(), a.ChainID.Uint64(), a.Nonce),
-				Value:              a,
-				DisplayValueString: AuthorityString(&a),
+			aCopy := a
+			authitems = append(authitems, &Item[types.SetCodeAuthorization]{
+				Label:   fmt.Sprintf("%s_%d_%d", a.Address.Hex(), a.ChainID.Uint64(), a.Nonce),
+				Value:   aCopy,
+				Display: func(v types.SetCodeAuthorization) string { return AuthorityString(&v) },
 			})
 		}
 		if !isRemoving {
@@ -208,14 +221,14 @@ func AuthListUI(satx *types.SetCodeTx) {
 			}
 		case AuthImportItem.Label:
 			auth := &types.SetCodeAuthorization{}
-			it := &Item{Label: "Input hex/rlp of the authorization"}
+			it := &Item[[]byte]{Label: "Input hex/rlp of the authorization"}
 			err := InputBytes(it, -1)
 			if err != nil {
 				fmt.Println("Error importing authorization:", err)
 				continue
 			}
 			if it.Value != nil {
-				err = rlp.DecodeBytes(it.Value.([]byte), auth)
+				err = rlp.DecodeBytes(it.Value, auth)
 				if err != nil {
 					fmt.Println("Error importing authorization:", err)
 					continue
@@ -245,7 +258,7 @@ func AuthListUI(satx *types.SetCodeTx) {
 
 }
 
-var SetCodeSignerItem = &Item{Label: "SetCode Signer"}
+var SetCodeSignerItem = &Item[signer.Signer]{Label: "SetCode Signer"}
 
 func SignSetCodeUI(satx *types.SetCodeTx) {
 	if satx == nil {
@@ -253,7 +266,7 @@ func SignSetCodeUI(satx *types.SetCodeTx) {
 		return
 	}
 
-	spr := promptui.Select{Items: []*Item{SetCodeSignerItem, SetCodeSignItem, Back}, Label: "Select an item"}
+	spr := promptui.Select{Items: []MenuItem{SetCodeSignerItem, SetCodeSignItem, Back}, Label: "Select an item"}
 	spr.Templates = ItemTemplate
 	for {
 		_, sel, err := spr.Run()
@@ -273,12 +286,7 @@ func SignSetCodeUI(satx *types.SetCodeTx) {
 				fmt.Println("No signer selected")
 				continue
 			}
-			signer, ok := signerV.(signer.Signer)
-			if !ok {
-				fmt.Println("Invalid signer type")
-				continue
-			}
-			nstx, err := types.SignNewTx(signer.GetKey().(*ecdsa.PrivateKey), types.NewPragueSigner(satx.ChainID.ToBig()), satx)
+			nstx, err := types.SignNewTx(signerV.GetKey().(*ecdsa.PrivateKey), types.NewPragueSigner(satx.ChainID.ToBig()), satx)
 			if err != nil {
 				fmt.Println("Error signing transaction:", err)
 				continue
@@ -287,7 +295,7 @@ func SignSetCodeUI(satx *types.SetCodeTx) {
 			satx.V, _ = uint256.FromBig(v)
 			satx.R, _ = uint256.FromBig(r)
 			satx.S, _ = uint256.FromBig(s)
-			SetCodeSignItem.DisplayValueString = RSVtoString(satx.R, satx.S, satx.V)
+			SetCodeSignItem.Display = func(_ struct{}) string { return RSVtoString(satx.R, satx.S, satx.V) }
 			return
 		}
 

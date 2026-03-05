@@ -13,25 +13,34 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-type Item struct {
-	Label              string
-	Value              interface{}
-	Details            string
-	DisplayValueString string //could be a function, but I am lazy
+// MenuItem is the interface for all menu items — used for heterogeneous slices passed to promptui.
+type MenuItem interface {
+	fmt.Stringer      // String() returns Label — used by promptui and GetItem
+	DisplayValue() string
+	LabColon() string
 }
 
-func (i *Item) LabColon() string {
+type Item[T any] struct {
+	Label   string
+	Value   T
+	Details string
+	Display func(T) string // replaces DisplayValueString string
+}
+
+func (i *Item[T]) String() string { return i.Label }
+
+func (i *Item[T]) LabColon() string {
 	return fmt.Sprintf("%s\t", i.Label)
 }
 
-func (i *Item) DisplayValue() string {
+func (i *Item[T]) DisplayValue() string {
 	if i == nil {
 		return ""
 	}
-	if i.DisplayValueString != "" {
-		return ShortString(i.DisplayValueString, 72)
+	if i.Display != nil {
+		return i.Display(i.Value)
 	}
-	return ToDisplayString(i.Value)
+	return ToDisplayString(any(i.Value))
 }
 
 func ToDisplayString(v any) string {
@@ -75,7 +84,8 @@ func ToDisplayString(v any) string {
 		return ShortString((*str).String(), 50)
 	}
 
-	if reflect.ValueOf(v).IsZero() {
+	rv := reflect.ValueOf(v)
+	if rv.IsZero() {
 		if reflect.TypeOf(v).ConvertibleTo(reflect.TypeOf(0)) {
 			return "0"
 		}
@@ -118,10 +128,6 @@ func ShortString(data string, l int) string {
 	return fmt.Sprintf("%s...%s", data[:l/2], data[len(data)-l/2:])
 }
 
-func (i *Item) String() string {
-	return i.Label
-}
-
 const unicorn = "\U0001F984"
 
 const (
@@ -129,11 +135,11 @@ const (
 	BACK = "BACK"
 )
 
-// Rewrite the above as variable instantiation witt OK=&Item{Label: "OK"} pattern
-var OK = &Item{Label: "OK", Details: "Confirm and proceed"}
-var Back = &Item{Label: BACK, Details: "Go back to previous menu"}
-var Exit = &Item{Label: EXIT, Details: "Exit the program"}
-var Set = &Item{Label: "Set", Details: "Set the value"}
+// Sentinel items — no meaningful value
+var OK = &Item[struct{}]{Label: "OK", Details: "Confirm and proceed"}
+var Back = &Item[struct{}]{Label: BACK, Details: "Go back to previous menu"}
+var Exit = &Item[struct{}]{Label: EXIT, Details: "Exit the program"}
+var Set = &Item[struct{}]{Label: "Set", Details: "Set the value"}
 
 var ItemTemplate = &promptui.SelectTemplates{
 	Label:    "{{ . | bold | cyan}}",
@@ -143,18 +149,39 @@ var ItemTemplate = &promptui.SelectTemplates{
 	Details:  "{{ .Details | faint }}",
 }
 
-func GetValue(label string, items []*Item) (interface{}, bool) {
-	it, ok := GetItem(label, items)
+func GetValue(label string, items []MenuItem) (any, bool) {
+	i, ok := GetItem(label, items)
 	if !ok {
 		return nil, false
 	}
-	return it.Value, true
+	// Use reflection to get Value field from concrete type
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	f := v.FieldByName("Value")
+	if !f.IsValid() {
+		return nil, false
+	}
+	return f.Interface(), true
 }
 
-func GetItem(label string, items []*Item) (*Item, bool) {
+func GetItem(label string, items []MenuItem) (MenuItem, bool) {
 	for _, i := range items {
-		if i.Label == label {
+		if i.String() == label {
 			return i, true
+		}
+	}
+	return nil, false
+}
+
+// GetTypedItem finds and type-asserts in one step — used for toggle bool items etc.
+func GetTypedItem[T any](label string, items []MenuItem) (*Item[T], bool) {
+	for _, i := range items {
+		if i.String() == label {
+			if typed, ok := i.(*Item[T]); ok {
+				return typed, true
+			}
 		}
 	}
 	return nil, false

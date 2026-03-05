@@ -3,7 +3,6 @@ package ui
 import (
 	"encoding/hex"
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
@@ -11,14 +10,14 @@ import (
 	"github.com/san-lab/go4337/userop"
 )
 
-var RequiredPrefundItem = &Item{Label: "Required Prefund", Details: "Get the required prefund for the user operation"}
+var RequiredPrefundItem = &Item[struct{}]{Label: "Required Prefund", Details: "Get the required prefund for the user operation"}
 
-var PaymasterV7HashItem = &Item{Label: "Paymaster V7 Hash", Details: "Get the hash as cheked in VerifyingPaymasterV7"}
+var PaymasterV7HashItem = &Item[struct{}]{Label: "Paymaster V7 Hash", Details: "Get the hash as cheked in VerifyingPaymasterV7"}
 
 func UtilsV7UI(usop *userop.UserOperation) {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{PreHashV7Item, HashV7Item, PaymasterV7HashItem, RequiredPrefundItem, Back},
+		Items:     []MenuItem{PreHashV7Item, HashV7Item, PaymasterV7HashItem, RequiredPrefundItem, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -41,8 +40,8 @@ func UtilsV7UI(usop *userop.UserOperation) {
 			}
 
 		case HashV7Item.Label:
-			ChainID := ChainIDItem.Value.(*big.Int)
-			EntryPoint := EntryPointItem.Value.(common.Address)
+			ChainID := ChainIDItem.Value
+			EntryPoint := EntryPointItem.Value
 			var hash [32]byte
 			hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
 			if err != nil {
@@ -53,19 +52,13 @@ func UtilsV7UI(usop *userop.UserOperation) {
 
 			return
 		case PaymasterV7HashItem.Label:
-			ChainID := ChainIDItem.Value.(*big.Int)
-			vafterItem := &Item{Label: "Valid After", Details: "Valid After"}
-			a, err := InputUint(vafterItem, 48)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			vuntilItem := &Item{Label: "Valid Until", Details: "Valid Until"}
-			u, err := InputUint(vuntilItem, 48)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			ChainID := ChainIDItem.Value
+			vafterItem := &Item[uint64]{Label: "Valid After", Details: "Valid After"}
+			InputUint64(vafterItem)
+			a := vafterItem.Value
+			vuntilItem := &Item[uint64]{Label: "Valid Until", Details: "Valid Until"}
+			InputUint64(vuntilItem)
+			u := vuntilItem.Value
 
 			var hash []byte
 			bts, hash, err := userop.GetPaymasterV7Hash(usop.Pack(), ChainID, a, u)
@@ -92,7 +85,7 @@ func UtilsV7UI(usop *userop.UserOperation) {
 func UtilsV6UI(usop *userop.UserOperation) {
 	prompt := promptui.Select{
 		Label:     "Select an option",
-		Items:     []*Item{PreHashV6Item, HashV6Item, RequiredPrefundItem, Back},
+		Items:     []MenuItem{PreHashV6Item, HashV6Item, RequiredPrefundItem, Back},
 		Templates: ItemTemplate,
 	}
 
@@ -115,8 +108,8 @@ func UtilsV6UI(usop *userop.UserOperation) {
 			}
 
 		case HashV6Item.Label:
-			ChainID := ChainIDItem.Value.(*big.Int)
-			EntryPoint := EntryPointItem.Value.(common.Address)
+			ChainID := ChainIDItem.Value
+			EntryPoint := EntryPointItem.Value
 			var hash [32]byte
 			hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
 			if err != nil {
@@ -134,3 +127,6 @@ func UtilsV6UI(usop *userop.UserOperation) {
 	}
 
 }
+
+// keep common import used
+var _ common.Address

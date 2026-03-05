@@ -8,17 +8,17 @@ import (
 	"github.com/san-lab/go4337/state"
 )
 
-var AddDictEntryItem = &Item{Label: "Add an Entry", Details: "Add a new dictionary entry"}
-var RemoveDictEntryItem = &Item{Label: "Remove an Entry", Details: "Remove a dictionary entry"}
-var RenameDictEntryItem = &Item{Label: "Rename an Entry", Details: "Rename a dictionary entry"}
-var FromAnotherDictItem = &Item{Label: "From Another Dictionary", Details: "Select a dictionary to choose from"}
+var AddDictEntryItem = &Item[struct{}]{Label: "Add an Entry", Details: "Add a new dictionary entry"}
+var RemoveDictEntryItem = &Item[struct{}]{Label: "Remove an Entry", Details: "Remove a dictionary entry"}
+var RenameDictEntryItem = &Item[struct{}]{Label: "Rename an Entry", Details: "Rename a dictionary entry"}
+var FromAnotherDictItem = &Item[struct{}]{Label: "From Another Dictionary", Details: "Select a dictionary to choose from"}
 
 func StringFromDictionaryUI(dictionary string) (dictname, name, value string, success bool) {
 	selectToRemove := false
 	selectToRename := false
 
 	for {
-		items := []*Item{}
+		items := []MenuItem{}
 		dict := state.GetDictionary(dictionary)
 		//sort the keys
 		keys := make([]string, 0, len(dict))
@@ -27,7 +27,7 @@ func StringFromDictionaryUI(dictionary string) (dictname, name, value string, su
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			items = append(items, &Item{Label: k, Value: dict[k]})
+			items = append(items, &Item[string]{Label: k, Value: dict[k]})
 		}
 		if !selectToRemove {
 
@@ -69,12 +69,12 @@ func StringFromDictionaryUI(dictionary string) (dictname, name, value string, su
 				continue
 			}
 			if selectToRename {
-				RenameItem := &Item{Label: fmt.Sprintf("New name for >>%s<<", sel)}
+				RenameItem := &Item[string]{Label: fmt.Sprintf("New name for >>%s<<", sel)}
 				err := InputNewStringUI(RenameItem)
 				if err != nil {
 					fmt.Println(err)
 				} else {
-					nname := RenameItem.Value.(string)
+					nname := RenameItem.Value
 					dict[nname] = dict[sel]
 					delete(dict, sel)
 					state.Save()
@@ -89,9 +89,9 @@ func StringFromDictionaryUI(dictionary string) (dictname, name, value string, su
 }
 
 func StringFromAllDictionariesUI(dictionary string) (dictname, name, value string, success bool) {
-	items := []*Item{}
+	items := []MenuItem{}
 	for _, dict := range state.GetDictionaries() {
-		items = append(items, &Item{Label: dict})
+		items = append(items, &Item[struct{}]{Label: dict})
 	}
 	items = append(items, Back)
 	spr := promptui.Select{Label: "Select Dictionary", Items: items, Templates: ItemTemplate, Size: 10}
@@ -110,17 +110,17 @@ func StringFromAllDictionariesUI(dictionary string) (dictname, name, value strin
 
 func AddDictEntryUI(dictionary string) (dictname, name, value string, success bool) {
 	dictname = dictionary
-	it := &Item{Label: "Name of the entry"}
+	it := &Item[string]{Label: "Name of the entry"}
 	err := InputNewStringUI(it)
 	if err == nil {
-		name = it.Value.(string)
+		name = it.Value
 	} else {
 		return
 	}
-	it = &Item{Label: "Value of the entry"}
+	it = &Item[string]{Label: "Value of the entry"}
 	err = InputNewStringUI(it)
 	if err == nil {
-		value = it.Value.(string)
+		value = it.Value
 	} else {
 		return
 	}

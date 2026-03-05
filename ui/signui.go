@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/manifoldco/promptui"
 	"github.com/san-lab/go4337/signer"
 	"github.com/san-lab/go4337/state"
@@ -18,22 +17,24 @@ func init() {
 	ChainIDItem.Value = state.GetChainId()
 }
 
-var ChainIDItem = &Item{Label: "Chain ID", Details: "Set Chain ID"}
-var UtilsV6Item = &Item{Label: "Utils V6", Details: "Various V6 utility functions"}
-var UtilsV7Item = &Item{Label: "Utils V7", Details: "Various V7 utility functions"}
+var ChainIDItem = &Item[*big.Int]{Label: "Chain ID", Details: "Set Chain ID"}
+var UtilsV6Item = &Item[struct{}]{Label: "Utils V6", Details: "Various V6 utility functions"}
+var UtilsV7Item = &Item[struct{}]{Label: "Utils V7", Details: "Various V7 utility functions"}
 
-var HashV7Item = &Item{Label: "Hash_v7", Details: "Get the hash of the user operation with entrypoint and chainid"}
-var HashV6Item = &Item{Label: "Hash_v6", Details: "Get the V6 hash of the user operation with entrypoint and chainid"}
-var PreHashV7Item = &Item{Label: "Pre Hash_v7", Details: "Hash of an encoded user operation"}
-var PreHashV6Item = &Item{Label: "Pre Hash_v6", Details: "Hash of an encoded user operation"}
-var EncodedBytesItem = &Item{Label: "Encoded Bytes", Details: "Encoded bytes of the user operation"}
+var HashV7Item = &Item[struct{}]{Label: "Hash_v7", Details: "Get the hash of the user operation with entrypoint and chainid"}
+var HashV6Item = &Item[struct{}]{Label: "Hash_v6", Details: "Get the V6 hash of the user operation with entrypoint and chainid"}
+var PreHashV7Item = &Item[struct{}]{Label: "Pre Hash_v7", Details: "Hash of an encoded user operation"}
+var PreHashV6Item = &Item[struct{}]{Label: "Pre Hash_v6", Details: "Hash of an encoded user operation"}
+var EncodedBytesItem = &Item[struct{}]{Label: "Encoded Bytes", Details: "Encoded bytes of the user operation"}
+
+// SignerItem is the signer used for signing user operations.
+var SignerItem = &Item[signer.Signer]{Label: "Signer", Details: "Manage Signer settings"}
 
 func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
-	var SignItem = &Item{Label: "Sign", Details: "Sign the user operation"}
+	var SignItem = &Item[struct{}]{Label: "Sign", Details: "Sign the user operation"}
 	prompt := promptui.Select{
-		Label: "Select an option",
-		//Items:     []*Item{ChainIDItem, EntryPointItem, SignerItem, SignItem, PreHashV7Item, PreHashV6Item, HashV7Item, HashV6Item, Back},
-		Items:     []*Item{ChainIDItem, EntryPointItem, SignerItem, SignItem, UtilsV6Item, UtilsV7Item, Back},
+		Label:     "Select an option",
+		Items:     []MenuItem{ChainIDItem, EntryPointItem, SignerItem, SignItem, UtilsV6Item, UtilsV7Item, Back},
 		Templates: ItemTemplate,
 		Size:      10,
 	}
@@ -57,69 +58,18 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			EntryPointUI()
 		case UtilsV6Item.Label:
 			UtilsV6UI(usop)
-
 		case UtilsV7Item.Label:
 			UtilsV7UI(usop)
-
 		case SignerItem.Label:
 			signui.SignerUI(SignerItem)
 		case SignItem.Label:
-			asigner, ok := SignerItem.Value.(signer.Signer)
-			if !ok {
+			asigner := SignerItem.Value
+			if asigner == nil {
 				fmt.Println("Invalid Signer")
 				return
 			}
-			ChainID := ChainIDItem.Value.(*big.Int)
-			EntryPoint := EntryPointItem.Value.(ecommon.Address)
-			/*
-				var hash [32]byte
-				switch EntryPoint.Hex() {
-				case entrypoint.E6Address.Hex():
-					hash, err = userop.GetUserOpHashV6(usop, EntryPoint, ChainID)
-					hash = signer.ToEthSignedMessageHash(hash[:])
-					fmt.Println("Signing using v6 hashes")
-				case entrypoint.E7Address.Hex():
-					hash, err = userop.GetUserOpHashV7(usop.Pack(), EntryPoint, ChainID)
-					hash = signer.ToEthSignedMessageHash(hash[:])
-					fmt.Println("Signing using v7 hashes")
-				case entrypoint.E8Address.Hex():
-					hash, err = userop.GetUserOpHash(usop, EntryPoint, big.NewInt(int64(ChainID)))
-					fmt.Println("Signing using v8 eip712 hash")
-					fmt.Printf("userOpHash: 0x%x\n", hash)
-				default:
-					fmt.Println("Do not know how to sign")
-					err = fmt.Errorf("Unknown Entrypoint: %s", EntryPoint)
-
-				}
-
-				if err != nil {
-					fmt.Println("error hashing:", err)
-					return
-				}
-
-				switch v := asigner.(type) {
-
-				case *ecsigner.ECSigner:
-
-					sig, err = asigner.SignHash(hash[:])
-					if err != nil {
-						fmt.Println("error signing:", err)
-						return
-					}
-					if sig[64] < 27 {
-						sig[64] += 27
-					}
-				case *browsersigner.BrowserSigner:
-					sig, err = asigner.SignEIP712(usop, big.NewInt(int64(ChainID)), EntryPoint)
-					if err != nil {
-						fmt.Println("error signing:", err)
-						return
-					}
-				default:
-					return nil, fmt.Errorf("unknown signer type: %v", v)
-
-				}
-			*/
+			ChainID := ChainIDItem.Value
+			EntryPoint := EntryPointItem.Value
 			sig, err = asigner.SignUserop(usop, ChainID, EntryPoint)
 			if err != nil {
 				fmt.Println("error signing:", err)
@@ -130,21 +80,19 @@ func GetHashUI(usop *userop.UserOperation) (sig []byte, err error) {
 			}
 			usop.Signature = sig
 			SignatureItem.Value = sig
-			//SignatureItem.DisplayValue = ShortHex(sig, 6)
 			SignatureItem.Details = hex.EncodeToString(sig[:])
 			fmt.Println("Signature:", hex.EncodeToString(sig[:]))
 			return
 		}
-
 	}
 }
 
 func SetSignatureUI(userop *userop.UserOperation) (calldata []byte, err error) {
 
-	var SignatureItemDirectItem = &Item{Label: "Input signature as hex", Details: "Input signature directly as hex"}
-	var UseSignerItem = &Item{Label: "Calculate using a Signer", Details: "Set Call Data using ABI"}
+	var SignatureItemDirectItem = &Item[struct{}]{Label: "Input signature as hex", Details: "Input signature directly as hex"}
+	var UseSignerItem = &Item[struct{}]{Label: "Calculate using a Signer", Details: "Set Call Data using ABI"}
 
-	items := []*Item{
+	items := []MenuItem{
 		SignatureItemDirectItem,
 		UseSignerItem,
 		Back,
@@ -165,17 +113,16 @@ func SetSignatureUI(userop *userop.UserOperation) (calldata []byte, err error) {
 		case Back.Label:
 			return
 		case SignatureItemDirectItem.Label:
-			it := &Item{Label: "Input Hex", Details: "Input Hex Data"}
+			it := &Item[[]byte]{Label: "Input Hex", Details: "Input Hex Data"}
 			err := InputBytes(it, -1)
 			if err != nil {
-				userop.Signature = it.Value.([]byte)
+				userop.Signature = it.Value
 			}
-			return it.Value.([]byte), err
+			return it.Value, err
 		case UseSignerItem.Label:
 			return GetHashUI(userop)
 		default:
 			fmt.Println("Unreachable reached:", sel)
 		}
 	}
-
 }

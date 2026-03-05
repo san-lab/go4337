@@ -112,23 +112,23 @@ func (ecsigner *ECSigner) GetECDSAKey() *ecdsa.PrivateKey {
 }
 
 func AddECSigner() (err error) {
-	nit := &Item{Label: "Signer name"}
+	nit := &Item[string]{Label: "Signer name"}
 	err = InputNewStringUI(nit)
 	if err != nil {
 		return
 	}
-	name, ok := nit.Value.(string)
-	if !ok {
+	name := nit.Value
+	if name == "" {
 		return fmt.Errorf("invalid input for signer name")
 	}
 
-	it := &Item{Label: "Input new ECDSA private key in HEX"}
+	it := &Item[[]byte]{Label: "Input new ECDSA private key in HEX"}
 	err = InputBytes(it, -1)
 	if err != nil {
 		return
 	}
-	bt, ok := it.Value.([]byte)
-	if !ok || len(bt) == 0 {
+	bt := it.Value
+	if len(bt) == 0 {
 		return fmt.Errorf("invalid input")
 	}
 	//fmt.Printf("Got key %x\n", bt)

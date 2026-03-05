@@ -15,32 +15,35 @@ import (
 	"github.com/san-lab/go4337/ui/common"
 	"github.com/san-lab/go4337/ui/nonceui"
 	"github.com/san-lab/go4337/ui/signui"
+	"github.com/san-lab/go4337/userop"
 )
 
-var AuthChainIDItem = &common.Item{Label: "Chain ID", Details: "The chain ID must be the same as TX or 0"}
-var AuthAddressItem = &common.Item{Label: "Address", Details: "The addrss to instrument"}
-var AuthNonceItem = &common.Item{Label: "Nonce", Details: "Current nonce at the authority "}
-var AuthSignItem = &common.Item{Label: "Sign", Details: "Sign the authorization"}
-var AuthExportItem = &common.Item{Label: "Export as rlp or json", Details: "Export the authorization as hex of the rlp encoded data or as json"}
-var AuthResetItem = &common.Item{Label: "Remove"}
+var AuthChainIDItem = &common.Item[*big.Int]{Label: "Chain ID", Details: "The chain ID must be the same as TX or 0"}
+var AuthAddressItem = &common.Item[string]{Label: "Address", Details: "The addrss to instrument"}
+var AuthNonceItem = &common.Item[*userop.U256]{Label: "Nonce", Details: "Current nonce at the authority ", Value: (*userop.U256)(new(big.Int))}
+var AuthSignItem = &common.Item[struct{}]{Label: "Sign", Details: "Sign the authorization"}
+var AuthExportItem = &common.Item[struct{}]{Label: "Export as rlp or json", Details: "Export the authorization as hex of the rlp encoded data or as json"}
+var AuthResetItem = &common.Item[struct{}]{Label: "Remove"}
 
 func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 	if auth == nil {
 		auth = new(types.SetCodeAuthorization)
 		AuthChainIDItem.Value = nil
-		AuthAddressItem.Value = nil
-		AuthNonceItem.Value = nil
-		AuthSignItem.DisplayValueString = ""
+		AuthAddressItem.Value = ""
+		AuthNonceItem.Value = (*userop.U256)(new(big.Int))
+		AuthSignItem.Display = nil
 		AuthSignerItem.Details = ""
 	} else {
-		AuthChainIDItem.Value = auth.ChainID
+		AuthChainIDItem.Value = auth.ChainID.ToBig()
 		AuthAddressItem.Value = auth.Address.String()
-		AuthNonceItem.Value = big.NewInt(int64(auth.Nonce))
-		AuthSignItem.DisplayValueString = RSVtoString(&auth.R, &auth.S, uint256.NewInt(uint64(auth.V)))
+		AuthNonceItem.Value = (*userop.U256)(big.NewInt(int64(auth.Nonce)))
+		AuthSignItem.Display = func(_ struct{}) string {
+			return RSVtoString(&auth.R, &auth.S, uint256.NewInt(uint64(auth.V)))
+		}
 		AuthSignerItem.Details = AuthorityString(auth)
 	}
 
-	authitems := []*common.Item{
+	authitems := []common.MenuItem{
 		AuthChainIDItem,
 		AuthAddressItem,
 		AuthSignerItem,
@@ -72,8 +75,7 @@ func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 		case AuthChainIDItem.Label:
 			common.InputBigInt(AuthChainIDItem)
 			if AuthChainIDItem.Value != nil {
-				bici := AuthChainIDItem.Value.(*big.Int)
-				chid, _ := uint256.FromBig(bici)
+				chid, _ := uint256.FromBig(AuthChainIDItem.Value)
 				auth.ChainID = *chid
 
 			}
@@ -87,10 +89,9 @@ func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 			signui.SignerUI(AuthSignerItem)
 
 		case AuthNonceItem.Label:
-
 			nonceui.InputNonceUI(AuthNonceItem, AuthSignerItem, true)
 			if AuthNonceItem.Value != nil {
-				auth.Nonce = AuthNonceItem.Value.(*big.Int).Uint64()
+				auth.Nonce = (*big.Int)(AuthNonceItem.Value).Uint64()
 			}
 		case AuthSignItem.Label:
 			SignAuthorizationUI(auth)
@@ -102,14 +103,14 @@ func AuthUI(auth *types.SetCodeAuthorization) *types.SetCodeAuthorization {
 
 }
 
-var AuthSignerItem = &common.Item{Label: "Auth Signer", Details: "The signer to use for signing the authorization"}
+var AuthSignerItem = &common.Item[signer.Signer]{Label: "Auth Signer", Details: "The signer to use for signing the authorization"}
 
 func SignAuthorizationUI(auth *types.SetCodeAuthorization) {
 	if auth == nil {
 		fmt.Println("No authorization to sign")
 		return
 	}
-	spr := promptui.Select{Items: []*common.Item{AuthSignerItem, AuthSignItem, common.Back}, Label: "Select an item"}
+	spr := promptui.Select{Items: []common.MenuItem{AuthSignerItem, AuthSignItem, common.Back}, Label: "Select an item"}
 	spr.Templates = common.ItemTemplate
 	for {
 		_, sel, err := spr.Run()
@@ -129,8 +130,8 @@ func SignAuthorizationUI(auth *types.SetCodeAuthorization) {
 			} else {
 
 				fmt.Println("Signing with", AuthSignerItem.Value)
-				signer := AuthSignerItem.Value.(signer.Signer)
-				a2, err := types.SignSetCode(signer.GetKey().(*ecdsa.PrivateKey), *auth)
+				signerV := AuthSignerItem.Value
+				a2, err := types.SignSetCode(signerV.GetKey().(*ecdsa.PrivateKey), *auth)
 				if err != nil {
 					fmt.Println("Failed to sign", err)
 				} else {
@@ -138,9 +139,9 @@ func SignAuthorizationUI(auth *types.SetCodeAuthorization) {
 					auth.S = a2.S
 					auth.V = uint8(a2.V)
 
-					AuthSignItem.DisplayValueString = RSVtoString(&a2.R, &a2.S, uint256.NewInt(uint64(a2.V)))
-
-					//AuthSignItem.DisplayValueString = RSVtoString(&a2.R, &a2.S, uint256.NewInt(uint64(a2.V)))
+					AuthSignItem.Display = func(_ struct{}) string {
+						return RSVtoString(&a2.R, &a2.S, uint256.NewInt(uint64(a2.V)))
+					}
 					return
 				}
 
@@ -170,9 +171,9 @@ func RSVtoString(r, s, v *uint256.Int) string {
 }
 
 func ExoprtAuthUI(auth *types.SetCodeAuthorization) {
-	exportAsHex := &common.Item{Label: "Export as hex", Details: "Export the authorization as hex of the rlp encoded data"}
-	exportAsJSON := &common.Item{Label: "Export as JSON", Details: "Export the authorization as JSON"}
-	selector := promptui.Select{Items: []*common.Item{exportAsHex, exportAsJSON, common.Back}, Label: "Select an item"}
+	exportAsHex := &common.Item[struct{}]{Label: "Export as hex", Details: "Export the authorization as hex of the rlp encoded data"}
+	exportAsJSON := &common.Item[struct{}]{Label: "Export as JSON", Details: "Export the authorization as JSON"}
+	selector := promptui.Select{Items: []common.MenuItem{exportAsHex, exportAsJSON, common.Back}, Label: "Select an item"}
 	selector.Templates = common.ItemTemplate
 	selector.Size = 4
 	_, sel, err := selector.Run()

@@ -33,15 +33,17 @@ func TestSlice(t *testing.T) {
 
 func TestDisplayValue(t *testing.T) {
 	//state.InitState()
-	it := new(ucommon.Item)
+	it := new(ucommon.Item[any])
 	it.Value = common.Address{}
 	fmt.Println(it.DisplayValue())
-	it.Value = &it.Value
+	addr := common.Address{}
+	it.Value = &addr
 	fmt.Println(it.DisplayValue())
 	usop := new(userop.UserOperation)
-	it.Value = usop.Sender
+	sender := usop.Sender
+	it.Value = sender
 	fmt.Println(it.Value == nil)
-	fmt.Println(reflect.ValueOf(it.Value).IsNil())
+	fmt.Println(reflect.ValueOf(it.Value).IsZero())
 	//fmt.Println(elem)
 	fmt.Println(">>" + it.DisplayValue() + "<<")
 }

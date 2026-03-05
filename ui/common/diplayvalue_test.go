@@ -10,7 +10,7 @@ import (
 )
 
 func TestDiplay(t *testing.T) {
-	it := &Item{}
+	it := &Item[any]{}
 	u, _ := uint256.FromDecimal("123")
 	it.Value = u
 	fmt.Println(it.DisplayValue())
@@ -19,7 +19,7 @@ func TestDiplay(t *testing.T) {
 	fmt.Println(it.DisplayValue())
 
 	u2 := userop.FullNonce(big.NewInt(1), uint64(7))
-	it2 := new(Item)
+	it2 := &Item[any]{}
 	it2.Value = u2
 	fmt.Println("i", it2.DisplayValue())
 

@@ -9,11 +9,11 @@ import (
 
 func PotentiallyRecursiveCallDataUI() (calldata []byte, err error) {
 	// SetCallDataUI sets the CallDataItem value
-	var CallDataDirectItem = &Item{Label: "Input as hex", Details: "Set Call Data Direct"}
-	var CallDataABIItem = &Item{Label: "Input by ABI", Details: "Set Call Data using ABI"}
-	var CallDataFileItem = &Item{Label: "Input by File", Details: "Set Call Data using File"}
+	var CallDataDirectItem = &Item[struct{}]{Label: "Input as hex", Details: "Set Call Data Direct"}
+	var CallDataABIItem = &Item[struct{}]{Label: "Input by ABI", Details: "Set Call Data using ABI"}
+	var CallDataFileItem = &Item[struct{}]{Label: "Input by File", Details: "Set Call Data using File"}
 
-	items := []*Item{
+	items := []MenuItem{
 		CallDataDirectItem,
 		CallDataABIItem,
 		CallDataFileItem,
@@ -35,18 +35,13 @@ func PotentiallyRecursiveCallDataUI() (calldata []byte, err error) {
 		case Back.Label:
 			return
 		case CallDataDirectItem.Label:
-			it := &Item{Label: "Input Hex", Details: "Input Hex Data"}
+			it := &Item[[]byte]{Label: "Input Hex", Details: "Input Hex Data"}
 			err := InputBytes(it, -1)
-			return it.Value.([]byte), err
+			return it.Value, err
 		case CallDataABIItem.Label:
-			it := &Item{Label: "Select ABI Methods to encode", Details: "Input ABI Data"}
+			it := &Item[[]byte]{Label: "Select ABI Methods to encode", Details: "Input ABI Data"}
 			_, err := AbisUI(it)
-			var retbytes []byte
-
-			if it.Value != nil {
-				retbytes = it.Value.([]byte)
-			}
-			return retbytes, err
+			return it.Value, err
 		case CallDataFileItem.Label:
 			bts, err := SelectFileFromFS("")
 			if err != nil {

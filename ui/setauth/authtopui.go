@@ -12,14 +12,14 @@ import (
 )
 
 // select menu with options: select/create//clone/export/import setAuthTx
-var SelectSetAuthTxItem = &Item{Label: "Select SetAuthTx", Details: "Select SetAuthTx"}
-var CreateSetAuthTxItem = &Item{Label: "Create SetAuthTx", Details: "Create SetAuthTx"}
-var DeleteSetAuthTxItem = &Item{Label: "Delete SetAuthTx", Details: "Delete SetAuthTx"}
-var CloneSetAuthTxItem = &Item{Label: "Clone SetAuthTx", Details: "Clone SetAuthTx"}
-var ExportSetAuthTxItem = &Item{Label: "Export SetAuthTx", Details: "Export SetAuthTx"}
-var ImportSetAuthTxItem = &Item{Label: "Import SetAuthTx", Details: "Import SetAuthTx"}
-var ContentSetAuthTxItem = &Item{Label: "Content SetAuthTx", Details: "Content SetAuthTx"}
-var SendSetAuthTxItem = &Item{Label: "Send SetAuthTx", Details: "Send SetAuthTx"}
+var SelectSetAuthTxItem = &Item[struct{}]{Label: "Select SetAuthTx", Details: "Select SetAuthTx"}
+var CreateSetAuthTxItem = &Item[struct{}]{Label: "Create SetAuthTx", Details: "Create SetAuthTx"}
+var DeleteSetAuthTxItem = &Item[struct{}]{Label: "Delete SetAuthTx", Details: "Delete SetAuthTx"}
+var CloneSetAuthTxItem = &Item[struct{}]{Label: "Clone SetAuthTx", Details: "Clone SetAuthTx"}
+var ExportSetAuthTxItem = &Item[struct{}]{Label: "Export SetAuthTx", Details: "Export SetAuthTx"}
+var ImportSetAuthTxItem = &Item[struct{}]{Label: "Import SetAuthTx", Details: "Import SetAuthTx"}
+var ContentSetAuthTxItem = &Item[struct{}]{Label: "Content SetAuthTx", Details: "Content SetAuthTx"}
+var SendSetAuthTxItem = &Item[struct{}]{Label: "Send SetAuthTx", Details: "Send SetAuthTx"}
 
 var satxName string
 
@@ -33,7 +33,7 @@ func AuthTxUI() {
 	for {
 		var selectedSetAuthTx *types.SetCodeTx
 		var ok bool
-		items := []*Item{}
+		items := []MenuItem{}
 		if selectedSetAuthTx, ok = state.GetSetAuthTx(satxName); ok {
 			items = append(items, ContentSetAuthTxItem, DeleteSetAuthTxItem, CloneSetAuthTxItem, ExportSetAuthTxItem, SendSetAuthTxItem)
 			prompt.Label = fmt.Sprintf("Working with tx To: %s at Nonce: %d", selectedSetAuthTx.To.Hex(), selectedSetAuthTx.Nonce)
@@ -80,10 +80,10 @@ func AuthTxUI() {
 }
 
 func SelectSetAuthTxUI() {
-	items := []*Item{}
+	items := []MenuItem{}
 	satxNames := state.ListSetAuthTxs()
 	for _, sn := range satxNames {
-		items = append(items, &Item{
+		items = append(items, &Item[string]{
 			Label: sn,
 			Value: sn,
 		})
@@ -146,13 +146,13 @@ func ExportSetAuthTxUI(satx *types.SetCodeTx) {
 }
 
 func ImportSetAuthTxUI() {
-	it := &Item{Label: "Input Hex", Details: "Input Hex Data"}
+	it := &Item[[]byte]{Label: "Input Hex", Details: "Input Hex Data"}
 	err := InputBytes(it, -1)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	bts := it.Value.([]byte)
+	bts := it.Value
 	if len(bts) == 0 || bts[0] != 0x04 {
 		fmt.Println("Invalid SetAuthTx")
 		return
@@ -171,14 +171,14 @@ func ImportSetAuthTxUI() {
 	}
 	fmt.Println(string(jb))
 
-	nameit := &Item{Label: "Set Name", Details: "Set Name for the imported SetAuth Transaction"}
+	nameit := &Item[string]{Label: "Set Name", Details: "Set Name for the imported SetAuth Transaction"}
 	err = InputNewStringUI(nameit)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	state.AddSetAuthTx(nameit.Value.(string), satx)
+	state.AddSetAuthTx(nameit.Value, satx)
 	state.Save()
-	satxName = nameit.Value.(string)
+	satxName = nameit.Value
 
 }
