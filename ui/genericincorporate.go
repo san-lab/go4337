@@ -357,5 +357,37 @@ func MapResultToGasAndPaymasterValues(result any) *GasAndPaymasterValues {
 
 	}
 
+	// Warn about every non-empty input field that did not result in a populated target field.
+	// This catches both name mismatches (field absent from GasAndPaymasterValues) and
+	// type-conversion failures (field present but target still nil/zero after mapping).
+	for i := 0; i < vResult.NumField(); i++ {
+		fieldResult := vResult.Field(i)
+		fieldName := vResult.Type().Field(i).Name
+
+		if isReflectEmpty(fieldResult) {
+			continue
+		}
+
+		fieldGasValues := vGasValues.FieldByName(fieldName)
+		if !fieldGasValues.IsValid() || isReflectEmpty(fieldGasValues) {
+			fmt.Printf("Warning: non-empty input field %q (type %s, value %v) was not mapped\n",
+				fieldName, fieldResult.Type(), fieldResult)
+		}
+	}
+
 	return gasValues
+}
+
+// isReflectEmpty reports whether a reflected value is nil, zero, or empty.
+func isReflectEmpty(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		return v.IsNil()
+	case reflect.Slice:
+		return v.Len() == 0
+	case reflect.String:
+		return v.String() == ""
+	default:
+		return v.IsZero()
+	}
 }
