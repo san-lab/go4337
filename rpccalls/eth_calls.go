@@ -2,7 +2,6 @@ package rpccalls
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/san-lab/go4337/state"
 	"github.com/san-lab/go4337/userop"
@@ -41,9 +40,7 @@ func Eth_sendUserOperation(url, key string, usop *userop.UserOperation, entrypoi
 }
 
 func Eth_estimateUserOperationGas(url, key string, usop *userop.UserOperation, entrypoint string, entrypointVersion int, provider string) (any, error) {
-	if state.DEBUG {
-		log.Println(entrypoint, entrypointVersion)
-	}
+	state.Log(entrypoint, entrypointVersion)
 	var usopdata, result interface{}
 	switch entrypointVersion {
 	case 6:

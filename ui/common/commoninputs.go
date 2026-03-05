@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"regexp"
@@ -49,6 +48,9 @@ func InputBigInt(item *Item[*big.Int]) (*big.Int, error) {
 
 	prompt := promptui.Prompt{
 		Label: item.Label,
+	}
+	if item.Value != nil {
+		prompt.Default = fmt.Sprint(item.Value)
 	}
 	a, err := prompt.Run()
 	if err != nil {
@@ -269,9 +271,7 @@ func InputHexFileUI(label string) ([]byte, error) {
 		return nil, err
 	}
 	sbytes := string(hbytes)
-	if state.DEBUG {
-		fmt.Println("Selected file: ", sbytes)
-	}
+	state.Log("Selected file:", sbytes)
 	//trim witespaces
 	sbytes = strings.TrimSpace(sbytes)
 	sbytes = strings.TrimPrefix(sbytes, "0x")
@@ -279,10 +279,3 @@ func InputHexFileUI(label string) ([]byte, error) {
 
 }
 
-func ConvHexOrZero(s string) uint64 {
-	i, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 64)
-	if err != nil && state.DEBUG {
-		log.Println(err)
-	}
-	return i
-}

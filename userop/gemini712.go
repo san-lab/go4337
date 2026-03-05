@@ -68,8 +68,8 @@ func buildStructHash(op *UserOperation) common.Hash {
 	// Prepare the complex fields
 	initCode := getInitCode(op)
 	paymasterAndData := getPaymasterAndData(op)
-	accountGasLimits := packUint128s(op.VerificationGasLimit, op.CallGasLimit)
-	gasFees := packUint128s(op.MaxPriorityFeePerGas, op.MaxFeePerGas)
+	accountGasLimits := packUint128s(bigToUint64(op.VerificationGasLimit), bigToUint64(op.CallGasLimit))
+	gasFees := packUint128s(bigToUint64(op.MaxPriorityFeePerGas), bigToUint64(op.MaxFeePerGas))
 
 	// Buffer to hold encoded data
 	// 32 bytes per field * 9 fields
@@ -100,7 +100,7 @@ func buildStructHash(op *UserOperation) common.Hash {
 
 	// 7. PreVerificationGas (uint256)
 	preVerifBytes := make([]byte, 32)
-	binary.BigEndian.PutUint64(preVerifBytes[24:], op.PreVerificationGas)
+	binary.BigEndian.PutUint64(preVerifBytes[24:], bigToUint64(op.PreVerificationGas))
 	encoded = append(encoded, preVerifBytes...)
 
 	// 8. GasFees (bytes32)
@@ -167,12 +167,12 @@ func getPaymasterAndData(op *UserOperation) []byte {
 
 	// 2. PaymasterVerificationGasLimit (16 bytes / uint128)
 	verifGasBytes := make([]byte, 16)
-	binary.BigEndian.PutUint64(verifGasBytes[8:], op.PaymasterVerificationGasLimit)
+	binary.BigEndian.PutUint64(verifGasBytes[8:], bigToUint64(op.PaymasterVerificationGasLimit))
 	result = append(result, verifGasBytes...)
 
 	// 3. PaymasterPostOpGasLimit (16 bytes / uint128)
 	postOpGasBytes := make([]byte, 16)
-	binary.BigEndian.PutUint64(postOpGasBytes[8:], op.PaymasterPostOpGasLimit)
+	binary.BigEndian.PutUint64(postOpGasBytes[8:], bigToUint64(op.PaymasterPostOpGasLimit))
 	result = append(result, postOpGasBytes...)
 
 	// 4. Paymaster Data

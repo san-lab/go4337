@@ -89,21 +89,21 @@ type UserOperation struct {
 	// Data to pass to the sender during the main execution call
 	CallData []byte `json:"callData"`
 	// The amount of gas to allocate the main execution call
-	CallGasLimit uint64 `json:"callGasLimit"`
+	CallGasLimit *big.Int `json:"callGasLimit"`
 	// The amount of gas to allocate for the verification step
-	VerificationGasLimit uint64 `json:"verificationGasLimit"`
+	VerificationGasLimit *big.Int `json:"verificationGasLimit"`
 	// Extra gas to pay the bunder
-	PreVerificationGas uint64 `json:"preVerificationGas"`
+	PreVerificationGas *big.Int `json:"preVerificationGas"`
 	// Maximum fee per gas (similar to EIP-1559 max_fee_per_gas)
-	MaxFeePerGas uint64 `json:"maxFeePerGas"`
+	MaxFeePerGas *big.Int `json:"maxFeePerGas"`
 	// Maximum priority fee per gas (similar to EIP-1559 max_priority_fee_per_gas)
-	MaxPriorityFeePerGas uint64 `json:"maxPriorityFeePerGas"`
+	MaxPriorityFeePerGas *big.Int `json:"maxPriorityFeePerGas"`
 	// Address of paymaster contract, (or empty, if account pays for itself)
 	Paymaster *common.Address `json:"paymaster,omitempty"`
 	// The amount of gas to allocate for the paymaster validation code
-	PaymasterVerificationGasLimit uint64 `json:"paymasterVerificationGasLimit"`
+	PaymasterVerificationGasLimit *big.Int `json:"paymasterVerificationGasLimit"`
 	// The amount of gas to allocate for the paymaster post-operation code
-	PaymasterPostOpGasLimit uint64 `json:"paymasterPostOpGasLimit"`
+	PaymasterPostOpGasLimit *big.Int `json:"paymasterPostOpGasLimit"`
 	// Data for paymaster (only if paymaster exists)
 	PaymasterData []byte `json:"paymasterData"`
 	// Data passed into the account to verify authorization
@@ -122,15 +122,34 @@ type UserOperation struct {
   }
 */
 
+// BigToUint64 safely converts *big.Int to uint64, returning 0 for nil.
+func BigToUint64(v *big.Int) uint64 {
+	if v == nil {
+		return 0
+	}
+	return v.Uint64()
+}
+
+// bigToUint64 is the package-internal alias.
+func bigToUint64(v *big.Int) uint64 { return BigToUint64(v) }
+
+// bigHex formats a *big.Int as a 0x-prefixed hex string, returning "0x0" for nil.
+func bigHex(v *big.Int) string {
+	if v == nil {
+		return "0x0"
+	}
+	return fmt.Sprintf("0x%x", v)
+}
+
 func NewUserOperationWithDefaults() *UserOperation {
 	uop := &UserOperation{
-		CallGasLimit:                  DefaultCallGasLimit,
-		VerificationGasLimit:          DefaultVerificationGasLimit,
-		PreVerificationGas:            DefaultPreVerificationGas,
-		MaxFeePerGas:                  DefaultMaxFeePerGas,
-		MaxPriorityFeePerGas:          DefaultMaxPriorityFeePerGas,
-		PaymasterVerificationGasLimit: DefaultPaymasterVerificationGasLimit,
-		PaymasterPostOpGasLimit:       DefaultPaymasterPostOpGasLimit,
+		CallGasLimit:                  new(big.Int).Set(DefaultCallGasLimit),
+		VerificationGasLimit:          new(big.Int).Set(DefaultVerificationGasLimit),
+		PreVerificationGas:            new(big.Int).Set(DefaultPreVerificationGas),
+		MaxFeePerGas:                  new(big.Int).Set(DefaultMaxFeePerGas),
+		MaxPriorityFeePerGas:          new(big.Int).Set(DefaultMaxPriorityFeePerGas),
+		PaymasterVerificationGasLimit: new(big.Int).Set(DefaultPaymasterVerificationGasLimit),
+		PaymasterPostOpGasLimit:       new(big.Int).Set(DefaultPaymasterPostOpGasLimit),
 	}
 	return uop
 }
@@ -166,14 +185,14 @@ func (u UserOperation) MarshalJSON() ([]byte, error) {
 			Factory:                       JSAddressHex(u.Factory, ""),
 			FactoryData:                   BytesToString(u.FactoryData),
 			CallData:                      BytesToString(u.CallData),
-			CallGasLimit:                  u.CallGasLimit,
-			VerificationGasLimit:          u.VerificationGasLimit,
-			PreVerificationGas:            u.PreVerificationGas,
-			MaxFeePerGas:                  u.MaxFeePerGas,
-			MaxPriorityFeePerGas:          u.MaxPriorityFeePerGas,
+			CallGasLimit:                  bigToUint64(u.CallGasLimit),
+			VerificationGasLimit:          bigToUint64(u.VerificationGasLimit),
+			PreVerificationGas:            bigToUint64(u.PreVerificationGas),
+			MaxFeePerGas:                  bigToUint64(u.MaxFeePerGas),
+			MaxPriorityFeePerGas:          bigToUint64(u.MaxPriorityFeePerGas),
 			Paymaster:                     JSAddressHex(u.Paymaster, ""),
-			PaymasterVerificationGasLimit: u.PaymasterVerificationGasLimit,
-			PaymasterPostOpGasLimit:       u.PaymasterPostOpGasLimit,
+			PaymasterVerificationGasLimit: bigToUint64(u.PaymasterVerificationGasLimit),
+			PaymasterPostOpGasLimit:       bigToUint64(u.PaymasterPostOpGasLimit),
 			PaymasterData:                 BytesToString(u.PaymasterData),
 			Signature:                     BytesToString(u.Signature),
 			EIP7702Auth:                   u.EIP7702Auth,
@@ -198,17 +217,17 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 	}
 	u.FactoryData = common.FromHex(adapter.FactoryData)
 	u.CallData = common.FromHex(adapter.CallData)
-	u.CallGasLimit = adapter.CallGasLimit
-	u.VerificationGasLimit = adapter.VerificationGasLimit
-	u.PreVerificationGas = adapter.PreVerificationGas
-	u.MaxFeePerGas = adapter.MaxFeePerGas
-	u.MaxPriorityFeePerGas = adapter.MaxPriorityFeePerGas
+	u.CallGasLimit = new(big.Int).SetUint64(adapter.CallGasLimit)
+	u.VerificationGasLimit = new(big.Int).SetUint64(adapter.VerificationGasLimit)
+	u.PreVerificationGas = new(big.Int).SetUint64(adapter.PreVerificationGas)
+	u.MaxFeePerGas = new(big.Int).SetUint64(adapter.MaxFeePerGas)
+	u.MaxPriorityFeePerGas = new(big.Int).SetUint64(adapter.MaxPriorityFeePerGas)
 	if adapter.Paymaster != "" {
 		u.Paymaster = new(common.Address)
 		*u.Paymaster = common.HexToAddress(fmt.Sprintf("%s", adapter.Paymaster))
 	}
-	u.PaymasterVerificationGasLimit = adapter.PaymasterVerificationGasLimit
-	u.PaymasterPostOpGasLimit = adapter.PaymasterPostOpGasLimit
+	u.PaymasterVerificationGasLimit = new(big.Int).SetUint64(adapter.PaymasterVerificationGasLimit)
+	u.PaymasterPostOpGasLimit = new(big.Int).SetUint64(adapter.PaymasterPostOpGasLimit)
 	u.PaymasterData = common.FromHex(adapter.PaymasterData)
 	u.Signature = common.FromHex(adapter.Signature)
 	u.EIP7702Auth = adapter.EIP7702Auth
@@ -216,9 +235,9 @@ func (u *UserOperation) UnmarshalJSON(data []byte) error {
 }
 
 func (u *UserOperation) TotalGasLimit() uint64 {
-	tot := u.CallGasLimit + u.VerificationGasLimit + u.PreVerificationGas +
-		u.PaymasterVerificationGasLimit + u.PaymasterPostOpGasLimit
-	return tot
+	return bigToUint64(u.CallGasLimit) + bigToUint64(u.VerificationGasLimit) +
+		bigToUint64(u.PreVerificationGas) + bigToUint64(u.PaymasterVerificationGasLimit) +
+		bigToUint64(u.PaymasterPostOpGasLimit)
 }
 
 func (u *UserOperation) InitData() []byte {
@@ -244,11 +263,11 @@ func (u *UserOperation) MarshalV6UserOp() entrypointv6.UserOperation {
 	//}
 	uop6.InitCode = u.InitData()
 	uop6.CallData = u.CallData
-	uop6.CallGasLimit = big.NewInt(int64(u.CallGasLimit))
-	uop6.VerificationGasLimit = big.NewInt(int64(u.VerificationGasLimit))
-	uop6.PreVerificationGas = big.NewInt(int64(u.PreVerificationGas))
-	uop6.MaxFeePerGas = big.NewInt(int64(u.MaxFeePerGas))
-	uop6.MaxPriorityFeePerGas = big.NewInt(int64(u.MaxPriorityFeePerGas))
+	uop6.CallGasLimit = new(big.Int).SetUint64(bigToUint64(u.CallGasLimit))
+	uop6.VerificationGasLimit = new(big.Int).SetUint64(bigToUint64(u.VerificationGasLimit))
+	uop6.PreVerificationGas = new(big.Int).SetUint64(bigToUint64(u.PreVerificationGas))
+	uop6.MaxFeePerGas = new(big.Int).SetUint64(bigToUint64(u.MaxFeePerGas))
+	uop6.MaxPriorityFeePerGas = new(big.Int).SetUint64(bigToUint64(u.MaxPriorityFeePerGas))
 	//if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
 	//	uop6.PaymasterAndData = append(u.Paymaster.Bytes(), u.PaymasterData...)
 	//}
@@ -273,11 +292,11 @@ func (u *UserOperation) MarshalValuesV6() []interface{} {
 	values[1] = source.Nonce
 	values[2] = source.InitData()
 	values[3] = source.CallData
-	values[4] = big.NewInt(int64(source.CallGasLimit))
-	values[5] = big.NewInt(int64(source.VerificationGasLimit))
-	values[6] = big.NewInt(int64(source.PreVerificationGas))
-	values[7] = big.NewInt(int64(source.MaxFeePerGas))
-	values[8] = big.NewInt(int64(source.MaxPriorityFeePerGas))
+	values[4] = new(big.Int).SetUint64(bigToUint64(source.CallGasLimit))
+	values[5] = new(big.Int).SetUint64(bigToUint64(source.VerificationGasLimit))
+	values[6] = new(big.Int).SetUint64(bigToUint64(source.PreVerificationGas))
+	values[7] = new(big.Int).SetUint64(bigToUint64(source.MaxFeePerGas))
+	values[8] = new(big.Int).SetUint64(bigToUint64(source.MaxPriorityFeePerGas))
 	values[9] = source.PaymasterAndData()
 	values[10] = source.Signature
 	return values
@@ -293,13 +312,13 @@ func (u *UserOperation) MarshalAlchemy() string {
 		json += fmt.Sprintf("\"factoryData\": \"0x%x\", ", u.FactoryData)
 	}
 	json += fmt.Sprintf("\"callData\": \"0x%x\", ", u.CallData)
-	json += fmt.Sprintf("\"callGasLimit\": \"0x%x\", ", u.CallGasLimit)
-	json += fmt.Sprintf("\"maxPriorityFeePerGas\": \"0x%x\", ", u.MaxPriorityFeePerGas)
-	json += fmt.Sprintf("\"maxFeePerGas\": \"0x%x\", ", u.MaxFeePerGas)
-	json += fmt.Sprintf("\"preVerificationGas\": \"0x%x\", ", u.PreVerificationGas)
-	json += fmt.Sprintf("\"verificationGasLimit\": \"0x%x\", ", u.VerificationGasLimit)
-	json += fmt.Sprintf("\"paymasterVerificationGasLimit\": \"0x%x\", ", u.PaymasterVerificationGasLimit)
-	json += fmt.Sprintf("\"paymasterPostOpGasLimit\": \"0x%x\", ", u.PaymasterPostOpGasLimit)
+	json += fmt.Sprintf("\"callGasLimit\": \"%s\", ", bigHex(u.CallGasLimit))
+	json += fmt.Sprintf("\"maxPriorityFeePerGas\": \"%s\", ", bigHex(u.MaxPriorityFeePerGas))
+	json += fmt.Sprintf("\"maxFeePerGas\": \"%s\", ", bigHex(u.MaxFeePerGas))
+	json += fmt.Sprintf("\"preVerificationGas\": \"%s\", ", bigHex(u.PreVerificationGas))
+	json += fmt.Sprintf("\"verificationGasLimit\": \"%s\", ", bigHex(u.VerificationGasLimit))
+	json += fmt.Sprintf("\"paymasterVerificationGasLimit\": \"%s\", ", bigHex(u.PaymasterVerificationGasLimit))
+	json += fmt.Sprintf("\"paymasterPostOpGasLimit\": \"%s\", ", bigHex(u.PaymasterPostOpGasLimit))
 	if u.Paymaster != nil && u.Paymaster.Cmp(common.BytesToAddress([]byte{0})) != 0 {
 		// Bundler answers with paymaster signature failure...
 		// json += fmt.Sprintf("paymaster: %s,", u.Paymaster.Hex())
@@ -376,13 +395,13 @@ func (u *PackedUserOp) MarshalRemix() string {
   paymasterPostOpGasLimit: 0,
 */
 var (
-	DefaultCallGasLimit                  = uint64(2000000)
-	DefaultVerificationGasLimit          = uint64(200000)
-	DefaultPreVerificationGas            = uint64(20000)
-	DefaultMaxFeePerGas                  = uint64(1000)
-	DefaultMaxPriorityFeePerGas          = uint64(1000000)
-	DefaultPaymasterVerificationGasLimit = uint64(1000)
-	DefaultPaymasterPostOpGasLimit       = uint64(100)
+	DefaultCallGasLimit                  = big.NewInt(2000000)
+	DefaultVerificationGasLimit          = big.NewInt(200000)
+	DefaultPreVerificationGas            = big.NewInt(20000)
+	DefaultMaxFeePerGas                  = big.NewInt(1000)
+	DefaultMaxPriorityFeePerGas          = big.NewInt(1000000)
+	DefaultPaymasterVerificationGasLimit = big.NewInt(1000)
+	DefaultPaymasterPostOpGasLimit       = big.NewInt(100)
 )
 
 func (u *UserOperation) Pack() *PackedUserOp {
@@ -398,7 +417,7 @@ func (u *UserOperation) Pack() *PackedUserOp {
 	}
 	paymasterData := []byte{}
 	if u.Paymaster != nil && *(u.Paymaster) != (common.Address{}) {
-		gasbytes := PackUints(u.PaymasterVerificationGasLimit, u.PaymasterPostOpGasLimit)
+		gasbytes := PackUints(bigToUint64(u.PaymasterVerificationGasLimit), bigToUint64(u.PaymasterPostOpGasLimit))
 		paymasterData = append(u.Paymaster.Bytes(), gasbytes[:]...)
 		paymasterData = append(paymasterData, u.PaymasterData...)
 	}
@@ -410,9 +429,9 @@ func (u *UserOperation) Pack() *PackedUserOp {
 		Nonce:              (*big.Int)(u.Nonce),
 		InitCode:           initCode,
 		CallData:           u.CallData,
-		AccountGasLimits:   PackUints(u.VerificationGasLimit, u.CallGasLimit),
-		PreVerificationGas: big.NewInt(int64(u.PreVerificationGas)),
-		GasFees:            PackUints(u.MaxPriorityFeePerGas, u.MaxFeePerGas),
+		AccountGasLimits:   PackUints(bigToUint64(u.VerificationGasLimit), bigToUint64(u.CallGasLimit)),
+		PreVerificationGas: new(big.Int).SetUint64(bigToUint64(u.PreVerificationGas)),
+		GasFees:            PackUints(bigToUint64(u.MaxPriorityFeePerGas), bigToUint64(u.MaxFeePerGas)),
 		PaymasterAndData:   paymasterData,
 		Signature:          u.Signature,
 	}

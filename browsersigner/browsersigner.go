@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -387,7 +386,7 @@ func NewBrowserSignerServer() (*BrowserSignerServer, error) {
 	// Start Server in a persistent Goroutine
 	go func() {
 		if err := bs.server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("BrowserSigner server error: %v", err)
+			fmt.Printf("BrowserSigner server error: %v\n", err)
 		}
 	}()
 

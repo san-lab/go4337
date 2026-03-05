@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -191,7 +190,7 @@ func SignEIP712Way(userOp *userop.UserOperation, chainId *big.Int, entrypoint co
 	// Start Server in Goroutine using the existing listener
 	go func() {
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error: %v", err)
+			fmt.Printf("Server error: %v\n", err)
 		}
 	}()
 
@@ -288,8 +287,8 @@ type Domain struct {
 func PrepareEIP712Payload(op *userop.UserOperation, entryPoint common.Address, chainID *big.Int, eip7702Delegate *common.Address) (string, error) {
 
 	// 1. PACKING
-	accountGasLimits := PackUint128s(op.VerificationGasLimit, op.CallGasLimit)
-	gasFees := PackUint128s(op.MaxPriorityFeePerGas, op.MaxFeePerGas)
+	accountGasLimits := PackUint128s(userop.BigToUint64(op.VerificationGasLimit), userop.BigToUint64(op.CallGasLimit))
+	gasFees := PackUint128s(userop.BigToUint64(op.MaxPriorityFeePerGas), userop.BigToUint64(op.MaxFeePerGas))
 	paymasterAndData := GetPaymasterAndDataForPacking(op)
 	initCode := GetInitCodeForPacking(op, eip7702Delegate)
 
@@ -353,10 +352,10 @@ func GetPaymasterAndDataForPacking(op *userop.UserOperation) []byte {
 	packed := make([]byte, 0, 20+16+16+len(op.PaymasterData))
 	packed = append(packed, op.Paymaster.Bytes()...)
 	verifGasBytes := make([]byte, 16)
-	binary.BigEndian.PutUint64(verifGasBytes[8:], op.PaymasterVerificationGasLimit)
+	binary.BigEndian.PutUint64(verifGasBytes[8:], userop.BigToUint64(op.PaymasterVerificationGasLimit))
 	packed = append(packed, verifGasBytes...)
 	postOpBytes := make([]byte, 16)
-	binary.BigEndian.PutUint64(postOpBytes[8:], op.PaymasterPostOpGasLimit)
+	binary.BigEndian.PutUint64(postOpBytes[8:], userop.BigToUint64(op.PaymasterPostOpGasLimit))
 	packed = append(packed, postOpBytes...)
 	packed = append(packed, op.PaymasterData...)
 	return packed

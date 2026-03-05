@@ -46,6 +46,11 @@ func CallForNonceUI(nit *Item[*userop.U256], nkit *Item[*big.Int], ait *Item[*co
 			return
 		case rpcui.SendEndpointItem.Label:
 			rpcui.RPCEndpointsUI(rpcui.SendEndpointItem)
+		case nkit.Label:
+			newKey, err := InputBigInt(nkit)
+			if err == nil {
+				key = newKey
+			}
 		case CallForNonceItem.Label:
 			endpoint := rpcui.SendEndpointItem.Value
 			if endpoint != nil {

@@ -3,7 +3,7 @@ package rpccalls
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -45,16 +45,16 @@ func IncorporateStackUpPMResToUserOp(usop *userop.UserOperation, res *StackUpPMP
 	usop.Paymaster = &pma
 	usop.PaymasterData, _ = hex.DecodeString(res.PaymasterAndData[42:])
 
-	usop.PreVerificationGas = ConvHexOrZero(res.PreVerificationGas)
-	usop.VerificationGasLimit = ConvHexOrZero(res.VerificationGasLimit)
-	usop.CallGasLimit = ConvHexOrZero(res.CallGasLimit)
+	usop.PreVerificationGas = new(big.Int).SetUint64(ConvHexOrZero(res.PreVerificationGas))
+	usop.VerificationGasLimit = new(big.Int).SetUint64(ConvHexOrZero(res.VerificationGasLimit))
+	usop.CallGasLimit = new(big.Int).SetUint64(ConvHexOrZero(res.CallGasLimit))
 	return nil
 }
 
 func ConvHexOrZero(s string) uint64 {
 	i, err := strconv.ParseUint(strings.TrimPrefix(s, "0x"), 16, 64)
-	if err != nil && state.DEBUG {
-		log.Println(err)
+	if err != nil {
+		state.Log(err)
 	}
 	return i
 }
