@@ -44,6 +44,7 @@ const signPageTemplate = `
         
         <div class="status" id="status">Waiting for user action...</div>
         <button id="signBtn">Sign with MetaMask</button>
+        <button id="closeBtn" style="display:none" onclick="window.close()">Close Tab</button>
 
         <h3>Typed Data Payload</h3>
         <pre id="payloadDisplay"></pre>
@@ -94,8 +95,9 @@ const signPageTemplate = `
                 });
 
                 if (response.ok) {
-                    statusDiv.innerText = "Success! You can close this tab.";
+                    statusDiv.innerText = "Success!";
                     btn.style.display = 'none';
+                    document.getElementById('closeBtn').style.display = 'inline-block';
                 } else {
                     statusDiv.innerText = "Server rejected the signature.";
                     statusDiv.className = "status error";
