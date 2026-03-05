@@ -130,7 +130,7 @@ func ProvAPIUI(provider string, usop *userop.UserOperation) {
 
 		key = APIKeyItem.Value
 		url = APIURLItem.Value
-		allOk = key != "" && url != ""
+		allOk = url != ""
 
 		usop = ApiUserOpItem.Value
 		if usop == nil {
